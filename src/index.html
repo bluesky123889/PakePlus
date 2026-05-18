@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>灵羽笔记 · 最终完善版</title>
+    <title>灵羽笔记 · 视图提示与完美居中</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 全局背景与毛玻璃变量 - 全透明主题 */
         :root {
             --bg-blur-amount: 12px;
             --card-blur-amount: 16px;
@@ -46,7 +45,6 @@
             --slider-thumb-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* 深色主题变量 */
         body.dark-theme {
             --default-bg-gradient: linear-gradient(145deg, #0a0f1c 0%, #0f172a 100%);
             --text-primary: #f1f5f9;
@@ -97,10 +95,7 @@
         body.font-medium { font-size: 16px; }
         body.font-large { font-size: 18px; }
 
-        /* 全局隐藏滚动条 */
-        ::-webkit-scrollbar {
-            display: none;
-        }
+        ::-webkit-scrollbar { display: none; }
         .app-container,
         .notes-list-container,
         .editor-panel,
@@ -180,7 +175,6 @@
             min-height: 0;
         }
 
-        /* 侧边栏折叠样式 */
         .notes-sidebar {
             width: 320px;
             background: var(--sidebar-bg);
@@ -266,8 +260,15 @@
             border: 1px solid var(--border-light);
             transition: all 0.2s;
         }
-        .note-item.active { border-left: 4px solid var(--note-active-border); box-shadow: var(--shadow-md); background: rgba(255,255,255,0.35); }
-        body.dark-theme .note-item.active { background: rgba(0,0,0,0.45); }
+        .note-item.active {
+            border-left: 4px solid var(--note-active-border);
+            box-shadow: 0 0 0 1px var(--note-active-border), var(--shadow-md);
+            background: rgba(255,255,255,0.35);
+            backdrop-filter: blur(12px);
+        }
+        body.dark-theme .note-item.active {
+            background: rgba(0,0,0,0.5);
+        }
         .note-title { font-weight: 600; display: flex; justify-content: space-between; margin-bottom: 6px; }
         .delete-note-btn { background: none; border: none; cursor: pointer; color: var(--text-light); padding: 0 4px; font-size: 1rem; }
         .delete-note-btn:hover { color: #ef4444; }
@@ -351,11 +352,35 @@
         .editor-actions {
             display: flex;
             gap: 12px;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
             margin-top: 1.5rem;
             padding-top: 0.5rem;
             border-top: 1px solid var(--border-light);
             flex-shrink: 0;
+        }
+        /* 左侧视图提示 */
+        .view-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+        .view-indicator .icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
         .btn {
             padding: 0.6rem 1.2rem;
@@ -367,6 +392,10 @@
             backdrop-filter: blur(8px);
             color: var(--btn-text);
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.2;
         }
         .btn-primary {
             background: var(--btn-primary-bg);
@@ -393,6 +422,10 @@
         }
         .btn:hover { transform: translateY(-1px); background-color: rgba(255,255,255,0.3); }
         body.dark-theme .btn:hover { background-color: rgba(255,255,255,0.15); }
+        .lock-active {
+            background-color: rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6;
+        }
         .editor-info {
             margin-top: 0.75rem;
             font-size: 0.7rem;
@@ -420,7 +453,6 @@
         }
         .save-toast.show { opacity: 1; }
 
-        /* 预览样式 - 强制换行 */
         .preview-content-render {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
             font-size: 0.95rem;
@@ -453,7 +485,6 @@
             word-break: break-word;
         }
 
-        /* 自定义对话框 */
         .custom-dialog-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -476,8 +507,8 @@
             background: var(--dialog-bg);
             backdrop-filter: blur(20px);
             border-radius: 1.5rem;
-            padding: 1.5rem;
-            width: 300px;
+            padding: 1.5rem 2rem;
+            width: 360px;
             max-width: 90%;
             border: 1px solid var(--border-light);
             box-shadow: 0 20px 30px rgba(0,0,0,0.1);
@@ -504,18 +535,26 @@
             color: var(--btn-text);
             transition: 0.2s;
         }
-        .dialog-btn.confirm {
-            background: var(--btn-primary-bg);
-            color: var(--btn-primary-text);
-            border: 1px solid var(--border-light);
-        }
-        .dialog-btn.cancel {
+        .dialog-btn.btn-danger {
             background: var(--btn-danger-bg);
             color: var(--btn-danger-text);
             border: none;
         }
+        .dialog-btn.btn-danger:hover {
+            background: #b91c1c;
+            color: white;
+        }
+        .dialog-btn.cancel {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-light);
+            color: var(--btn-text);
+        }
+        .dialog-btn-only {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            border: 1px solid var(--border-light);
+        }
 
-        /* 设置模态框 */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -634,7 +673,6 @@
         }
         input:checked + .slider { background-color: #3b82f6; }
         input:checked + .slider:before { transform: translateX(26px); }
-        /* 滑块样式 */
         .range-container {
             display: flex;
             align-items: center;
@@ -716,6 +754,7 @@
             padding: 6px 14px;
             border-radius: 30px;
             cursor: pointer;
+            backdrop-filter: blur(4px);
         }
         .image-gallery {
             display: flex;
@@ -797,6 +836,10 @@
             .settings-nav-item { padding: 0.5rem 1rem; }
             .gallery-item { width: 60px; height: 60px; }
             input[type="range"].glass-slider { width: 160px; }
+            .custom-dialog { width: 85%; padding: 1rem; }
+            .editor-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+            .view-indicator { justify-content: center; }
+            .button-group { justify-content: center; flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -829,11 +872,22 @@
                     </div>
                 </div>
                 <div class="editor-actions">
-                    <div id="editModeButtons">
-                        <button class="btn btn-danger" id="deleteCurrentNoteBtn">🗑️ 删除当前</button>
-                        <button class="btn btn-primary" id="togglePreviewBtn">👁️ 预览模式</button>
+                    <div class="view-indicator" id="viewIndicator">
+                        <span class="icon">✏️</span>
+                        <span id="viewModeText">编辑模式</span>
                     </div>
-                    <div id="previewModeButtons" style="display:none;"><button class="btn btn-primary" id="backToEditBtn">✏️ 返回编辑</button></div>
+                    <div class="button-group" id="actionButtonsGroup">
+                        <div id="editModeButtons">
+                            <button class="btn btn-danger" id="deleteCurrentNoteBtn">🗑️ 删除当前</button>
+                            <button class="btn" id="lockViewBtn" title="锁定当前笔记的视图模式">🔓 锁定视图</button>
+                            <button class="btn btn-primary" id="togglePreviewBtn">👁️ 预览模式</button>
+                        </div>
+                        <div id="previewModeButtons" style="display:none;">
+                            <button class="btn btn-danger" id="deleteCurrentNoteBtnPreview">🗑️ 删除当前</button>
+                            <button class="btn" id="lockViewBtnPreview" title="锁定当前笔记的视图模式">🔓 锁定视图</button>
+                            <button class="btn btn-primary" id="backToEditBtn">✏️ 返回编辑</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="editor-info" id="editorMetaInfo">未选中笔记 / 新建</div>
                 <div id="saveToast" class="save-toast">✓ 已保存</div>
@@ -842,7 +896,6 @@
     </div>
 </div>
 
-<!-- 设置模态框 -->
 <div id="settingsModal" class="modal-overlay">
     <div class="settings-modal-container">
         <div class="settings-header">
@@ -901,11 +954,11 @@
                     <h4>数据管理</h4>
                     <div class="setting-item">
                         <span>📤 导出笔记</span>
-                        <button id="exportNotesBtn" class="bg-upload-btn" style="background:#3b82f6;">导出为 JSON</button>
+                        <button id="exportNotesBtn" class="bg-upload-btn">导出（选择位置）</button>
                     </div>
                     <div class="setting-item">
                         <span>📥 导入笔记</span>
-                        <button id="importNotesBtn" class="bg-upload-btn" style="background:#3b82f6;">选择文件导入</button>
+                        <button id="importNotesBtn" class="bg-upload-btn">选择文件导入</button>
                         <input type="file" id="importFileInput" accept=".json" style="display: none;">
                     </div>
                     <p style="font-size:0.7rem; margin-top:8px;">导入将<strong>完全替换</strong>当前所有笔记，请提前导出备份。</p>
@@ -915,13 +968,11 @@
     </div>
 </div>
 
-<!-- 自定义确认对话框 -->
 <div id="customDialog" class="custom-dialog-overlay">
     <div class="custom-dialog">
         <p id="dialogMessage"></p>
-        <div class="dialog-buttons">
-            <button class="dialog-btn confirm" id="dialogConfirmBtn">确认</button>
-            <button class="dialog-btn cancel" id="dialogCancelBtn">取消</button>
+        <div class="dialog-buttons" id="dialogButtons">
+            <!-- 动态生成按钮 -->
         </div>
     </div>
 </div>
@@ -955,6 +1006,7 @@
         const titleInput = document.getElementById('noteTitleInput');
         const contentInput = document.getElementById('noteContentInput');
         const deleteCurrentBtn = document.getElementById('deleteCurrentNoteBtn');
+        const deleteCurrentBtnPreview = document.getElementById('deleteCurrentNoteBtnPreview');
         const newNoteSideBtn = document.getElementById('newNoteSideBtn');
         const noteCounterSpan = document.getElementById('noteCounter');
         const editorMetaInfo = document.getElementById('editorMetaInfo');
@@ -979,55 +1031,104 @@
         const imageGallery = document.getElementById('imageGallery');
         const customDialog = document.getElementById('customDialog');
         const dialogMessage = document.getElementById('dialogMessage');
-        const dialogConfirmBtn = document.getElementById('dialogConfirmBtn');
-        const dialogCancelBtn = document.getElementById('dialogCancelBtn');
+        const dialogButtonsDiv = document.getElementById('dialogButtons');
         const exportNotesBtn = document.getElementById('exportNotesBtn');
         const importNotesBtn = document.getElementById('importNotesBtn');
         const importFileInput = document.getElementById('importFileInput');
         const sidebarEl = document.getElementById('notesSidebar');
         const shortcutPreviewInput = document.getElementById('shortcutTogglePreview');
         const shortcutSidebarInput = document.getElementById('shortcutToggleSidebar');
+        const lockViewBtn = document.getElementById('lockViewBtn');
+        const lockViewBtnPreview = document.getElementById('lockViewBtnPreview');
+        const viewModeTextSpan = document.getElementById('viewModeText');
+        const viewIndicatorIcon = document.querySelector('#viewIndicator .icon');
         
         let pendingResolve = null;
 
+        // 纯提示弹窗（只有确定按钮）
+        function showAlert(message) {
+            return new Promise((resolve) => {
+                dialogMessage.innerText = message;
+                dialogButtonsDiv.innerHTML = `<button class="dialog-btn dialog-btn-only" id="dialogAlertBtn">确定</button>`;
+                customDialog.classList.add('active');
+                const alertBtn = document.getElementById('dialogAlertBtn');
+                const handler = () => {
+                    customDialog.classList.remove('active');
+                    alertBtn.removeEventListener('click', handler);
+                    resolve(true);
+                };
+                alertBtn.addEventListener('click', handler);
+            });
+        }
+        
+        // 确认弹窗（取消在左，确认在右且为红色透明）
         function showConfirm(message) {
             return new Promise((resolve) => {
                 dialogMessage.innerText = message;
+                dialogButtonsDiv.innerHTML = `
+                    <button class="dialog-btn cancel" id="dialogCancelBtn">取消</button>
+                    <button class="dialog-btn btn-danger" id="dialogConfirmBtn">确认</button>
+                `;
                 customDialog.classList.add('active');
-                pendingResolve = resolve;
+                const confirmBtn = document.getElementById('dialogConfirmBtn');
+                const cancelBtn = document.getElementById('dialogCancelBtn');
+                const cleanup = () => {
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                };
+                const onConfirm = () => {
+                    customDialog.classList.remove('active');
+                    cleanup();
+                    resolve(true);
+                };
+                const onCancel = () => {
+                    customDialog.classList.remove('active');
+                    cleanup();
+                    resolve(false);
+                };
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
             });
         }
-        dialogConfirmBtn.onclick = () => {
-            customDialog.classList.remove('active');
-            if (pendingResolve) pendingResolve(true);
-            pendingResolve = null;
-        };
-        dialogCancelBtn.onclick = () => {
-            customDialog.classList.remove('active');
-            if (pendingResolve) pendingResolve(false);
-            pendingResolve = null;
-        };
         
         // 导出笔记
-        function exportNotes() {
+        async function exportNotes() {
             try {
                 const dataStr = JSON.stringify(notes, null, 2);
                 const blob = new Blob([dataStr], {type: 'application/json'});
+                const defaultFileName = `灵羽笔记_备份_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+                if ('showSaveFilePicker' in window) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: defaultFileName,
+                            types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        showSaveToastMsg('导出成功');
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') {
+                            showSaveToastMsg('已取消导出');
+                            return;
+                        }
+                    }
+                }
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `lingyu_notes_backup_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+                a.download = defaultFileName;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                showSaveToastMsg('导出成功');
-            } catch(e) {
-                showConfirm('导出失败：' + e.message);
+                showSaveToastMsg('导出成功 (保存至默认下载文件夹)');
+            } catch (e) {
+                showAlert('导出失败：' + e.message);
             }
         }
         
-        // 导入笔记
         async function importNotes(file) {
             const confirmed = await showConfirm('导入将完全替换现有笔记，确定继续吗？');
             if (!confirmed) return;
@@ -1041,7 +1142,8 @@
                         title: (item.title && typeof item.title === 'string' && item.title !== 'undefined') ? item.title : '未命名笔记',
                         content: (item.content && typeof item.content === 'string' && item.content !== 'undefined') ? item.content : '',
                         createdAt: item.createdAt || Date.now(),
-                        updatedAt: item.updatedAt || Date.now()
+                        updatedAt: item.updatedAt || Date.now(),
+                        lockedView: (item.lockedView === 'edit' || item.lockedView === 'preview') ? item.lockedView : null
                     }));
                     notes = validated;
                     currentNoteId = null;
@@ -1049,10 +1151,10 @@
                     persistAndUpdate();
                     showSaveToastMsg('导入成功');
                 } catch(err) {
-                    showConfirm('导入失败：' + err.message);
+                    showAlert('导入失败：' + err.message);
                 }
             };
-            reader.onerror = () => showConfirm('读取文件失败');
+            reader.onerror = () => showAlert('读取文件失败');
             reader.readAsText(file);
         }
         
@@ -1063,6 +1165,17 @@
                 saveToast.classList.remove('show');
                 saveToast.innerText = '✓ 已保存';
             }, 1500);
+        }
+        
+        // 更新视图提示
+        function updateViewIndicator() {
+            if (isPreviewMode) {
+                viewModeTextSpan.innerText = '预览模式';
+                viewIndicatorIcon.innerText = '👁️';
+            } else {
+                viewModeTextSpan.innerText = '编辑模式';
+                viewIndicatorIcon.innerText = '✏️';
+            }
         }
         
         // 快捷键设置
@@ -1097,24 +1210,15 @@
         shortcutPreviewInput.addEventListener('keydown', (e) => {
             e.preventDefault();
             const key = e.key;
-            if (key.length === 1 && /[a-z]/i.test(key)) {
-                saveShortcutPreview(key);
-            }
+            if (key.length === 1 && /[a-z]/i.test(key)) saveShortcutPreview(key);
         });
         shortcutSidebarInput.addEventListener('keydown', (e) => {
             e.preventDefault();
             const key = e.key;
-            if (key.length === 1 && /[a-z]/i.test(key)) {
-                saveShortcutSidebar(key);
-            }
+            if (key.length === 1 && /[a-z]/i.test(key)) saveShortcutSidebar(key);
         });
         
-        // 侧边栏折叠功能
-        function toggleSidebar() {
-            sidebarEl.classList.toggle('collapsed');
-        }
-        
-        // 释放焦点功能 (ESC)
+        function toggleSidebar() { sidebarEl.classList.toggle('collapsed'); }
         function blurCurrentEditor() {
             if (document.activeElement === titleInput || document.activeElement === contentInput) {
                 document.activeElement.blur();
@@ -1122,40 +1226,19 @@
             }
             return false;
         }
-        
-        // 关闭所有模态框 (ESC 优先)
         function closeAllModals() {
             let closed = false;
-            if (settingsModal.classList.contains('active')) {
-                settingsModal.classList.remove('active');
-                closed = true;
-            }
-            if (customDialog.classList.contains('active')) {
-                customDialog.classList.remove('active');
-                if (pendingResolve) pendingResolve(false);
-                pendingResolve = null;
-                closed = true;
-            }
+            if (settingsModal.classList.contains('active')) { settingsModal.classList.remove('active'); closed = true; }
+            if (customDialog.classList.contains('active')) { customDialog.classList.remove('active'); if (pendingResolve) pendingResolve(false); pendingResolve = null; closed = true; }
             return closed;
         }
-        
-        // 全局快捷键监听
         function onGlobalKeydown(e) {
             const key = e.key;
             if (key === 'Escape') {
                 const anyModalOpen = settingsModal.classList.contains('active') || customDialog.classList.contains('active');
-                if (anyModalOpen) {
-                    e.preventDefault();
-                    closeAllModals();
-                    return;
-                } else {
-                    if (blurCurrentEditor()) {
-                        e.preventDefault();
-                    }
-                    return;
-                }
+                if (anyModalOpen) { e.preventDefault(); closeAllModals(); return; }
+                else { if (blurCurrentEditor()) e.preventDefault(); return; }
             }
-            
             const activeTag = document.activeElement?.tagName;
             const activeId = document.activeElement?.id;
             if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
@@ -1163,27 +1246,17 @@
                 return;
             }
             if (settingsModal.classList.contains('active') || customDialog.classList.contains('active')) return;
-            
             const lowerKey = key.toLowerCase();
-            if (lowerKey === shortcutPreview) {
-                e.preventDefault();
-                if (!isPreviewMode) setPreviewMode(true);
-                else setPreviewMode(false);
-            } else if (lowerKey === shortcutSidebar) {
-                e.preventDefault();
-                toggleSidebar();
-            }
+            if (lowerKey === shortcutPreview) { e.preventDefault(); if (!isPreviewMode) setPreviewMode(true); else setPreviewMode(false); }
+            else if (lowerKey === shortcutSidebar) { e.preventDefault(); toggleSidebar(); }
         }
         
-        // 安全字符串转换，防止 undefined / null 出现
         function safeString(str) { 
             if (str === undefined || str === null) return '';
             let s = String(str);
             if (s === 'undefined' || s === 'null') return '';
             return s;
         }
-        
-        // 清理笔记中可能残留的 "undefined" 字符串
         function sanitizeNotes() {
             let changed = false;
             for (let n of notes) {
@@ -1199,7 +1272,6 @@
             if (changed) persistAndUpdate();
         }
         
-        // 控制编辑器可用性
         function updateEditorAccess() {
             const hasNotes = notes.length > 0;
             titleInput.disabled = !hasNotes;
@@ -1215,38 +1287,57 @@
             }
         }
         
-        // 背景图库管理
-        function saveBgImages() {
-            localStorage.setItem(BG_IMAGES_KEY, JSON.stringify(bgImages.map(({id, dataUrl}) => ({id, dataUrl}))));
+        // 锁定相关：为当前笔记设置锁定模式或清除锁定
+        async function toggleLockForCurrentNote() {
+            if (!currentNoteId) {
+                await showAlert('没有选中任何笔记');
+                return;
+            }
+            const note = notes.find(n => n.id === currentNoteId);
+            if (!note) return;
+            const currentMode = isPreviewMode ? 'preview' : 'edit';
+            if (note.lockedView === currentMode) {
+                note.lockedView = null;
+                showSaveToastMsg('已解锁当前笔记的视图');
+            } else {
+                note.lockedView = currentMode;
+                showSaveToastMsg(`已锁定当前笔记为「${currentMode === 'preview' ? '预览' : '编辑'}」模式`);
+            }
+            persistAndUpdate();
+            updateLockButtonUI();
         }
+        
+        function updateLockButtonUI() {
+            const lockedMode = currentNoteId ? (notes.find(n => n.id === currentNoteId)?.lockedView) : null;
+            let icon = '🔓', title = '锁定当前笔记的视图模式';
+            if (lockedMode) {
+                icon = '🔒';
+                title = `已锁定为${lockedMode === 'preview' ? '预览' : '编辑'}模式，点击解锁`;
+            }
+            if (lockViewBtn) { lockViewBtn.innerHTML = `${icon} 锁定视图`; lockViewBtn.title = title; }
+            if (lockViewBtnPreview) { lockViewBtnPreview.innerHTML = `${icon} 锁定视图`; lockViewBtnPreview.title = title; }
+            const shouldHighlight = (lockedMode !== null && lockedMode === (isPreviewMode ? 'preview' : 'edit'));
+            const highlightClass = shouldHighlight ? 'lock-active' : '';
+            if (lockViewBtn) lockViewBtn.className = `btn ${highlightClass}`;
+            if (lockViewBtnPreview) lockViewBtnPreview.className = `btn ${highlightClass}`;
+        }
+        
+        // 背景图库管理
+        function saveBgImages() { localStorage.setItem(BG_IMAGES_KEY, JSON.stringify(bgImages.map(({id, dataUrl}) => ({id, dataUrl})))); }
         function loadBgImages() {
             const stored = localStorage.getItem(BG_IMAGES_KEY);
-            if (stored) {
-                try {
-                    bgImages = JSON.parse(stored);
-                } catch(e) { bgImages = []; }
-            } else {
-                bgImages = [];
-            }
+            if (stored) { try { bgImages = JSON.parse(stored); } catch(e) { bgImages = []; } } else { bgImages = []; }
             const savedActiveId = localStorage.getItem(ACTIVE_BG_ID_KEY);
-            if (savedActiveId && bgImages.some(img => img.id === savedActiveId)) {
-                activeBgId = savedActiveId;
-            } else if (bgImages.length > 0) {
-                activeBgId = bgImages[0].id;
-            } else {
-                activeBgId = null;
-            }
+            if (savedActiveId && bgImages.some(img => img.id === savedActiveId)) activeBgId = savedActiveId;
+            else if (bgImages.length > 0) activeBgId = bgImages[0].id;
+            else activeBgId = null;
             applyActiveBackground();
             renderGallery();
         }
         function applyActiveBackground() {
             if (activeBgId) {
                 const img = bgImages.find(i => i.id === activeBgId);
-                if (img) {
-                    document.body.style.setProperty('--user-bg-image', `url(${img.dataUrl})`);
-                    document.body.classList.add('custom-bg');
-                    return;
-                }
+                if (img) { document.body.style.setProperty('--user-bg-image', `url(${img.dataUrl})`); document.body.classList.add('custom-bg'); return; }
             }
             document.body.classList.remove('custom-bg');
             document.body.style.removeProperty('--user-bg-image');
@@ -1255,94 +1346,49 @@
             const newId = Date.now().toString();
             bgImages.push({ id: newId, dataUrl });
             saveBgImages();
-            if (!activeBgId) {
-                activeBgId = newId;
-                localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId);
-                applyActiveBackground();
-            }
+            if (!activeBgId) { activeBgId = newId; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId); applyActiveBackground(); }
             renderGallery();
         }
         async function deleteBgImage(id) {
             if (bgImages.length === 1) {
-                await showConfirm("至少保留一张背景图片，无法删除。如需清空请使用「重置默认背景」");
+                await showAlert("至少保留一张背景图片，无法删除。如需清空请使用「重置默认背景」");
                 return;
             }
             const idx = bgImages.findIndex(i => i.id === id);
             if (idx !== -1) {
                 bgImages.splice(idx, 1);
                 saveBgImages();
-                if (activeBgId === id) {
-                    activeBgId = bgImages.length ? bgImages[0].id : null;
-                    localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId || '');
-                    applyActiveBackground();
-                }
+                if (activeBgId === id) { activeBgId = bgImages.length ? bgImages[0].id : null; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId || ''); applyActiveBackground(); }
                 renderGallery();
             }
         }
-        function setActiveBg(id) {
-            activeBgId = id;
-            localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId);
-            applyActiveBackground();
-            renderGallery();
-        }
-        function resetToDefaultBg() {
-            activeBgId = null;
-            localStorage.removeItem(ACTIVE_BG_ID_KEY);
-            applyActiveBackground();
-            renderGallery();
-        }
+        function setActiveBg(id) { activeBgId = id; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId); applyActiveBackground(); renderGallery(); }
+        function resetToDefaultBg() { activeBgId = null; localStorage.removeItem(ACTIVE_BG_ID_KEY); applyActiveBackground(); renderGallery(); }
         function renderGallery() {
             if (!imageGallery) return;
-            if (bgImages.length === 0) {
-                imageGallery.innerHTML = '<div style="color:var(--text-light); padding:8px;">暂无背景图片，点击上方按钮上传</div>';
-                return;
-            }
+            if (bgImages.length === 0) { imageGallery.innerHTML = '<div style="color:var(--text-light); padding:8px;">暂无背景图片，点击上方按钮上传</div>'; return; }
             let html = '';
-            bgImages.forEach(img => {
-                const isActive = (activeBgId === img.id);
-                html += `
-                    <div class="gallery-item ${isActive ? 'active' : ''}" data-id="${img.id}">
-                        <img src="${img.dataUrl}" alt="背景预览">
-                        <div class="gallery-delete" data-id="${img.id}" data-delete="true">✕</div>
-                    </div>
-                `;
+            bgImages.forEach(img => { const isActive = (activeBgId === img.id);
+                html += `<div class="gallery-item ${isActive ? 'active' : ''}" data-id="${img.id}"><img src="${img.dataUrl}" alt="背景预览"><div class="gallery-delete" data-id="${img.id}" data-delete="true">✕</div></div>`;
             });
             imageGallery.innerHTML = html;
             document.querySelectorAll('.gallery-item').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('gallery-delete')) return;
-                    const id = el.dataset.id;
-                    if (id) setActiveBg(id);
-                });
+                el.addEventListener('click', (e) => { if (e.target.classList.contains('gallery-delete')) return; const id = el.dataset.id; if (id) setActiveBg(id); });
                 const delBtn = el.querySelector('.gallery-delete');
-                if (delBtn) {
-                    delBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const id = delBtn.dataset.id;
-                        if (id) deleteBgImage(id);
-                    });
-                }
+                if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); const id = delBtn.dataset.id; if (id) deleteBgImage(id); });
             });
         }
-        
         const hiddenFileInput = document.createElement('input');
         hiddenFileInput.type = 'file';
         hiddenFileInput.accept = 'image/jpeg,image/png,image/webp';
         hiddenFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    addBgImage(ev.target.result);
-                };
-                reader.readAsDataURL(file);
-            }
+            if (file && file.type.startsWith('image/')) { const reader = new FileReader(); reader.onload = (ev) => { addBgImage(ev.target.result); }; reader.readAsDataURL(file); }
             hiddenFileInput.value = '';
         });
         uploadBgBtn.addEventListener('click', () => hiddenFileInput.click());
         resetBgBtn.addEventListener('click', () => resetToDefaultBg());
         
-        // 毛玻璃强度
         function applyBlurStrength(value) {
             let px = value + 'px';
             document.documentElement.style.setProperty('--bg-blur-amount', px);
@@ -1352,29 +1398,13 @@
         }
         function loadBlurStrength() {
             const savedBlur = localStorage.getItem(BLUR_STRENGTH_KEY);
-            if (savedBlur !== null) {
-                let val = parseInt(savedBlur);
-                if (isNaN(val)) val = 12;
-                blurStrengthSlider.value = val;
-                applyBlurStrength(val);
-            } else {
-                blurStrengthSlider.value = 12;
-                applyBlurStrength(12);
-            }
+            if (savedBlur !== null) { let val = parseInt(savedBlur); if (isNaN(val)) val = 12; blurStrengthSlider.value = val; applyBlurStrength(val); }
+            else { blurStrengthSlider.value = 12; applyBlurStrength(12); }
         }
-        blurStrengthSlider.addEventListener('input', (e) => {
-            let val = parseInt(e.target.value);
-            if (isNaN(val)) val = 0;
-            if (val < 0) val = 0;
-            if (val > 25) val = 25;
-            applyBlurStrength(val);
-        });
+        blurStrengthSlider.addEventListener('input', (e) => { let val = parseInt(e.target.value); if (isNaN(val)) val = 0; if (val < 0) val = 0; if (val > 25) val = 25; applyBlurStrength(val); });
         
-        // 笔记核心逻辑 - 全面安全化
-        function escapeHtml(str) { 
-            let s = safeString(str);
-            return s.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
-        }
+        // 笔记核心逻辑
+        function escapeHtml(str) { let s = safeString(str); return s.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
         function formatTime(ts){ if(!ts) return '未知'; let d=new Date(ts); return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; }
         function getFilteredNotes(){
             let filtered = notes.filter(n => {
@@ -1391,6 +1421,7 @@
             if(!isPreviewMode) syncForm(); 
             else refreshPreview();
             updateEditorAccess();
+            updateLockButtonUI();
         }
         function updateCount(){ noteCounterSpan.innerHTML = `📌 ${notes.length} 篇笔记`; }
         function renderList(){
@@ -1459,8 +1490,21 @@
         }
         function setPreviewMode(en){
             isPreviewMode=en;
-            if(en){ editorModeDiv.classList.add('hide-view'); previewModeDiv.classList.remove('hide-view'); editModeButtonsDiv.style.display='none'; previewModeButtonsDiv.style.display='flex'; refreshPreview(); }
-            else{ editorModeDiv.classList.remove('hide-view'); previewModeDiv.classList.add('hide-view'); editModeButtonsDiv.style.display='flex'; previewModeButtonsDiv.style.display='none'; syncForm(); }
+            if(en){ 
+                editorModeDiv.classList.add('hide-view'); 
+                previewModeDiv.classList.remove('hide-view'); 
+                editModeButtonsDiv.style.display='none'; 
+                previewModeButtonsDiv.style.display='flex'; 
+                refreshPreview(); 
+            } else { 
+                editorModeDiv.classList.remove('hide-view'); 
+                previewModeDiv.classList.add('hide-view'); 
+                editModeButtonsDiv.style.display='flex'; 
+                previewModeButtonsDiv.style.display='none'; 
+                syncForm(); 
+            }
+            updateViewIndicator();
+            updateLockButtonUI();
         }
         function saveCurrentNote(showToast=true){
             let rawTitle = safeString(titleInput.value).trim();
@@ -1494,7 +1538,8 @@
                 title: newTitle,
                 content: rawContent,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
+                lockedView: null
             });
             currentNoteId = newId;
             persistAndUpdate();
@@ -1503,9 +1548,7 @@
         function triggerAutoSave(){ 
             if(autoSaveTimer) clearTimeout(autoSaveTimer);
             autoSaveTimer = setTimeout(() => {
-                if (!titleInput.disabled && !isPreviewMode && notes.length > 0) {
-                    saveCurrentNote(true);
-                }
+                if (!titleInput.disabled && !isPreviewMode && notes.length > 0) saveCurrentNote(true);
                 autoSaveTimer = null;
             }, 500);
         }
@@ -1517,24 +1560,41 @@
             if(currentNoteId===id){ currentNoteId=null; if(isPreviewMode) setPreviewMode(false); titleInput.value=''; contentInput.value=''; editorMetaInfo.innerHTML='✨ 新建笔记模式 · 内容自动保存'; }
             persistAndUpdate();
         }
-        async function deleteCurrent(){ if(currentNoteId) await deleteNoteById(currentNoteId); else await showConfirm('没有选中任何笔记'); }
+        async function deleteCurrent(){ if(currentNoteId) await deleteNoteById(currentNoteId); else await showAlert('没有选中任何笔记'); }
         function createEmptyNoteNow(){
             let now=Date.now();
-            notes.unshift({id:now, title:'未命名笔记', content:'', createdAt:now, updatedAt:now});
-            currentNoteId=now; if(isPreviewMode) setPreviewMode(false); persistAndUpdate(); titleInput.value=''; contentInput.value=''; editorMetaInfo.innerHTML='✏️ 正在编辑: “未命名笔记” · 刚刚创建';
+            notes.unshift({id:now, title:'未命名笔记', content:'', createdAt:now, updatedAt:now, lockedView:null});
+            currentNoteId=now;
+            if (isPreviewMode) setPreviewMode(false);
+            persistAndUpdate(); 
+            titleInput.value=''; contentInput.value=''; 
+            editorMetaInfo.innerHTML='✏️ 正在编辑: “未命名笔记” · 刚刚创建';
             if(autoSaveTimer) clearTimeout(autoSaveTimer);
         }
+        
         function loadNoteToEdit(id){
             let n=notes.find(x=>x.id===id);
             if(!n) return;
-            currentNoteId=n.id; if(isPreviewMode) setPreviewMode(false);
+            currentNoteId=n.id;
             titleInput.value = safeString(n.title);
             contentInput.value = safeString(n.content);
+            if (n.lockedView === 'preview') {
+                if (!isPreviewMode) setPreviewMode(true);
+                else refreshPreview();
+            } else if (n.lockedView === 'edit') {
+                if (isPreviewMode) setPreviewMode(false);
+                else syncForm();
+            } else {
+                if (isPreviewMode) setPreviewMode(false);
+                else syncForm();
+            }
             let displayTitle = safeString(n.title);
             if(displayTitle === '') displayTitle = '无标题';
             editorMetaInfo.innerHTML=`✏️ 正在编辑: “${escapeHtml(displayTitle.slice(0,35))}” · 最后更新 ${formatTime(n.updatedAt)}`;
             renderList();
+            updateLockButtonUI();
         }
+        
         function handleSearchInput(){ currentSearchTerm=searchInput.value; renderList(); }
         function applyFontSize(size){ document.body.classList.remove('font-small','font-medium','font-large'); document.body.classList.add(size==='small'?'font-small':size==='large'?'font-large':'font-medium'); localStorage.setItem(FONT_SIZE_KEY,size); }
         function applySortOrder(order){ currentSortOrder=order; localStorage.setItem(SORT_ORDER_KEY,order); renderList(); }
@@ -1558,20 +1618,26 @@
                         title: (n.title && typeof n.title === 'string' && n.title !== 'undefined') ? n.title : '未命名笔记',
                         content: (n.content && typeof n.content === 'string' && n.content !== 'undefined') ? n.content : '',
                         createdAt: n.createdAt||n.id, 
-                        updatedAt: n.updatedAt||n.id
+                        updatedAt: n.updatedAt||n.id,
+                        lockedView: (n.lockedView === 'edit' || n.lockedView === 'preview') ? n.lockedView : null
                     })); 
                 } catch(e){ notes=[]; } 
             }
-            if(!notes.length){ let now=Date.now(); notes=[{ id:now-86400000, title:'✨ 灵羽笔记· 欢迎', content:'你可以自由记录灵感。\n- 按 **Tab** 键呼出Markdown符号列表\n- 支持待办事项：\n- [ ] 未完成的任务\n- [x] 已完成的任务\n- 预览模式下点击复选框可切换状态并自动保存\n- 在设置中可上传多张背景图片，点击缩略图自由切换', createdAt:now-86400000, updatedAt:now-86400000 }]; }
+            if(!notes.length){ let now=Date.now(); notes=[{ id:now-86400000, title:'✨ 灵羽笔记· 欢迎', content:'你可以自由记录灵感。\n- 按 **Tab** 键呼出Markdown符号列表\n- 支持待办事项：\n- [ ] 未完成的任务\n- [x] 已完成的任务\n- 预览模式下点击复选框可切换状态并自动保存\n- 在设置中可上传多张背景图片，点击缩略图自由切换', createdAt:now-86400000, updatedAt:now-86400000, lockedView:null }]; }
             sanitizeNotes();
-            currentNoteId=null; isPreviewMode=false; persistAndUpdate(); titleInput.value=''; contentInput.value=''; editorModeDiv.classList.remove('hide-view'); previewModeDiv.classList.add('hide-view'); editModeButtonsDiv.style.display='flex'; previewModeButtonsDiv.style.display='none';
+            currentNoteId=null; isPreviewMode=false;
+            persistAndUpdate(); 
+            titleInput.value=''; contentInput.value=''; 
+            editorModeDiv.classList.remove('hide-view'); previewModeDiv.classList.add('hide-view'); 
+            editModeButtonsDiv.style.display='flex'; previewModeButtonsDiv.style.display='none';
             updateEditorAccess();
+            updateLockButtonUI();
+            updateViewIndicator();
         }
         
-        // ---------- Tab 菜单改进：防止遮挡 + 支持连续 Tab 选择 ----------
+        // Tab 菜单逻辑
         let suggestItems=['# 一级标题','## 二级标题','- 无序列表','1. 有序列表','**粗体**','*斜体*','[链接](url)','- [ ] 待办事项','- [x] 已完成事项'];
         let suggestDiv=null, isSuggestActive=false, currentSuggestIndex=0;
-        
         function getCaretCoordinates(el,pos){
             let div=document.createElement('div'), styles=getComputedStyle(el);
             for(let p of ['direction','boxSizing','width','height','overflowX','overflowY','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','paddingTop','paddingRight','paddingBottom','paddingLeft','fontStyle','fontVariant','fontWeight','fontStretch','fontSize','fontSizeAdjust','lineHeight','fontFamily','textAlign','textTransform','textIndent','textDecoration','letterSpacing','wordSpacing']) div.style[p]=styles[p];
@@ -1588,22 +1654,15 @@
             document.body.removeChild(div);
             return coord;
         }
-        
         function showSuggestAtCaret(inputEl){
             if(suggestDiv) suggestDiv.remove();
-            let pos=inputEl.selectionStart;
-            let coords=getCaretCoordinates(inputEl,pos);
-            let rect=inputEl.getBoundingClientRect();
+            let pos=inputEl.selectionStart, coords=getCaretCoordinates(inputEl,pos), rect=inputEl.getBoundingClientRect();
             let left = rect.left + coords.left;
             let top = rect.top + coords.top;
-            // 计算菜单尺寸（预估高度）
-            const MENU_HEIGHT = suggestItems.length * 40; // 每项约40px
+            const MENU_HEIGHT = suggestItems.length * 40;
             const viewportHeight = window.innerHeight;
             let finalTop = top;
-            if (top + MENU_HEIGHT > viewportHeight - 20) {
-                finalTop = top - MENU_HEIGHT;
-                if (finalTop < 10) finalTop = 10;
-            }
+            if (top + MENU_HEIGHT > viewportHeight - 20) { finalTop = top - MENU_HEIGHT; if (finalTop < 10) finalTop = 10; }
             suggestDiv = document.createElement('div');
             suggestDiv.className = 'md-suggest';
             suggestDiv.style.left = left + 'px';
@@ -1626,13 +1685,7 @@
             suggestDiv.style.display='block';
             isSuggestActive=true;
         }
-        
-        function hideSuggest(){
-            if(suggestDiv){ suggestDiv.remove(); suggestDiv=null; }
-            isSuggestActive=false;
-            currentSuggestIndex=0;
-        }
-        
+        function hideSuggest(){ if(suggestDiv){ suggestDiv.remove(); suggestDiv=null; } isSuggestActive=false; currentSuggestIndex=0; }
         function navigateSuggest(delta){
             if(!suggestDiv) return;
             let items=suggestDiv.querySelectorAll('.md-suggest-item');
@@ -1640,7 +1693,6 @@
             currentSuggestIndex=(currentSuggestIndex+delta+items.length)%items.length;
             items[currentSuggestIndex]?.classList.add('selected');
         }
-        
         function insertSelected(){
             if(!suggestDiv) return;
             let items=suggestDiv.querySelectorAll('.md-suggest-item');
@@ -1655,7 +1707,6 @@
             }
             hideSuggest();
         }
-        
         function insertAtCursor(field,text){
             let start=field.selectionStart,end=field.selectionEnd;
             field.value=field.value.slice(0,start)+text+field.value.slice(end);
@@ -1664,46 +1715,21 @@
             if(isPreviewMode) refreshPreview();
             triggerAutoSave();
         }
-        
-        // 全局键盘监听整合
         document.addEventListener('keydown', (e)=>{
-            // 处理 Tab 菜单的导航
             if(isSuggestActive){
-                if(e.key === 'Tab'){
-                    e.preventDefault();
-                    if(e.shiftKey){
-                        navigateSuggest(-1);
-                    } else {
-                        navigateSuggest(1);
-                    }
-                    return;
-                } else if(e.key === 'ArrowUp'){
-                    e.preventDefault();
-                    navigateSuggest(-1);
-                } else if(e.key === 'ArrowDown'){
-                    e.preventDefault();
-                    navigateSuggest(1);
-                } else if(e.key === 'Enter' || e.key === ' '){
-                    e.preventDefault();
-                    insertSelected();
-                } else if(e.key === 'Escape'){
-                    e.preventDefault();
-                    hideSuggest();
-                } else {
-                    // 输入其他字符时关闭菜单（但不要阻止按键本身）
-                    hideSuggest();
-                }
+                if(e.key === 'Tab'){ e.preventDefault(); if(e.shiftKey) navigateSuggest(-1); else navigateSuggest(1); return; }
+                else if(e.key === 'ArrowUp'){ e.preventDefault(); navigateSuggest(-1); }
+                else if(e.key === 'ArrowDown'){ e.preventDefault(); navigateSuggest(1); }
+                else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); insertSelected(); }
+                else if(e.key === 'Escape'){ e.preventDefault(); hideSuggest(); }
+                else { hideSuggest(); }
                 return;
             }
-            
-            // Tab 键打开菜单
             if(e.key === 'Tab' && (document.activeElement===titleInput||document.activeElement===contentInput)){
                 e.preventDefault();
                 showSuggestAtCaret(document.activeElement);
                 return;
             }
-            
-            // 其他快捷键交给全局处理
             onGlobalKeydown(e);
         });
         
@@ -1712,6 +1738,7 @@
             notesContainer.addEventListener('click',e=>{ let del=e.target.closest('.delete-note-btn'); if(del){ e.stopPropagation(); deleteNoteById(parseInt(del.dataset.deleteId)); return; } let item=e.target.closest('.note-item'); if(item && item.dataset.noteId) loadNoteToEdit(parseInt(item.dataset.noteId)); });
             newNoteSideBtn.addEventListener('click',createEmptyNoteNow);
             deleteCurrentBtn.addEventListener('click',deleteCurrent);
+            if(deleteCurrentBtnPreview) deleteCurrentBtnPreview.addEventListener('click',deleteCurrent);
             togglePreviewBtn.addEventListener('click',()=>setPreviewMode(true));
             backToEditBtn.addEventListener('click',()=>setPreviewMode(false));
             settingsBtn.addEventListener('click',()=>settingsModal.classList.add('active'));
@@ -1726,10 +1753,9 @@
             document.querySelectorAll('.settings-nav-item').forEach(item=>item.addEventListener('click',()=>switchSettingsTab(item.dataset.tab)));
             exportNotesBtn.addEventListener('click', exportNotes);
             importNotesBtn.addEventListener('click', () => importFileInput.click());
-            importFileInput.addEventListener('change', (e) => {
-                if (e.target.files.length) importNotes(e.target.files[0]);
-                importFileInput.value = '';
-            });
+            importFileInput.addEventListener('change', (e) => { if (e.target.files.length) importNotes(e.target.files[0]); importFileInput.value = ''; });
+            if (lockViewBtn) lockViewBtn.addEventListener('click', toggleLockForCurrentNote);
+            if (lockViewBtnPreview) lockViewBtnPreview.addEventListener('click', toggleLockForCurrentNote);
         }
         initSettings(); loadInitialData(); bindEvents();
     })();
