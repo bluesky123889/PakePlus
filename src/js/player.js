@@ -4,6 +4,7 @@
 // 导入时会读取音频时长（duration）并存库
 // 曲目数量上限：MUSIC_MAX_COUNT
 // 支持拖拽排序：reorderTracks
+// 支持导出全部为 ZIP：exportAllTracksAsZip（依赖 fflate）
 // ============================================================
 
 const MUSIC_DB_NAME = 'tetrisMusicDB';
@@ -400,3 +401,119 @@ class MusicPlayer {
 }
 
 const musicPlayer = new MusicPlayer();
+
+// ============================================================
+// 音乐导出（ZIP 打包，依赖 fflate）
+// ============================================================
+
+// dataURL → Uint8Array
+function dataURLToUint8(dataUrl) {
+    const base64 = dataUrl.split(',')[1];
+    const bin = atob(base64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+
+// 触发浏览器下载
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// 清洗文件名
+function sanitizeFilename(name) {
+    return String(name || 'track').replace(/[\\/:*?"<>|]/g, '_').slice(0, 80).trim() || 'track';
+}
+
+// 根据 type / fileName 推断扩展名
+function guessExt(track) {
+    const t = (track.type || '').toLowerCase();
+    const fn = (track.fileName || '').toLowerCase();
+    if (t.includes('mpeg') || t.includes('mp3') || fn.endsWith('.mp3')) return 'mp3';
+    if (t.includes('wav') || fn.endsWith('.wav')) return 'wav';
+    if (t.includes('ogg') || fn.endsWith('.ogg')) return 'ogg';
+    if (t.includes('flac') || fn.endsWith('.flac')) return 'flac';
+    if (t.includes('m4a') || t.includes('mp4') || fn.endsWith('.m4a')) return 'm4a';
+    if (t.includes('aac') || fn.endsWith('.aac')) return 'aac';
+    if (t.includes('webm') || fn.endsWith('.webm')) return 'webm';
+    return 'mp3';
+}
+
+// 生成带日期的 zip 文件名
+function getExportZipName() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `tetris-music-${y}${m}${day}.zip`;
+}
+
+// 导出全部为 ZIP
+// onProgress(current, total, trackName)
+async function exportAllTracksAsZip(tracks, onProgress) {
+    const list = Array.isArray(tracks) ? tracks.slice() : [];
+    const total = list.length;
+    if (total === 0) {
+        return { ok: 0, failed: 0, total: 0, blob: null };
+    }
+    if (typeof fflate === 'undefined' || !fflate.zipSync) {
+        console.warn('[export] fflate not loaded');
+        return { ok: 0, failed: total, total, blob: null };
+    }
+
+    const files = {};
+    let ok = 0, failed = 0;
+
+    for (let i = 0; i < total; i++) {
+        const t = list[i];
+        let name = sanitizeFilename(t.name + (t.artist ? ` - ${t.artist}` : '')) + '.' + guessExt(t);
+
+        // 防重名
+        if (files[name]) {
+            const base = name.replace(/\.[^.]+$/, '');
+            const ext = name.split('.').pop();
+            let n = 1;
+            while (files[`${base} (${n}).${ext}`]) n++;
+            name = `${base} (${n}).${ext}`;
+        }
+
+        try {
+            if (t.audioDataUrl) {
+                files[name] = dataURLToUint8(t.audioDataUrl);
+                ok++;
+            } else {
+                failed++;
+            }
+        } catch (e) {
+            console.warn('[export] decode failed:', t.name, e);
+            failed++;
+        }
+
+        if (typeof onProgress === 'function') {
+            try { onProgress(i + 1, total, t.name || ''); } catch (e) {}
+        }
+        // 让 UI 有机会刷新
+        if (i < total - 1) await new Promise(r => setTimeout(r, 0));
+    }
+
+    let blob = null;
+    try {
+        // level: 0 = STORE，音频本来就是压缩格式，不重复压缩
+        const zipped = fflate.zipSync(files, { level: 0 });
+        blob = new Blob([zipped], { type: 'application/zip' });
+        downloadBlob(blob, getExportZipName());
+    } catch (e) {
+        console.warn('[export] zip failed:', e);
+        return { ok: 0, failed: total, total, blob: null };
+    }
+
+    return { ok, failed, total, blob };
+}
