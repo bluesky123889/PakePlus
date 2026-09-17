@@ -91,6 +91,10 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     musicLocateCurrent: '定位当前歌曲',
     musicSearchPlaceholder: '🔍 搜索...',
     musicNoResults: '没有匹配的曲目',
+    musicExportAll: '导出全部',
+    musicExporting: '正在导出音乐',
+    musicExportingText: '正在打包，请稍候...',
+    musicExportSuccess: '导出完成',
 
     // ===== 设置 - 语言 =====
     languageSetting: '界面语言',
@@ -143,6 +147,22 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achGames100: '百局老手',
     achLevel10: '十级新秀',
     achLevel20: '二十级飞驰',
+    achLevel30: '星级玩家',
+    achLevel50: '王者风范',
+    achLevel100: '超凡入圣',
+    achSurvive10min: '持久战',
+    achSurvive30min: '铁人耐力',
+    achSurvive60min: '不朽传说',
+    achGames500: '五百战',
+    achGames1000: '千局老兵',
+    achDailyFirst: '任务新人',
+    achDailyAll1: '全勤一日',
+    achDailyAll7: '全勤一周',
+    achDailyAll30: '全勤一月',
+    achHiddenNightOwl: '夜猫子',
+    achHiddenMarathonFail1: '出师未捷',
+    achHiddenScore0: '颗粒无收',
+    achHiddenLucky777: '幸运 777',
 
     // ===== 成就名称 - 累计 =====
     achLines100: '百行斩',
@@ -150,10 +170,31 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achHarddrop100: '百次硬降',
     achHarddrop1000: '千次硬降',
     achRotate1000: '千次旋转',
+    achLines5000: '万行之前',
+    achLines10000: '万行达成',
+    achLines50000: '行云流水',
+    achHarddrop5000: '硬降五千',
+    achHarddrop10000: '硬降一万',
+    achRotate5000: '旋转五千',
+    achRotate10000: '旋转一万',
+    achTetris10: '四消入门',
+    achTetris50: '四消专家',
+    achTetris100: '四消宗师',
+    achPlaytime1h: '初入江湖',
+    achPlaytime10h: '渐入佳境',
+    achPlaytime50h: '炉火纯青',
+    achPlaytime100h: '登峰造极',
+    achExp100k: '经验十万',
+    achExp500k: '经验五十万',
+    achExp1m: '经验百万',
 
     // ===== 成就名称 - 单局 =====
     achScore10k: '万分户',
     achScore100k: '十万分殿堂',
+    achSingleLines20: '单局二十行',
+    achSingleLines50: '单局五十行',
+    achSingleLines100: '单局百行',
+    achSingleLines200: '单局两百行',
 
     // ===== 成就名称 - 技巧 =====
     achClassicNoPause30: '一气呵成',
@@ -161,6 +202,12 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achSprint240: '冲刺二百四',
     achSprint180: '冲刺一百八',
     achSprint150: '冲刺一百五',
+    achSprint120: '两分钟冲刺',
+    achSprint100: '百秒冲刺',
+    achSprint90: '九十秒冲刺',
+    achClassicNoPause60: '禅定一分钟',
+    achSpeedNoTimeout: '零超时',
+    achAllModesPlayed: '全能玩家',
 
     // ===== 成就名称 - 模式 =====
     achClassicLines50: '经典五十',
@@ -183,6 +230,23 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achEndless100: '无尽一百',
     achEndless300: '无尽三百',
     achEndless30min: '半小时耐力',
+    achClassicSpeedMax: '极速经典',
+    achClassicGames100: '经典百局',
+    achClassicScore50k: '经典五万',
+    achClassicScore100k: '经典十万',
+    achEndless500: '无尽五百',
+    achEndless1000: '无尽千行',
+    achEndlessScore200k: '无尽二十万',
+    achEndless1h: '无尽一小时',
+    achSurvival600: '生存十分钟',
+    achSurvival900: '生存十五分钟',
+    achMarathon8: '马拉松八阶',
+    achMarathon10: '马拉松十阶',
+    achMarathon15: '马拉松十五阶',
+    achTimedScore200k: '限时二十万',
+    achCountdown180: '倒计时三分钟',
+    achInvisible50: '隐形五十行',
+    achInvisible2_50: '隐形2.0五十行',
 
     // ===== 成就名称 - 隐藏 =====
     achMarathonNoFail: '全程无败',
@@ -195,6 +259,22 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achGames100Desc: '累计游玩 100 局',
     achLevel10Desc: '达到 10 级',
     achLevel20Desc: '达到 20 级',
+    achLevel30Desc: '等级 ≥30',
+    achLevel50Desc: '等级 ≥50',
+    achLevel100Desc: '等级 ≥100',
+    achSurvive10minDesc: '单局存活 ≥10 分钟',
+    achSurvive30minDesc: '单局存活 ≥30 分钟',
+    achSurvive60minDesc: '单局存活 ≥60 分钟',
+    achGames500Desc: '累计局数 ≥500',
+    achGames1000Desc: '累计局数 ≥1000',
+    achDailyFirstDesc: '首次领取每日任务奖励',
+    achDailyAll1Desc: '首次领完一天全部任务+全勤奖励',
+    achDailyAll7Desc: '累计 7 天领完全部任务',
+    achDailyAll30Desc: '累计 30 天领完全部任务',
+    achHiddenNightOwlDesc: '凌晨 2:00–5:00 完成一局',
+    achHiddenMarathonFail1Desc: '马拉松第 1 阶段就失败',
+    achHiddenScore0Desc: '一局得分恰好为 0（且已开始）',
+    achHiddenLucky777Desc: '单局得分恰好含 777',
 
     // ===== 成就描述 - 累计 =====
     achLines100Desc: '累计消除 100 行',
@@ -202,10 +282,31 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achHarddrop100Desc: '累计硬降 100 次',
     achHarddrop1000Desc: '累计硬降 1000 次',
     achRotate1000Desc: '累计旋转方块 1000 次',
+    achLines5000Desc: '累计消除 ≥5000 行',
+    achLines10000Desc: '累计消除 ≥10000 行',
+    achLines50000Desc: '累计消除 ≥50000 行',
+    achHarddrop5000Desc: '累计硬降 ≥5000 次',
+    achHarddrop10000Desc: '累计硬降 ≥10000 次',
+    achRotate5000Desc: '累计旋转 ≥5000 次',
+    achRotate10000Desc: '累计旋转 ≥10000 次',
+    achTetris10Desc: '累计消除 Tetris（4行）10 次',
+    achTetris50Desc: '累计消除 Tetris 50 次',
+    achTetris100Desc: '累计消除 Tetris 100 次',
+    achPlaytime1hDesc: '累计游戏时长 ≥1 小时',
+    achPlaytime10hDesc: '累计游戏时长 ≥10 小时',
+    achPlaytime50hDesc: '累计游戏时长 ≥50 小时',
+    achPlaytime100hDesc: '累计游戏时长 ≥100 小时',
+    achExp100kDesc: '累计获得经验 ≥100,000',
+    achExp500kDesc: '累计获得经验 ≥500,000',
+    achExp1mDesc: '累计获得经验 ≥1,000,000',
 
     // ===== 成就描述 - 单局 =====
     achScore10kDesc: '单局得分达到 10,000',
     achScore100kDesc: '单局得分达到 100,000',
+    achSingleLines20Desc: '单局消除 ≥20 行',
+    achSingleLines50Desc: '单局消除 ≥50 行',
+    achSingleLines100Desc: '单局消除 ≥100 行',
+    achSingleLines200Desc: '单局消除 ≥200 行',
 
     // ===== 成就描述 - 技巧 =====
     achClassicNoPause30Desc: '经典模式单局不暂停，消除 30 行',
@@ -213,6 +314,12 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achSprint240Desc: '40 行冲刺 240 秒内完成',
     achSprint180Desc: '40 行冲刺 180 秒内完成',
     achSprint150Desc: '40 行冲刺 150 秒内完成',
+    achSprint120Desc: '40 行冲刺 ≤120 秒',
+    achSprint100Desc: '40 行冲刺 ≤100 秒',
+    achSprint90Desc: '40 行冲刺 ≤90 秒',
+    achClassicNoPause60Desc: '经典模式不暂停且消除 ≥60 行',
+    achSpeedNoTimeoutDesc: '极速挑战 0 次超时完成一局',
+    achAllModesPlayedDesc: '玩过全部 10 种挑战模式',
 
     // ===== 成就描述 - 模式 =====
     achClassicLines50Desc: '经典模式单局消除 50 行',
@@ -235,6 +342,23 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     achEndless100Desc: '无尽模式单局消除 100 行',
     achEndless300Desc: '无尽模式单局消除 300 行',
     achEndless30minDesc: '无尽模式单局游玩 30 分钟',
+    achClassicSpeedMaxDesc: '经典模式达到最高下落速度（level ≥10）',
+    achClassicGames100Desc: '经典模式累计游玩 ≥100 局',
+    achClassicScore50kDesc: '经典模式单局 ≥50,000',
+    achClassicScore100kDesc: '经典模式单局 ≥100,000',
+    achEndless500Desc: '无尽模式消除 ≥500 行',
+    achEndless1000Desc: '无尽模式消除 ≥1000 行',
+    achEndlessScore200kDesc: '无尽模式单局 ≥200,000',
+    achEndless1hDesc: '无尽模式单局存活 ≥1 小时',
+    achSurvival600Desc: '生存模式存活 ≥600 秒',
+    achSurvival900Desc: '生存模式存活 ≥900 秒',
+    achMarathon8Desc: '马拉松阶段 ≥8',
+    achMarathon10Desc: '马拉松阶段 ≥10',
+    achMarathon15Desc: '马拉松阶段 ≥15',
+    achTimedScore200kDesc: '固定时间冲分 ≥200,000',
+    achCountdown180Desc: '倒计时生存存活 ≥180 秒',
+    achInvisible50Desc: '经典隐形消除 ≥50 行',
+    achInvisible2_50Desc: '隐形2.0消除 ≥50 行',
 
     // ===== 成就描述 - 隐藏 =====
     achMarathonNoFailDesc: '马拉松完成 5 次目标检测且未失败',
@@ -467,6 +591,17 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     initialTime: '初始时间',
     timePerLine: '每行加时',
 
+    // ===== 任务系统 - 通用 =====
+    taskSystemTitle: '任务',
+    taskTabDaily: '每日',
+    taskTabWeekly: '每周',
+    taskTabMonthly: '每月',
+    taskPeriodFrom: '起',
+    taskTimeDay: '天',
+    taskTimeHour: '时',
+    taskTimeMin: '分',
+    taskTimeSec: '秒',
+
     // ===== 每日任务 =====
     dailyTaskTitle: '每日任务',
     dailyTaskRefreshIn: '距刷新还有',
@@ -474,7 +609,6 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     dailyTaskClaim: '领取',
     dailyTaskClaimed: '已领取',
 
-    // 单局任务
     dailyTaskSingleLines10: '单局消除 10 行',
     dailyTaskSingleLines20: '单局消除 20 行',
     dailyTaskSingleLines40: '单局消除 40 行',
@@ -492,7 +626,6 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     dailyTaskSingleNoPause: '单局不暂停完成',
     dailyTaskSingleHarddrop30: '单局硬降 30 次',
 
-    // 累计任务
     dailyTaskGames3: '今天玩 3 局',
     dailyTaskGames5: '今天玩 5 局',
     dailyTaskGames10: '今天玩 10 局',
@@ -516,7 +649,31 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     dailyTaskPlay60min: '今天游玩 60 分钟',
     dailyTaskHarddrop100: '今天硬降 100 次',
     dailyTaskHarddrop300: '今天硬降 300 次',
-    dailyTaskRotate500: '今天旋转 500 次'
+    dailyTaskRotate500: '今天旋转 500 次',
+
+    // ===== 周任务 =====
+    weeklyTaskGames10: '本周玩 10 局',
+    weeklyTaskGames25: '本周玩 25 局',
+    weeklyTaskGames50: '本周玩 50 局',
+    weeklyTaskLines200: '本周消除 200 行',
+    weeklyTaskLines500: '本周消除 500 行',
+    weeklyTaskLines1000: '本周消除 1000 行',
+    weeklyTaskScore200k: '本周得分 200,000',
+    weeklyTaskScore500k: '本周得分 500,000',
+    weeklyTaskScore1m: '本周得分 1,000,000',
+    weeklyTaskPlay60min: '本周游玩 60 分钟',
+    weeklyTaskPlay180min: '本周游玩 180 分钟',
+
+    // ===== 月任务 =====
+    monthlyTaskGames100: '本月玩 100 局',
+    monthlyTaskGames300: '本月玩 300 局',
+    monthlyTaskLines2000: '本月消除 2000 行',
+    monthlyTaskLines5000: '本月消除 5000 行',
+    monthlyTaskLines10000: '本月消除 10000 行',
+    monthlyTaskScore2m: '本月得分 2,000,000',
+    monthlyTaskScore5m: '本月得分 5,000,000',
+    monthlyTaskPlay10h: '本月游玩 10 小时',
+    monthlyTaskPlay30h: '本月游玩 30 小时'
 };
 
 window.VERSION_DATA['zh-CN'] = [
@@ -530,7 +687,7 @@ window.VERSION_DATA['zh-CN'] = [
             '限时挑战、固定时间冲分、倒计时生存、限时消行数统一收纳',
             '限时挑战固定3分钟，其他三个模式支持自定义时间',
             '挑战模式主菜单从8个卡片精简至5个',
-            '与隐形模式的二级选择交互保持一致'
+            '与隐形模式的二级选择弹窗交互保持一致'
         ],
         current: true
     },
