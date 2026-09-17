@@ -22,7 +22,7 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 .leaderboard-header h2{font-size:1.8rem;color:#ff9966}
 .close-leaderboard{background:#ff5e62;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:.9rem;cursor:pointer;transition:all .2s ease}
 .close-leaderboard:hover{background:#ff3b3f;transform:translateY(-2px)}
-.leaderboard-tabs{display:flex;flex-wrap:wrap;margin-bottom:20px;border-bottom:2px solid #2a2a4a;flex-shrink:0}
+.leaderboard-tabs{display:flex;flex-wrap:wrap;margin-bottom:20px;border-bottom:2px solid #2a2a4a;flex-shrink:0;justify-content:center}
 .leaderboard-tab{padding:10px 20px;background:none;color:#a0a0c0;border:none;cursor:pointer;font-size:1rem;transition:all .2s ease;border-bottom:3px solid transparent}
 .leaderboard-tab.active{color:#4dccbd;border-bottom:3px solid #4dccbd}
 .leaderboard-tab:hover:not(.active){color:#fff}
@@ -131,6 +131,21 @@ input:checked+.slider:before{transform:translateX(30px);background-color:#fff}
 .control-btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
 .pause-btn:disabled,.reset-btn:disabled{background:linear-gradient(to right,#666,#555)!important;color:#888!important}
 @keyframes modalSlideUp{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeOutScale{from{opacity:1}to{opacity:0}}
+.custom-modal.closing,
+#settingsPanel.closing,
+#leaderboardPanel.closing,
+#updateNotice.closing,
+#achievementPanel.closing,
+#bgmPanel.closing{animation:fadeOutScale .3s ease forwards}
+.custom-modal.closing .custom-modal-content,
+.custom-modal.closing .result-modal-content,
+.custom-modal.closing .daily-task-content,
+#settingsPanel.closing .settings-content,
+#leaderboardPanel.closing .leaderboard-content,
+#updateNotice.closing .notice-content,
+#achievementPanel.closing .leaderboard-content,
+#bgmPanel.closing .bgm-content{animation:fadeOutScale .3s ease forwards}
 .notice-content{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);width:90%;max-width:1100px;height:80vh;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.5);border:2px solid #4dccbd;overflow:hidden;display:flex;flex-direction:column;position:relative}
 .notice-header-section{padding:25px 30px;border-bottom:2px solid #2a2a4a;flex-shrink:0;z-index:10;position:relative}
 .notice-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -310,6 +325,9 @@ input:checked+.slider:before{transform:translateX(30px);background-color:#fff}
 .music-import-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(77,204,189,.15);color:#4dccbd;border:1px dashed #4dccbd;border-radius:8px;font-size:.95rem;cursor:pointer;transition:all .2s ease;font-family:inherit;flex:1}
 .music-import-btn:hover{background:rgba(77,204,189,.25);transform:translateY(-2px)}
 .music-import-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.music-export-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;background:rgba(255,215,0,.15);color:#ffd700;border:1px dashed #ffd700;border-radius:8px;font-size:.95rem;cursor:pointer;transition:all .2s ease;font-family:inherit;flex-shrink:0}
+.music-export-btn:hover{background:rgba(255,215,0,.28);transform:translateY(-2px)}
+.music-export-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .music-clear-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;background:rgba(255,94,98,.15);color:#ff5e62;border:1px dashed #ff5e62;border-radius:8px;font-size:.95rem;cursor:pointer;transition:all .2s ease;font-family:inherit;flex-shrink:0}
 .music-clear-btn:hover{background:rgba(255,94,98,.28);transform:translateY(-2px)}
 .music-clear-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
@@ -531,6 +549,7 @@ button:active:not(:disabled),
 .game-music-btn:active:not(:disabled),
 .music-play-btn:active:not(:disabled),
 .music-import-btn:active:not(:disabled),
+.music-export-btn:active:not(:disabled),
 .music-clear-btn:active:not(:disabled),
 .bgm-play-btn:active:not(:disabled),
 .music-locate-btn:active:not(:disabled),
@@ -566,6 +585,7 @@ button:active:not(:disabled),
   padding: 8px 16px; font-size: .9rem; cursor: pointer; transition: all .2s ease;
 }
 .close-daily-task:hover { background: #ff3b3f; transform: translateY(-2px); }
+#taskTabs { margin: 0 22px; border-bottom: 2px solid #2a2a4a; }
 .daily-task-meta {
   padding: 10px 22px; font-size: .85rem; color: #a0a0c0;
   border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 6px;
@@ -626,6 +646,16 @@ button:active:not(:disabled),
   transition: all .2s ease; flex-shrink: 0; font-family: inherit;
 }
 .daily-task-claim:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,.3); }
+.daily-task-claim:disabled {
+  background: rgba(40,40,70,.6);
+  color: #8a8aa8;
+  cursor: not-allowed;
+  opacity: .55;
+}
+.daily-task-claim:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
 .daily-task-claimed {
   font-size: .85rem; color: #4dccbd; font-weight: bold;
   flex-shrink: 0; padding: 0 6px;
@@ -657,7 +687,7 @@ button:active:not(:disabled),
 <button id="updatesBtn" class="top-left-btn">📢 <span data-i18n="updates">更新公告</span></button>
 </div>
 <div class="top-right-controls">
-<button id="dailyTasksBtn" class="top-right-btn">📅 <span data-i18n="dailyTaskTitle">每日任务</span></button>
+<button id="dailyTasksBtn" class="top-right-btn">📅 <span data-i18n="taskSystemTitle">任务</span></button>
 <button id="achievementsBtn" class="top-right-btn">🏅 <span data-i18n="achievements">成就</span></button>
 <button id="leaderboardBtn" class="top-right-btn">🏆 <span data-i18n="leaderboard">排行榜</span></button>
 </div>
@@ -710,6 +740,9 @@ button:active:not(:disabled),
 <div class="music-actions">
 <button class="music-import-btn" id="musicImportBtn">
 <span>＋</span><span data-i18n="musicImport">导入本地音乐</span>
+</button>
+<button class="music-export-btn" id="musicExportAllBtn">
+<span>📦</span><span data-i18n="musicExportAll">导出全部</span>
 </button>
 <button class="music-clear-btn" id="musicClearAllBtn">
 <span>🗑️</span><span data-i18n="musicClearAll">清空所有音乐</span>
@@ -868,7 +901,7 @@ button:active:not(:disabled),
 <div class="achievement-summary">
 <div class="achievement-summary-row">
 <span class="achievement-summary-label" data-i18n="achTotalProgress">总进度</span>
-<span class="achievement-summary-value" id="achProgressText">0 / 40</span>
+<span class="achievement-summary-value" id="achProgressText">0 / 100</span>
 </div>
 <div class="challenge-progress"><div id="achProgressFill" class="challenge-progress-fill" style="width:0%"></div></div>
 </div>
@@ -1089,14 +1122,34 @@ button:active:not(:disabled),
 </div>
 </div>
 </div>
+<div id="exportingModal" class="custom-modal">
+<div class="custom-modal-content" style="max-width:360px;">
+<div class="custom-modal-header">
+<div class="custom-modal-icon">📦</div>
+<h3 class="custom-modal-title" data-i18n="musicExporting">正在导出音乐</h3>
+</div>
+<div class="custom-modal-body">
+<p class="custom-modal-text" id="exportingText" style="margin-bottom:0">正在打包，请稍候...</p>
+<div class="import-progress" style="margin-top:16px;">
+<div class="import-progress-fill" id="exportingProgressFill"></div>
+</div>
+<p class="custom-modal-text" id="exportingProgressText" style="color:#4dccbd;font-weight:bold;text-align:center;margin-top:10px;margin-bottom:0;">0 / 0</p>
+</div>
+</div>
+</div>
 <div id="dailyTaskPanel" class="custom-modal">
   <div class="daily-task-content">
     <div class="daily-task-header">
       <div class="daily-task-title">
         <span class="daily-task-icon">📅</span>
-        <h2 data-i18n="dailyTaskTitle">每日任务</h2>
+        <h2 data-i18n="taskSystemTitle">任务</h2>
       </div>
       <button class="close-daily-task" data-i18n="close">关闭</button>
+    </div>
+    <div class="leaderboard-tabs" id="taskTabs">
+      <button class="leaderboard-tab active" data-task-tab="daily" data-i18n="taskTabDaily">每日</button>
+      <button class="leaderboard-tab" data-task-tab="weekly" data-i18n="taskTabWeekly">每周</button>
+      <button class="leaderboard-tab" data-task-tab="monthly" data-i18n="taskTabMonthly">每月</button>
     </div>
     <div class="daily-task-meta">
       <span id="dailyTaskDate">2025-09-16</span>
@@ -1312,6 +1365,7 @@ button:active:not(:disabled),
 <script src="js/audio.js"></script>
 <script src="js/effects.js"></script>
 <script src="js/id3.js"></script>
+<script src="js/fflate.min.js"></script>
 <script src="js/player.js"></script>
 <script src="js/leveling.js"></script>
 <script src="js/achievements.js"></script>
@@ -1323,10 +1377,11 @@ button:active:not(:disabled),
 // 音频系统已拆分至 js/audio.js
 // 特效管理器已拆分至 js/effects.js
 // ID3 解析器已拆分至 js/id3.js
+// 压缩库已拆分至 js/fflate.min.js
 // 音乐播放器已拆分至 js/player.js
 // 成就系统已拆分至 js/achievements.js
 // 等级系统已拆分至 js/leveling.js
-// 每日任务系统已拆分至 js/daily.js
+// 任务系统（每日/每周/每月）已拆分至 js/daily.js
 // ============================================================
 
 // ============================================================
@@ -1650,9 +1705,10 @@ const speedDropInterval = 1000;
 let pausedThisGame = false;
 let marathonCheckSuccessCount = 0;
 
-// 每日任务用：本局 tetris 次数 & 硬降次数
 let currentTetrisCount = 0;
 let currentHarddropCount = 0;
+
+let maxComboThisGame = 0;
 
 let showPreview = true, showHeightLine = true, showExtraPreview = false;
 let musicVolume = 70, soundVolume = 80;
@@ -1733,6 +1789,7 @@ const musicTotalTime = $('musicTotalTime');
 const musicNowTitle = $('musicNowTitle');
 const musicNowSub = $('musicNowSub');
 const musicImportBtn = $('musicImportBtn');
+const musicExportAllBtn = $('musicExportAllBtn');
 const musicFileInput = $('musicFileInput');
 const musicPlaylistEl = $('musicPlaylist');
 const musicPlaylistCount = $('musicPlaylistCount');
@@ -1769,7 +1826,6 @@ function escapeHtml(s) {
     }[c]));
 }
 
-// ===== 标题滚动（跑马灯） =====
 function startTitleRoll(el, text) {
     if (!el) return;
     if (el._rollTimer) { clearTimeout(el._rollTimer); el._rollTimer = null; }
@@ -1802,7 +1858,6 @@ function stopTitleRoll(el, text) {
     el.textContent = text;
 }
 
-// ===== 音乐搜索 =====
 let musicSearchQuery = '';
 let bgmSearchQuery = '';
 function filterTracksByQuery(tracks, query) {
@@ -1914,11 +1969,12 @@ function showAccountResetConfirm() {
     const original = modalConfirmBtn.onclick;
     modalConfirmBtn.onclick = () => {
         resetAccount();
-        hidePanel(customModal);
+        hidePanel(customModal, () => {
+            showAccountCreateModal();
+        });
         resetCustomModalToDefault();
         modalConfirmBtn.onclick = original;
         audioSystem.playSound('click');
-        setTimeout(() => showAccountCreateModal(), 300);
     };
     modalCancelBtn.onclick = () => {
         hidePanel(customModal);
@@ -1969,23 +2025,24 @@ function recordGameStats() {
 
     if (typeof achievementManager !== 'undefined') {
         achievementManager.onGameEnd({
-            score, lines, maxCombo: currentCombo,
+            score, lines, maxCombo: maxComboThisGame,
             challenge: currentChallenge, mode: currentMode,
             elapsedTime, marathonStage, marathonCheckSuccessCount,
             pausedThisGame, level: levelManager.getLevel(),
+            gameLevel: level,
             sprintCleared: sprintLinesCleared, sprintTarget: sprintTargetLines,
             endless: currentMode === GAME_MODES.ENDLESS, classic: currentMode === GAME_MODES.CLASSIC,
-            timedLinesCleared, customTargetLines
+            timedLinesCleared, customTargetLines,
+            speedTimeouts, marathonCheckFailed
         });
     }
 
-    // ===== 每日任务结算 =====
     if (typeof dailyTaskManager !== 'undefined' && dailyTaskManager) {
         const playSec = currentGameStartTime > 0 ? Math.floor((Date.now() - currentGameStartTime) / 1000) : 0;
         dailyTaskManager.onGameEnd({
             score,
             lines,
-            maxCombo: currentCombo,
+            maxCombo: maxComboThisGame,
             pausedThisGame,
             playSeconds: playSec
         });
@@ -2076,7 +2133,27 @@ function hideImportingModal() {
     if (el) hidePanel(el);
 }
 
-// ===== 定位当前曲目（滚动完成后闪烁 3 次） =====
+function showExportingModal(total) {
+    const el = document.getElementById('exportingModal');
+    if (!el) return;
+    document.getElementById('exportingText').textContent = languageManager.getText('musicExportingText');
+    document.getElementById('exportingProgressFill').style.width = '0%';
+    document.getElementById('exportingProgressText').textContent = `0 / ${total}`;
+    showPanel(el);
+}
+function updateExportingProgress(current, total, name) {
+    const fill = document.getElementById('exportingProgressFill');
+    const text = document.getElementById('exportingProgressText');
+    if (fill) fill.style.width = `${total > 0 ? (current / total) * 100 : 0}%`;
+    if (text) {
+        text.textContent = `${current} / ${total}`;
+    }
+}
+function hideExportingModal() {
+    const el = document.getElementById('exportingModal');
+    if (el) hidePanel(el);
+}
+
 function locateCurrentTrack() {
     const idx = musicPlayer.currentIndex;
     if (idx < 0) return;
@@ -2326,7 +2403,6 @@ function bindEvents() {
             hidePanel(timedChoiceModal); showChallengeMenu(); audioSystem.playSound('click');
         });
     }
-    // 音乐搜索
     const musicSearchInput = document.getElementById('musicSearchInput');
     const bgmSearchInput = document.getElementById('bgmSearchInput');
     if (musicSearchInput) {
@@ -2720,7 +2796,6 @@ function rotatePiece(piece) {
         achievementManager.addProgress('rotate_count', 1);
         achievementManager.checkSimple();
     }
-    // 每日任务：旋转计数（仅当天累计）
     if (typeof dailyTaskManager !== 'undefined' && dailyTaskManager) {
         dailyTaskManager.onProgress({ rotateInc: 1 });
     }
@@ -2805,6 +2880,7 @@ function clearLines() {
     }
     if (linesCleared === 0) { currentCombo = 0; return; }
     currentCombo++;
+    if (currentCombo > maxComboThisGame) maxComboThisGame = currentCombo;
     if (currentCombo > statsData.highestCombo) statsData.highestCombo = currentCombo;
     if (typeof achievementManager !== 'undefined') achievementManager.onLineClear(linesCleared, currentCombo);
     audioSystem.playSound(`clear${linesCleared}`);
@@ -2855,12 +2931,11 @@ function clearLines() {
     }
     updateUI();
 
-    // 每日任务：实时更新本局进度（消行/分数/连消/四连消）
     if (typeof dailyTaskManager !== 'undefined' && dailyTaskManager) {
         dailyTaskManager.onProgress({
             lines,
             score,
-            maxCombo: currentCombo,
+            maxCombo: maxComboThisGame,
             tetrisInc: linesCleared === 4 ? 1 : 0
         });
     }
@@ -2924,7 +2999,6 @@ function hardDrop() {
         achievementManager.addProgress('harddrop_count', 1);
         achievementManager.checkSimple();
     }
-    // 每日任务：硬降计数
     if (typeof dailyTaskManager !== 'undefined' && dailyTaskManager) {
         dailyTaskManager.onProgress({ harddropInc: 1 });
     }
@@ -2963,8 +3037,8 @@ function startGameplay() {
     marathonCheckSuccessCount = 0;
     currentGameStartTime = Date.now();
     currentCombo = 0;
+    maxComboThisGame = 0;
 
-    // 每日任务：本局开始，重置 current
     if (typeof dailyTaskManager !== 'undefined' && dailyTaskManager) {
         dailyTaskManager.onGameStart();
     }
@@ -3321,6 +3395,7 @@ function resetGame() {
     countdownTime = customInitialTime;
     timedLinesTime = customInitialTime;
     speedTimeouts = 0; speedBlockTimer = speedTimeLimit; speedBlockTimedOut = false;
+    maxComboThisGame = 0;
     if (currentMode === GAME_MODES.CLASSIC) dropInterval = 1000;
     else if (currentChallenge === CHALLENGE_TYPES.SPEED) dropInterval = speedDropInterval;
     else dropInterval = 800;
@@ -3404,8 +3479,27 @@ function updateUI() {
     linesElement.textContent = lines;
     timeElapsed.textContent = '00:00';
 }
-function showPanel(p) { p.style.display = 'flex'; }
-function hidePanel(p) { p.style.display = 'none'; }
+function showPanel(p) {
+    if (!p) return;
+    if (p.classList.contains('closing')) p.classList.remove('closing');
+    p.style.display = 'flex';
+}
+function hidePanel(p, onDone) {
+    if (!p || p.style.display === 'none') {
+        if (onDone) onDone();
+        return;
+    }
+    if (p.classList.contains('closing')) {
+        if (onDone) onDone();
+        return;
+    }
+    p.classList.add('closing');
+    setTimeout(() => {
+        p.classList.remove('closing');
+        p.style.display = 'none';
+        if (onDone) onDone();
+    }, 300);
+}
 
 function loadLeaderboardData() {
     const saved = localStorage.getItem('tetrisLeaderboard');
@@ -3713,6 +3807,7 @@ async function initMusicPlayer() {
         renderMusicPlaylist();
         renderBgmPanel();
         updateGameMusicBtn();
+        if (musicExportAllBtn) musicExportAllBtn.disabled = musicPlayer.tracks.length === 0;
     });
     musicPlayer.onPlayStateChange(() => {
         updateMusicPlayerUI();
@@ -3725,6 +3820,30 @@ async function initMusicPlayer() {
     });
     musicPlayBtn.addEventListener('click', () => musicPlayer.togglePlay());
     musicImportBtn.addEventListener('click', () => musicFileInput.click());
+
+    if (musicExportAllBtn) {
+        musicExportAllBtn.addEventListener('click', async () => {
+            if (musicPlayer.tracks.length === 0) {
+                showSaveNotification('⚠️ ' + languageManager.getText('musicNoTrack'), true);
+                return;
+            }
+            musicExportAllBtn.disabled = true;
+            const total = musicPlayer.tracks.length;
+            showExportingModal(total);
+            const result = await exportAllTracksAsZip(musicPlayer.tracks, (cur, tot, name) => {
+                updateExportingProgress(cur, tot, name);
+            });
+            hideExportingModal();
+            musicExportAllBtn.disabled = false;
+            if (result.failed > 0) {
+                showSaveNotification(`⚠️ ${languageManager.getText('musicExportSuccess')} ${result.ok} / ${result.total}`, true);
+            } else {
+                showSaveNotification(`✅ ${languageManager.getText('musicExportSuccess')} (${result.ok})`);
+            }
+            audioSystem.playSound('click');
+        });
+    }
+
     musicFileInput.addEventListener('change', async (e) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -3803,6 +3922,7 @@ async function initMusicPlayer() {
         musicPlayer._seekDragging = false;
     });
     if (typeof musicPlayer !== 'undefined') musicPlayer.setVolume(musicVolume / 100);
+    if (musicExportAllBtn) musicExportAllBtn.disabled = musicPlayer.tracks.length === 0;
     renderMusicPlaylist();
     updateMusicPlayerUI();
     renderBgmPanel();
