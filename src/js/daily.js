@@ -1,21 +1,22 @@
 // ============================================================
-// 每日任务系统
-// - 每天 0 点刷新（本地日期）
-// - 40 个任务池，每天抽 2 单局 + 2 累计（按 tier 分层）
-// - 单局类任务：当前局实时进度，达标即持久化 ready
-// - 累计类任务：当天累计
+// 任务系统（每日 / 每周 / 每月）
+// - 每天 0 点刷新，每周一 0 点刷新，每月 1 号 0 点刷新（本地日期）
+// - 日任务：2 单局 + 2 累计，40 池抽 4
+// - 周任务：3 累计，11 池抽 3
+// - 月任务：2 累计，9 池抽 2
 // - 奖励手动领取
 // - 仅本系统使用，不写入全局 statsData
 // ============================================================
 
-const DAILY_TASKS_KEY = 'tetrisDailyTasks';
-const DAILY_TASK_COUNT = 4;
-const DAILY_ALL_BONUS = 200;
-const DAILY_SINGLE_COUNT = 2;
-const DAILY_DAILY_COUNT = 2;
+const DAILY_TASKS_KEY   = 'tetrisDailyTasks';
+const WEEKLY_TASKS_KEY  = 'tetrisWeeklyTasks';
+const MONTHLY_TASKS_KEY = 'tetrisMonthlyTasks';
+
+const DAILY_ALL_BONUS   = 200;
+const WEEKLY_ALL_BONUS  = 500;
+const MONTHLY_ALL_BONUS = 1000;
 
 const DAILY_TASK_POOL = [
-    // ===== 单局类 16 个 =====
     { id:'single_lines_10',        i18n:'dailyTaskSingleLines10',        target:10,     exp:40,  scope:'single', tier:1, metric:'lines' },
     { id:'single_lines_20',        i18n:'dailyTaskSingleLines20',        target:20,     exp:50,  scope:'single', tier:2, metric:'lines' },
     { id:'single_lines_40',        i18n:'dailyTaskSingleLines40',        target:40,     exp:120, scope:'single', tier:3, metric:'lines' },
@@ -33,7 +34,6 @@ const DAILY_TASK_POOL = [
     { id:'single_no_pause',        i18n:'dailyTaskSingleNoPause',        target:1,      exp:60,  scope:'single', tier:2, metric:'noPauseFlag' },
     { id:'single_harddrop_30',     i18n:'dailyTaskSingleHarddrop30',     target:30,     exp:70,  scope:'single', tier:2, metric:'harddropCount' },
 
-    // ===== 累计类 24 个 =====
     { id:'daily_games_3',          i18n:'dailyTaskGames3',               target:3,      exp:40,  scope:'daily',  tier:1, metric:'gamesPlayed' },
     { id:'daily_games_5',          i18n:'dailyTaskGames5',               target:5,      exp:60,  scope:'daily',  tier:2, metric:'gamesPlayed' },
     { id:'daily_games_10',         i18n:'dailyTaskGames10',              target:10,     exp:120, scope:'daily',  tier:3, metric:'gamesPlayed' },
@@ -60,14 +60,54 @@ const DAILY_TASK_POOL = [
     { id:'daily_rotate_500',       i18n:'dailyTaskRotate500',            target:500,    exp:100, scope:'daily',  tier:2, metric:'rotateCount' }
 ];
 
+const WEEKLY_TASK_POOL = [
+    { id:'weekly_games_10',    i18n:'weeklyTaskGames10',    target:10,     exp:200,  scope:'accumulate', tier:2, metric:'gamesPlayed' },
+    { id:'weekly_games_25',    i18n:'weeklyTaskGames25',    target:25,     exp:400,  scope:'accumulate', tier:3, metric:'gamesPlayed' },
+    { id:'weekly_games_50',    i18n:'weeklyTaskGames50',    target:50,     exp:700,  scope:'accumulate', tier:3, metric:'gamesPlayed' },
+    { id:'weekly_lines_200',   i18n:'weeklyTaskLines200',   target:200,    exp:250,  scope:'accumulate', tier:2, metric:'totalLines' },
+    { id:'weekly_lines_500',   i18n:'weeklyTaskLines500',   target:500,    exp:500,  scope:'accumulate', tier:3, metric:'totalLines' },
+    { id:'weekly_lines_1000',  i18n:'weeklyTaskLines1000',  target:1000,   exp:800,  scope:'accumulate', tier:3, metric:'totalLines' },
+    { id:'weekly_score_200k',  i18n:'weeklyTaskScore200k',  target:200000, exp:250,  scope:'accumulate', tier:2, metric:'totalScore' },
+    { id:'weekly_score_500k',  i18n:'weeklyTaskScore500k',  target:500000, exp:500,  scope:'accumulate', tier:3, metric:'totalScore' },
+    { id:'weekly_score_1m',    i18n:'weeklyTaskScore1m',    target:1000000,exp:800,  scope:'accumulate', tier:3, metric:'totalScore' },
+    { id:'weekly_play_60min',  i18n:'weeklyTaskPlay60min',  target:3600,   exp:300,  scope:'accumulate', tier:2, metric:'playSeconds' },
+    { id:'weekly_play_180min', i18n:'weeklyTaskPlay180min', target:10800,  exp:600,  scope:'accumulate', tier:3, metric:'playSeconds' }
+];
+
+const MONTHLY_TASK_POOL = [
+    { id:'monthly_games_100',    i18n:'monthlyTaskGames100',    target:100,     exp:500,  scope:'accumulate', tier:2, metric:'gamesPlayed' },
+    { id:'monthly_games_300',    i18n:'monthlyTaskGames300',    target:300,     exp:1200, scope:'accumulate', tier:3, metric:'gamesPlayed' },
+    { id:'monthly_lines_2000',   i18n:'monthlyTaskLines2000',   target:2000,    exp:800,  scope:'accumulate', tier:2, metric:'totalLines' },
+    { id:'monthly_lines_5000',   i18n:'monthlyTaskLines5000',   target:5000,    exp:1500, scope:'accumulate', tier:3, metric:'totalLines' },
+    { id:'monthly_lines_10000',  i18n:'monthlyTaskLines10000',  target:10000,   exp:2000, scope:'accumulate', tier:3, metric:'totalLines' },
+    { id:'monthly_score_2m',     i18n:'monthlyTaskScore2m',     target:2000000, exp:800,  scope:'accumulate', tier:2, metric:'totalScore' },
+    { id:'monthly_score_5m',     i18n:'monthlyTaskScore5m',     target:5000000, exp:1500, scope:'accumulate', tier:3, metric:'totalScore' },
+    { id:'monthly_play_10h',     i18n:'monthlyTaskPlay10h',     target:36000,   exp:1000, scope:'accumulate', tier:2, metric:'playSeconds' },
+    { id:'monthly_play_30h',     i18n:'monthlyTaskPlay30h',     target:108000,  exp:2000, scope:'accumulate', tier:3, metric:'playSeconds' }
+];
+
+// ===== 周期字符串 =====
+function pad2(n) { return String(n).padStart(2, '0'); }
+
 function getTodayStr() {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+function getWeekStr() {
+    const d = new Date();
+    const day = d.getDay() || 7;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - day + 1);
+    return `${monday.getFullYear()}-${pad2(monday.getMonth() + 1)}-${pad2(monday.getDate())}`;
+}
+
+function getMonthStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+}
+
+// ===== 抽题 =====
 function hashStr(s) {
     let h = 2166136261;
     for (let i = 0; i < s.length; i++) {
@@ -88,111 +128,98 @@ function pickN(arr, n, s) {
 }
 
 function pickDailyTasks(dateStr) {
-    const seed = hashStr(dateStr);
-    let s = seed;
-
-    const singles = DAILY_TASK_POOL.filter(t => t.scope === 'single');
-    const dailies = DAILY_TASK_POOL.filter(t => t.scope === 'daily');
-
-    const all = [...singles, ...dailies];
+    let s = hashStr(dateStr);
+    const all = [...DAILY_TASK_POOL];
     const byTier = { 1: [], 2: [], 3: [] };
     for (const t of all) byTier[t.tier].push(t);
-
     const picked = [];
     const usedIds = new Set();
-
-    {
-        const r = pickN(byTier[1], 1, s); s = r.s;
-        if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); }
-    }
-    {
-        const cand = byTier[2].filter(t => !usedIds.has(t.id));
-        const r = pickN(cand, 1, s); s = r.s;
-        if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); }
-    }
-    {
-        const cand = byTier[3].filter(t => !usedIds.has(t.id));
-        const r = pickN(cand, 1, s); s = r.s;
-        if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); }
-    }
-    {
-        const remain = all.filter(t => !usedIds.has(t.id));
-        const r = pickN(remain, 1, s); s = r.s;
-        if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); }
-    }
-
+    { const r = pickN(byTier[1], 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const cand = byTier[2].filter(t => !usedIds.has(t.id)); const r = pickN(cand, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const cand = byTier[3].filter(t => !usedIds.has(t.id)); const r = pickN(cand, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const remain = all.filter(t => !usedIds.has(t.id)); const r = pickN(remain, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
     for (let i = picked.length - 1; i > 0; i--) {
         s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
         const j = s % (i + 1);
         [picked[i], picked[j]] = [picked[j], picked[i]];
     }
-
     return picked;
 }
 
-class DailyTaskManager {
-    constructor() {
+function pickWeeklyTasks(weekStr) {
+    let s = hashStr('W:' + weekStr);
+    const picked = [];
+    const usedIds = new Set();
+    const t2 = WEEKLY_TASK_POOL.filter(t => t.tier === 2);
+    const t3 = WEEKLY_TASK_POOL.filter(t => t.tier === 3);
+    { const r = pickN(t2, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const r = pickN(t3, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const remain = WEEKLY_TASK_POOL.filter(t => !usedIds.has(t.id)); const r = pickN(remain, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); } }
+    for (let i = picked.length - 1; i > 0; i--) {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        const j = s % (i + 1);
+        [picked[i], picked[j]] = [picked[j], picked[i]];
+    }
+    return picked;
+}
+
+function pickMonthlyTasks(monthStr) {
+    let s = hashStr('M:' + monthStr);
+    const picked = [];
+    const usedIds = new Set();
+    const t2 = MONTHLY_TASK_POOL.filter(t => t.tier === 2);
+    const t3 = MONTHLY_TASK_POOL.filter(t => t.tier === 3);
+    { const r = pickN(t2, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); usedIds.add(r.out[0].id); } }
+    { const r = pickN(t3, 1, s); s = r.s; if (r.out[0]) { picked.push(r.out[0]); } }
+    for (let i = picked.length - 1; i > 0; i--) {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        const j = s % (i + 1);
+        [picked[i], picked[j]] = [picked[j], picked[i]];
+    }
+    return picked;
+}
+
+// ============================================================
+// 单个周期的任务组
+// ============================================================
+class TaskGroup {
+    constructor({ key, periodFn, poolPickFn, allBonus, hasCurrent }) {
+        this.key = key;
+        this.periodFn = periodFn;
+        this.poolPickFn = poolPickFn;
+        this.allBonus = allBonus;
+        this.hasCurrent = hasCurrent;
         this.state = null;
-        this._countdownTimer = null;
-        this._modalEl = null;
-        this._listEl = null;
-        this._dateEl = null;
-        this._countdownEl = null;
-        this._allBonusEl = null;
     }
 
-    init() {
-        this._modalEl = document.getElementById('dailyTaskPanel');
-        this._listEl = document.getElementById('dailyTaskList');
-        this._dateEl = document.getElementById('dailyTaskDate');
-        this._countdownEl = document.getElementById('dailyTaskCountdown');
-        this._allBonusEl = document.getElementById('dailyTaskAllBonus');
-        this._bindEvents();
-        this.refresh();
-        this.startCountdown();
+    _emptyCurrent() {
+        return { lines: 0, score: 0, maxCombo: 0, tetrisCount: 0, harddropCount: 0, noPauseFlag: 0, pausedThisGame: false };
     }
-
-    _bindEvents() {
-        const closeBtn = document.querySelector('.close-daily-task');
-        if (closeBtn) closeBtn.addEventListener('click', () => {
-            hidePanel(this._modalEl);
-            audioSystem.playSound('click');
-        });
-        const openBtn = document.getElementById('dailyTasksBtn');
-        if (openBtn) openBtn.addEventListener('click', () => {
-            showPanel(this._modalEl);
-            this.render();
-            audioSystem.playSound('click');
-        });
-        if (this._listEl) {
-            this._listEl.addEventListener('click', (e) => {
-                const btn = e.target.closest('.daily-task-claim');
-                if (!btn) return;
-                const taskId = btn.getAttribute('data-task-id');
-                this.claim(taskId);
-            });
-        }
-        if (this._allBonusEl) {
-            this._allBonusEl.addEventListener('click', (e) => {
-                if (e.target.closest('.daily-task-claim-all')) {
-                    this.claimAllBonus();
-                }
-            });
-        }
+    _emptyStats() {
+        return { gamesPlayed: 0, totalLines: 0, totalScore: 0, tetrisCount: 0, noPauseGames: 0, playSeconds: 0, harddropCount: 0, rotateCount: 0 };
     }
-
+    _createNewState(period) {
+        const tasks = this.poolPickFn(period).map(t => ({
+            id: t.id, i18n: t.i18n, target: t.target, exp: t.exp,
+            scope: t.scope, tier: t.tier, metric: t.metric,
+            claimed: false, ready: false
+        }));
+        return {
+            period, tasks, allBonusClaimed: false,
+            stats: this._emptyStats(),
+            current: this.hasCurrent ? this._emptyCurrent() : null
+        };
+    }
     refresh() {
-        const today = getTodayStr();
+        const period = this.periodFn();
         let saved = null;
-        try { saved = JSON.parse(localStorage.getItem(DAILY_TASKS_KEY) || 'null'); } catch (e) {}
-
-        if (saved && saved.date === today && Array.isArray(saved.tasks)) {
+        try { saved = JSON.parse(localStorage.getItem(this.key) || 'null'); } catch (e) {}
+        if (saved && saved.period === period && Array.isArray(saved.tasks)) {
             this.state = saved;
-            if (!this.state.stats) this.state.stats = {};
+            if (!this.state.stats) this.state.stats = this._emptyStats();
             if (!this.state.stats.rotateCount) this.state.stats.rotateCount = 0;
             if (!this.state.stats.harddropCount) this.state.stats.harddropCount = 0;
-            if (!this.state.current) this.state.current = this._emptyCurrent();
-            // 补 ready 字段，并对已有进度做一次达标补判
+            if (this.hasCurrent && !this.state.current) this.state.current = this._emptyCurrent();
             for (const t of this.state.tasks) {
                 if (t.ready === undefined) t.ready = false;
                 if (!t.ready && !t.claimed) {
@@ -202,120 +229,53 @@ class DailyTaskManager {
             }
             this._save();
         } else {
-            this.state = this._createNewState(today);
+            this.state = this._createNewState(period);
             this._save();
         }
-        this.render();
     }
-
-    _emptyCurrent() {
-        return {
-            lines: 0,
-            score: 0,
-            maxCombo: 0,
-            tetrisCount: 0,
-            harddropCount: 0,
-            noPauseFlag: 0,
-            pausedThisGame: false
-        };
-    }
-
-    _createNewState(date) {
-        const tasks = pickDailyTasks(date).map(t => ({
-            id: t.id,
-            i18n: t.i18n,
-            target: t.target,
-            exp: t.exp,
-            scope: t.scope,
-            tier: t.tier,
-            metric: t.metric,
-            progress: 0,
-            claimed: false,
-            ready: false
-        }));
-        return {
-            date,
-            tasks,
-            allBonusClaimed: false,
-            stats: {
-                gamesPlayed: 0,
-                totalLines: 0,
-                totalScore: 0,
-                tetrisCount: 0,
-                noPauseGames: 0,
-                playSeconds: 0,
-                harddropCount: 0,
-                rotateCount: 0
-            },
-            current: this._emptyCurrent()
-        };
-    }
-
-    _save() {
-        try { localStorage.setItem(DAILY_TASKS_KEY, JSON.stringify(this.state)); } catch (e) {}
-    }
-
+    _save() { try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {} }
     onGameStart() {
         if (!this.state) return;
-        this.state.current = this._emptyCurrent();
-        this._save();
-        if (this._modalEl && this._modalEl.style.display !== 'none') this.render();
+        if (this.hasCurrent) { this.state.current = this._emptyCurrent(); this._save(); }
     }
-
     onProgress(data) {
         if (!this.state) return;
-        if (!this.state.current) this.state.current = this._emptyCurrent();
+        if (this.hasCurrent && !this.state.current) this.state.current = this._emptyCurrent();
         const cur = this.state.current;
-        if (typeof data.lines === 'number') cur.lines = data.lines;
-        if (typeof data.score === 'number') cur.score = data.score;
-        if (typeof data.maxCombo === 'number') cur.maxCombo = Math.max(cur.maxCombo, data.maxCombo);
-        if (typeof data.tetrisInc === 'number') {
-            cur.tetrisCount += data.tetrisInc;
-            this.state.stats.tetrisCount += data.tetrisInc;
+        if (cur) {
+            if (typeof data.lines === 'number') cur.lines = data.lines;
+            if (typeof data.score === 'number') cur.score = data.score;
+            if (typeof data.maxCombo === 'number') cur.maxCombo = Math.max(cur.maxCombo, data.maxCombo);
+            if (typeof data.tetrisInc === 'number') cur.tetrisCount += data.tetrisInc;
+            if (typeof data.harddropInc === 'number') cur.harddropCount += data.harddropInc;
+            if (typeof data.paused === 'boolean') cur.pausedThisGame = cur.pausedThisGame || data.paused;
         }
-        if (typeof data.harddropInc === 'number') {
-            cur.harddropCount += data.harddropInc;
-            this.state.stats.harddropCount += data.harddropInc;
-        }
-        if (typeof data.rotateInc === 'number') {
-            this.state.stats.rotateCount += data.rotateInc;
-        }
-        if (typeof data.paused === 'boolean') {
-            cur.pausedThisGame = cur.pausedThisGame || data.paused;
-        }
-
-        // 达标检测：达标即写 ready 并持久化
+        if (typeof data.tetrisInc === 'number') this.state.stats.tetrisCount += data.tetrisInc;
+        if (typeof data.harddropInc === 'number') this.state.stats.harddropCount += data.harddropInc;
+        if (typeof data.rotateInc === 'number') this.state.stats.rotateCount += data.rotateInc;
         this._checkReady();
-
         this._save();
-        if (this._modalEl && this._modalEl.style.display !== 'none') this.render();
     }
-
     onGameEnd({ score, lines, maxCombo, pausedThisGame, playSeconds }) {
         if (!this.state) return;
-        if (!this.state.current) this.state.current = this._emptyCurrent();
         const s = this.state.stats;
         s.gamesPlayed += 1;
         s.totalLines += (lines || 0);
         s.totalScore += (score || 0);
         if (!pausedThisGame) s.noPauseGames += 1;
         s.playSeconds += (playSeconds || 0);
-
-        const cur = this.state.current;
-        cur.lines = lines || 0;
-        cur.score = score || 0;
-        cur.maxCombo = maxCombo || 0;
-        cur.pausedThisGame = !!pausedThisGame;
-        cur.noPauseFlag = pausedThisGame ? 0 : 1;
-
-        // 达标检测：本局最终数据也参与判定
+        if (this.hasCurrent) {
+            if (!this.state.current) this.state.current = this._emptyCurrent();
+            const cur = this.state.current;
+            cur.lines = lines || 0;
+            cur.score = score || 0;
+            cur.maxCombo = maxCombo || 0;
+            cur.pausedThisGame = !!pausedThisGame;
+            cur.noPauseFlag = pausedThisGame ? 0 : 1;
+        }
         this._checkReady();
-
         this._save();
-        if (this._modalEl && this._modalEl.style.display !== 'none') this.render();
     }
-
-    // 遍历所有未领取任务，达标则写 ready
     _checkReady() {
         if (!this.state || !Array.isArray(this.state.tasks)) return;
         for (const task of this.state.tasks) {
@@ -324,32 +284,21 @@ class DailyTaskManager {
             if (value >= target) task.ready = true;
         }
     }
-
     _getProgress(task) {
         if (task.scope === 'single') {
             const cur = this.state.current || {};
-            const v = cur[task.metric] || 0;
-            return { value: v, target: task.target };
+            return { value: cur[task.metric] || 0, target: task.target };
         } else {
-            const v = this.state.stats[task.metric] || 0;
-            return { value: v, target: task.target };
+            return { value: this.state.stats[task.metric] || 0, target: task.target };
         }
     }
-
     _isReady(task) {
         if (task.ready) return true;
         const { value, target } = this._getProgress(task);
         return value >= target;
     }
-
-    _isAllCompleted() {
-        return this.state.tasks.every(t => t.claimed);
-    }
-
-    _isAllReady() {
-        return this.state.tasks.every(t => this._isReady(t) || t.claimed);
-    }
-
+    _isAllCompleted() { return this.state.tasks.every(t => t.claimed); }
+    _isAllReady() { return this.state.tasks.every(t => this._isReady(t) || t.claimed); }
     claim(taskId) {
         const task = this.state.tasks.find(t => t.id === taskId);
         if (!task || task.claimed) return;
@@ -359,90 +308,209 @@ class DailyTaskManager {
         audioSystem.playSound('start');
         showSaveNotification(`✅ +${task.exp} EXP`);
         this._save();
-        this.render();
         if (typeof updateLevelDisplay === 'function') updateLevelDisplay();
+        if (typeof achievementManager !== 'undefined') achievementManager.onDailyClaim();
     }
-
     claimAllBonus() {
         if (this.state.allBonusClaimed) return;
         if (!this._isAllCompleted()) return;
         this.state.allBonusClaimed = true;
-        levelManager.addExp(DAILY_ALL_BONUS);
+        levelManager.addExp(this.allBonus);
         audioSystem.playSound('start');
-        showSaveNotification(`🎉 +${DAILY_ALL_BONUS} EXP`);
+        showSaveNotification(`🎉 +${this.allBonus} EXP`);
         this._save();
-        this.render();
         if (typeof updateLevelDisplay === 'function') updateLevelDisplay();
+        if (typeof achievementManager !== 'undefined') achievementManager.onDailyAllClaim();
     }
+}
+
+// ============================================================
+// 任务系统总控
+// ============================================================
+class TaskSystem {
+    constructor() {
+        this.daily = new TaskGroup({ key: DAILY_TASKS_KEY, periodFn: getTodayStr, poolPickFn: pickDailyTasks, allBonus: DAILY_ALL_BONUS, hasCurrent: true });
+        this.weekly = new TaskGroup({ key: WEEKLY_TASKS_KEY, periodFn: getWeekStr, poolPickFn: pickWeeklyTasks, allBonus: WEEKLY_ALL_BONUS, hasCurrent: false });
+        this.monthly = new TaskGroup({ key: MONTHLY_TASKS_KEY, periodFn: getMonthStr, poolPickFn: pickMonthlyTasks, allBonus: MONTHLY_ALL_BONUS, hasCurrent: false });
+        this._currentTab = 'daily';
+        this._countdownTimer = null;
+        this._tickCountdown = null;
+        this._modalEl = null;
+        this._listEl = null;
+        this._dateEl = null;
+        this._countdownEl = null;
+        this._allBonusEl = null;
+        this._tabsEl = null;
+    }
+
+    init() {
+        this._modalEl = document.getElementById('dailyTaskPanel');
+        this._listEl = document.getElementById('dailyTaskList');
+        this._dateEl = document.getElementById('dailyTaskDate');
+        this._countdownEl = document.getElementById('dailyTaskCountdown');
+        this._allBonusEl = document.getElementById('dailyTaskAllBonus');
+        this._tabsEl = document.getElementById('taskTabs');
+        this._bindEvents();
+        this.refresh();
+        this.startCountdown();
+        this.render();
+    }
+
+    _bindEvents() {
+        const closeBtn = document.querySelector('.close-daily-task');
+        if (closeBtn) closeBtn.addEventListener('click', () => { hidePanel(this._modalEl); audioSystem.playSound('click'); });
+        const openBtn = document.getElementById('dailyTasksBtn');
+        if (openBtn) openBtn.addEventListener('click', () => {
+            showPanel(this._modalEl);
+            this.render();
+            if (this._tickCountdown) this._tickCountdown();
+            audioSystem.playSound('click');
+        });
+        if (this._tabsEl) {
+            this._tabsEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.leaderboard-tab');
+                if (!btn) return;
+                const newTab = btn.getAttribute('data-task-tab');
+                if (newTab === this._currentTab) return;
+                this._currentTab = newTab;
+                if (this._tickCountdown) this._tickCountdown();
+                this.render();
+                audioSystem.playSound('click');
+            });
+        }
+        if (this._listEl) {
+            this._listEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.daily-task-claim');
+                if (!btn) return;
+                if (btn.disabled) return;
+                const taskId = btn.getAttribute('data-task-id');
+                this.getGroup(this._currentTab).claim(taskId);
+                this.render();
+            });
+        }
+        if (this._allBonusEl) {
+            this._allBonusEl.addEventListener('click', (e) => {
+                if (e.target.closest('.daily-task-claim-all')) {
+                    this.getGroup(this._currentTab).claimAllBonus();
+                    this.render();
+                }
+            });
+        }
+    }
+
+    getGroup(tab) {
+        if (tab === 'weekly') return this.weekly;
+        if (tab === 'monthly') return this.monthly;
+        return this.daily;
+    }
+    refresh() { this.daily.refresh(); this.weekly.refresh(); this.monthly.refresh(); }
+    onGameStart() { this.daily.onGameStart(); this.weekly.onGameStart(); this.monthly.onGameStart(); }
+    onProgress(data) { this.daily.onProgress(data); this.weekly.onProgress(data); this.monthly.onProgress(data); }
+    onGameEnd(data) { this.daily.onGameEnd(data); this.weekly.onGameEnd(data); this.monthly.onGameEnd(data); }
 
     startCountdown() {
         if (this._countdownTimer) clearInterval(this._countdownTimer);
-        const tick = () => {
+        this._tickCountdown = () => {
             const now = new Date();
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            const diff = Math.max(0, tomorrow - now);
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-            const text = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            let target;
+            if (this._currentTab === 'weekly') {
+                target = new Date(now);
+                const day = now.getDay() || 7;
+                target.setDate(now.getDate() - day + 8);
+                target.setHours(0, 0, 0, 0);
+            } else if (this._currentTab === 'monthly') {
+                target = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            } else {
+                target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            }
+            const diff = Math.max(0, target - now);
+            let text;
+            if (this._currentTab === 'daily') {
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                text = `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+                        } else {
+                const lang = languageManager;
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const isChinese = lang.currentLang === 'zh-CN' || lang.currentLang === 'zh-TW';
+                const sep = isChinese ? '' : ' ';
+                text = `${d}${lang.getText('taskTimeDay')}${sep}${h}${lang.getText('taskTimeHour')}${sep}${m}${lang.getText('taskTimeMin')}${sep}${s}${lang.getText('taskTimeSec')}`;
+            }
             if (this._countdownEl) this._countdownEl.textContent = text;
-            if (diff <= 1000) this.refresh();
+            if (diff <= 1000) { this.refresh(); this.render(); }
         };
-        tick();
-        this._countdownTimer = setInterval(tick, 1000);
+        this._tickCountdown();
+        this._countdownTimer = setInterval(this._tickCountdown, 1000);
     }
 
     render() {
-        if (!this.state) return;
+        const group = this.getGroup(this._currentTab);
+        if (!group.state) return;
         const lang = languageManager;
-        if (this._dateEl) this._dateEl.textContent = this.state.date;
-        if (!this._listEl) return;
 
-        this._listEl.innerHTML = this.state.tasks.map(task => {
-            const { value, target } = this._getProgress(task);
-            const pct = Math.min(100, Math.round(value / target * 100));
-            const ready = this._isReady(task);
-            const claimed = task.claimed;
-            const done = claimed;
-            const name = lang.getText(task.i18n);
-            const check = done ? '✅' : (ready ? '🎁' : '⬜');
-            const progressText = done
-                ? `${pct}%`
-                : `${pct}%  ${value.toLocaleString()}/${target.toLocaleString()}`;
-            let actionHtml = '';
-            if (claimed) {
-                actionHtml = `<span class="daily-task-claimed">${lang.getText('dailyTaskClaimed')}</span>`;
-            } else if (ready) {
-                actionHtml = `<button class="daily-task-claim" data-task-id="${task.id}">${lang.getText('dailyTaskClaim')}</button>`;
-            }
-            return `<div class="daily-task-item ${done ? 'completed' : ''} ${ready && !claimed ? 'ready' : ''}">
-                <div class="daily-task-check">${check}</div>
-                <div class="daily-task-body">
-                    <div class="daily-task-row">
-                        <span class="daily-task-name">${name}</span>
-                        <span class="daily-task-reward">+${task.exp} exp</span>
+        if (this._dateEl) {
+            const fromLabel = lang.getText('taskPeriodFrom');
+            if (this._currentTab === 'weekly') this._dateEl.textContent = '📅 ' + group.state.period + ' ' + fromLabel;
+            else if (this._currentTab === 'monthly') this._dateEl.textContent = '📅 ' + group.state.period;
+            else this._dateEl.textContent = group.state.period;
+        }
+
+        if (this._tabsEl) {
+            this._tabsEl.querySelectorAll('.leaderboard-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-task-tab') === this._currentTab);
+            });
+        }
+
+        if (this._listEl) {
+            this._listEl.innerHTML = group.state.tasks.map(task => {
+                const { value, target } = group._getProgress(task);
+                const pct = Math.min(100, Math.round(value / target * 100));
+                const ready = group._isReady(task);
+                const claimed = task.claimed;
+                const name = lang.getText(task.i18n);
+                const check = claimed ? '✅' : (ready ? '🎁' : '⬜');
+                const progressText = claimed ? `${pct}%` : `${pct}%  ${value.toLocaleString()}/${target.toLocaleString()}`;
+                let actionHtml = '';
+                if (claimed) {
+                    actionHtml = `<span class="daily-task-claimed">${lang.getText('dailyTaskClaimed')}</span>`;
+                } else if (ready) {
+                    actionHtml = `<button class="daily-task-claim" data-task-id="${task.id}">${lang.getText('dailyTaskClaim')}</button>`;
+                } else {
+                    actionHtml = `<button class="daily-task-claim" data-task-id="${task.id}" disabled>${lang.getText('dailyTaskClaim')}</button>`;
+                }
+                return `<div class="daily-task-item ${claimed ? 'completed' : ''} ${ready && !claimed ? 'ready' : ''}">
+                    <div class="daily-task-check">${check}</div>
+                    <div class="daily-task-body">
+                        <div class="daily-task-row">
+                            <span class="daily-task-name">${name}</span>
+                            <span class="daily-task-reward">+${task.exp} exp</span>
+                        </div>
+                        <div class="daily-task-progress">
+                            <div class="daily-task-progress-fill" style="width:${pct}%"></div>
+                        </div>
+                        <div class="daily-task-progress-text">${progressText}</div>
                     </div>
-                    <div class="daily-task-progress">
-                        <div class="daily-task-progress-fill" style="width:${pct}%"></div>
-                    </div>
-                    <div class="daily-task-progress-text">${progressText}</div>
-                </div>
-                ${actionHtml}
-            </div>`;
-        }).join('');
+                    ${actionHtml}
+                </div>`;
+            }).join('');
+        }
 
         if (this._allBonusEl) {
-            const allReady = this._isAllReady();
-            const allClaimed = this.state.allBonusClaimed;
+            const allReady = group._isAllReady();
+            const allClaimed = group.state.allBonusClaimed;
             let html = `<span>${lang.getText('dailyTaskAllBonus')}</span>`;
             if (allClaimed) {
-                html += `<span class="daily-task-all-exp claimed">✓ ${lang.getText('dailyTaskClaimed')} +${DAILY_ALL_BONUS} exp</span>`;
+                html += `<span class="daily-task-all-exp claimed">✓ ${lang.getText('dailyTaskClaimed')} +${group.allBonus} exp</span>`;
                 this._allBonusEl.classList.add('claimed');
-            } else if (allReady && this._isAllCompleted()) {
-                html += `<button class="daily-task-claim-all">${lang.getText('dailyTaskClaim')} +${DAILY_ALL_BONUS} exp</button>`;
+            } else if (allReady) {
+                html += `<button class="daily-task-claim-all">${lang.getText('dailyTaskClaim')} +${group.allBonus} exp</button>`;
                 this._allBonusEl.classList.remove('claimed');
             } else {
-                html += `<span class="daily-task-all-exp">+${DAILY_ALL_BONUS} exp</span>`;
+                html += `<span class="daily-task-all-exp">+${group.allBonus} exp</span>`;
                 this._allBonusEl.classList.remove('claimed');
             }
             this._allBonusEl.innerHTML = html;
@@ -450,4 +518,14 @@ class DailyTaskManager {
     }
 }
 
-const dailyTaskManager = new DailyTaskManager();
+const taskSystem = new TaskSystem();
+
+const dailyTaskManager = {
+    init: () => taskSystem.init(),
+    render: () => taskSystem.render(),
+    onGameStart: () => taskSystem.onGameStart(),
+    onProgress: (d) => taskSystem.onProgress(d),
+    onGameEnd: (d) => taskSystem.onGameEnd(d),
+    refresh: () => taskSystem.refresh(),
+    get state() { return taskSystem.daily.state; }
+};
