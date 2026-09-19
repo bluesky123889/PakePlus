@@ -142,13 +142,15 @@ const ACH_CATEGORIES = ['milestone', 'cumulative', 'single', 'skill', 'mode'];
 
 class AchievementManager {
     constructor() {
-        this.unlocked = {};
-        this.progress = {};
-        this.queue = [];
-        this.toastTimer = null;
-        this.sessionUnlocks = [];
-        this._playedModes = null;   // 用于 all_modes_played
-    }
+    this.unlocked = {};
+    this.progress = {};
+    this.queue = [];
+    this.toastTimer = null;
+    this.sessionUnlocks = [];
+    this._playedModes = null;
+    this._toastTimer1 = null;
+    this._toastTimer2 = null;
+}
 
     load() {
         try {
@@ -430,16 +432,25 @@ class AchievementManager {
         }, 3200);
     }
     showToast(msg) {
-        const el = document.getElementById('achievementToast');
-        if (!el) return;
-        el.innerHTML = `<span>${msg}</span>`;
-        el.style.display = 'flex';
+    const el = document.getElementById('achievementToast');
+    if (!el) return;
+    if (this._toastTimer1) { clearTimeout(this._toastTimer1); this._toastTimer1 = null; }
+    if (this._toastTimer2) { clearTimeout(this._toastTimer2); this._toastTimer2 = null; }
+    el.style.animation = 'none';
+    el.style.display = 'none';
+    void el.offsetWidth;
+    el.innerHTML = `<span>${msg}</span>`;
+    el.style.display = 'flex';
+    this._toastTimer1 = setTimeout(() => {
+        el.style.animation = 'slideUp 0.3s ease, fadeOut 0.3s ease 2.7s forwards';
+        this._toastTimer1 = null;
+    }, 16);
+    this._toastTimer2 = setTimeout(() => {
+        el.style.display = 'none';
         el.style.animation = 'none';
-        setTimeout(() => {
-            el.style.animation = 'slideUp 0.3s ease, fadeOut 0.3s ease 2.7s forwards';
-        }, 10);
-        setTimeout(() => { el.style.display = 'none'; }, 3000);
-    }
+        this._toastTimer2 = null;
+    }, 3000);
+}
 
     reset() {
         this.unlocked = {};
