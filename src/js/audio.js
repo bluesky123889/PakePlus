@@ -64,7 +64,7 @@ class BGM_Manager {
     constructor() {
         this.audio = null; this.currentTrack = null; this.isPlaying = false;
         this.volume = 0.5; this.basePath = 'audio/bgm/';
-        this.tracks = { menu:'menu_bgm.mp3', challenge_menu:'challenge_menu_bgm.mp3', game:'game_bgm.mp3' };
+        this.tracks = { menu:'menu_bgm.mp3', challenge_menu:'challenge_menu_bgm.mp3', game:'game_bgm.mp3', result:'result_bgm.mp3' };
         this.enabled = true; this.pendingTrack = null; this._fadeRaf = null;
     }
     init() {
