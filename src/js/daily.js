@@ -233,7 +233,11 @@ class TaskGroup {
             this._save();
         }
     }
-    _save() { try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {} }
+    _save() {
+        try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {}
+        // 任务状态变化后刷新任务按钮红点
+        if (typeof updateTaskBadge === 'function') updateTaskBadge();
+    }
     onGameStart() {
         if (!this.state) return;
         if (this.hasCurrent) { this.state.current = this._emptyCurrent(); this._save(); }
@@ -299,12 +303,24 @@ class TaskGroup {
     }
     _isAllCompleted() { return this.state.tasks.every(t => t.claimed); }
     _isAllReady() { return this.state.tasks.every(t => this._isReady(t) || t.claimed); }
+
+    // 是否有可领取的（任务或全勤奖励）
+    hasClaimable() {
+        if (!this.state) return false;
+        if (!this.state.allBonusClaimed && this._isAllReady()) return true;
+        return this.state.tasks.some(t => !t.claimed && this._isReady(t));
+    }
+
     claim(taskId) {
         const task = this.state.tasks.find(t => t.id === taskId);
         if (!task || task.claimed) return;
         if (!this._isReady(task)) return;
         task.claimed = true;
         levelManager.addExp(task.exp);
+        if (typeof shopManager !== 'undefined') {
+            shopManager.addCoins(Math.floor(task.exp / 2));
+            if (typeof updateShopBadge === 'function') updateShopBadge();
+        }
         audioSystem.playSound('start');
         showSaveNotification(`✅ +${task.exp} EXP`);
         this._save();
@@ -316,6 +332,10 @@ class TaskGroup {
         if (!this._isAllCompleted()) return;
         this.state.allBonusClaimed = true;
         levelManager.addExp(this.allBonus);
+        if (typeof shopManager !== 'undefined') {
+            shopManager.addCoins(Math.floor(this.allBonus / 2));
+            if (typeof updateShopBadge === 'function') updateShopBadge();
+        }
         audioSystem.playSound('start');
         showSaveNotification(`🎉 +${this.allBonus} EXP`);
         this._save();
@@ -403,7 +423,22 @@ class TaskSystem {
         if (tab === 'monthly') return this.monthly;
         return this.daily;
     }
-    refresh() { this.daily.refresh(); this.weekly.refresh(); this.monthly.refresh(); }
+
+    // 是否有任何可领取的任务（日/周/月任一）
+    hasClaimable() {
+        try {
+            return this.daily.hasClaimable() || this.weekly.hasClaimable() || this.monthly.hasClaimable();
+        } catch (e) {
+            return false;
+        }
+    }
+
+    refresh() {
+        this.daily.refresh();
+        this.weekly.refresh();
+        this.monthly.refresh();
+        if (typeof updateTaskBadge === 'function') updateTaskBadge();
+    }
     onGameStart() { this.daily.onGameStart(); this.weekly.onGameStart(); this.monthly.onGameStart(); }
     onProgress(data) { this.daily.onProgress(data); this.weekly.onProgress(data); this.monthly.onProgress(data); }
     onGameEnd(data) { this.daily.onGameEnd(data); this.weekly.onGameEnd(data); this.monthly.onGameEnd(data); }
@@ -430,7 +465,7 @@ class TaskSystem {
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
                 text = `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
-                        } else {
+            } else {
                 const lang = languageManager;
                 const d = Math.floor(diff / 86400000);
                 const h = Math.floor((diff % 86400000) / 3600000);
@@ -515,6 +550,9 @@ class TaskSystem {
             }
             this._allBonusEl.innerHTML = html;
         }
+
+        // 渲染完成后刷新任务按钮红点
+        if (typeof updateTaskBadge === 'function') updateTaskBadge();
     }
 }
 
