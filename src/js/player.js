@@ -5,6 +5,7 @@
 // 曲目数量上限：MUSIC_MAX_COUNT
 // 支持拖拽排序：reorderTracks
 // 支持导出全部为 ZIP：exportAllTracksAsZip（依赖 fflate）
+// 支持从 ZIP 导入：importTracksFromZip（依赖 fflate）
 // ============================================================
 
 const MUSIC_DB_NAME = 'tetrisMusicDB';
@@ -141,7 +142,6 @@ class MusicPlayer {
                     restored = true;
                 }
             } catch (e) {}
-            // 没保存顺序的按添加时间排
             if (!restored) {
                 this.tracks.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
             }
@@ -196,14 +196,14 @@ class MusicPlayer {
         for (const file of filesArr) {
             index++;
 
-            // ===== 曲目数上限检查 =====
+            // 曲目数上限检查
             if (this.tracks.length >= MUSIC_MAX_COUNT) {
                 maxReached = true;
                 if (onProgress) onProgress(index, total, { maxReached: 1, name: file.name });
                 continue;
             }
 
-            // ===== 重复检查 ①：文件名 + 文件大小 =====
+            // 重复检查 ①：文件名 + 文件大小
             if (this.tracks.some(t => t.fileName === file.name && t.size === file.size)) {
                 skipped++;
                 if (onProgress) onProgress(index, total, { skipped: 1, name: file.name });
@@ -224,17 +224,26 @@ class MusicPlayer {
             try {
                 const id = 'trk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
 
-                // 读 ID3
+                // 如果从 ZIP 导入，优先用附带的元数据
+                const attachedMeta = file._meta || null;
+
+                // 读 ID3（仅在没有 attachedMeta 时）
                 let meta = null;
-                if (file.type === 'audio/mpeg' || file.name.toLowerCase().endsWith('.mp3')) {
+                if (!attachedMeta && (file.type === 'audio/mpeg' || file.name.toLowerCase().endsWith('.mp3'))) {
                     try { meta = await ID3.read(file); } catch (e) {}
                 }
                 const fallbackName = file.name.replace(/\.[^.]+$/, '');
-                const displayName = (meta && meta.title) ? meta.title : fallbackName;
-                const artist = (meta && meta.artist) ? meta.artist : '';
-                const album = (meta && meta.album) ? meta.album : '';
+                const displayName = attachedMeta ? (attachedMeta.name || fallbackName)
+                                    : (meta && meta.title) ? meta.title
+                                    : fallbackName;
+                const artist = attachedMeta ? (attachedMeta.artist || '')
+                              : (meta && meta.artist) ? meta.artist
+                              : '';
+                const album = attachedMeta ? (attachedMeta.album || '')
+                             : (meta && meta.album) ? meta.album
+                             : '';
 
-                // ===== 重复检查 ②：标题 + 艺术家 =====
+                // 重复检查 ②：标题 + 艺术家
                 if (displayName && artist) {
                     if (this.tracks.some(t => t.name === displayName && t.artist === artist)) {
                         skipped++;
@@ -243,9 +252,14 @@ class MusicPlayer {
                     }
                 }
 
-                // 封面：Blob → data URL
+                // 封面：优先用 ZIP 附带元数据里的 picture
                 let picture = null;
-                if (meta && meta.picture && meta.picture.blob) {
+                if (attachedMeta && attachedMeta.picture && attachedMeta.picture.dataUrl) {
+                    picture = {
+                        mime: attachedMeta.picture.mime || 'image/jpeg',
+                        dataUrl: attachedMeta.picture.dataUrl
+                    };
+                } else if (meta && meta.picture && meta.picture.blob) {
                     try {
                         picture = {
                             mime: meta.picture.mime || 'image/jpeg',
@@ -266,7 +280,11 @@ class MusicPlayer {
 
                 // 读取音频时长
                 let duration = 0;
-                try { duration = await readAudioDuration(audioDataUrl); } catch (e) { duration = 0; }
+                if (attachedMeta && attachedMeta.duration) {
+                    duration = attachedMeta.duration;
+                } else {
+                    try { duration = await readAudioDuration(audioDataUrl); } catch (e) { duration = 0; }
+                }
 
                 const track = {
                     id,
@@ -312,7 +330,6 @@ class MusicPlayer {
         this.savePlaylistOrder();
     }
 
-    // ===== 拖拽排序 =====
     reorderTracks(fromIndex, toIndex) {
         if (fromIndex === toIndex) return false;
         if (fromIndex < 0 || fromIndex >= this.tracks.length) return false;
@@ -321,7 +338,6 @@ class MusicPlayer {
         const track = this.tracks.splice(fromIndex, 1)[0];
         this.tracks.splice(toIndex, 0, track);
 
-        // 修正 currentIndex
         if (this.currentIndex === fromIndex) {
             this.currentIndex = toIndex;
         } else if (fromIndex < this.currentIndex && toIndex >= this.currentIndex) {
@@ -447,6 +463,19 @@ function guessExt(track) {
     return 'mp3';
 }
 
+// 根据文件名推断 MIME
+function guessMimeFromFilename(name) {
+    const n = (name || '').toLowerCase();
+    if (n.endsWith('.mp3')) return 'audio/mpeg';
+    if (n.endsWith('.wav')) return 'audio/wav';
+    if (n.endsWith('.ogg')) return 'audio/ogg';
+    if (n.endsWith('.flac')) return 'audio/flac';
+    if (n.endsWith('.m4a')) return 'audio/mp4';
+    if (n.endsWith('.aac')) return 'audio/aac';
+    if (n.endsWith('.webm')) return 'audio/webm';
+    return 'audio/mpeg';
+}
+
 // 生成带日期的 zip 文件名
 function getExportZipName() {
     const d = new Date();
@@ -456,7 +485,7 @@ function getExportZipName() {
     return `tetris-music-${y}${m}${day}.zip`;
 }
 
-// 导出全部为 ZIP
+// 导出全部为 ZIP（含 metadata.json）
 // onProgress(current, total, trackName)
 async function exportAllTracksAsZip(tracks, onProgress) {
     const list = Array.isArray(tracks) ? tracks.slice() : [];
@@ -470,6 +499,7 @@ async function exportAllTracksAsZip(tracks, onProgress) {
     }
 
     const files = {};
+    const metadata = [];
     let ok = 0, failed = 0;
 
     for (let i = 0; i < total; i++) {
@@ -488,6 +518,17 @@ async function exportAllTracksAsZip(tracks, onProgress) {
         try {
             if (t.audioDataUrl) {
                 files[name] = dataURLToUint8(t.audioDataUrl);
+                // 记录元数据，导入时按 fileName 还原
+                metadata.push({
+                    fileName: name,
+                    name: t.name || '',
+                    artist: t.artist || '',
+                    album: t.album || '',
+                    duration: t.duration || 0,
+                    size: t.size || 0,
+                    type: t.type || '',
+                    picture: t.picture || null
+                });
                 ok++;
             } else {
                 failed++;
@@ -500,13 +541,22 @@ async function exportAllTracksAsZip(tracks, onProgress) {
         if (typeof onProgress === 'function') {
             try { onProgress(i + 1, total, t.name || ''); } catch (e) {}
         }
-        // 让 UI 有机会刷新
         if (i < total - 1) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // 写入 metadata.json
+    try {
+        files['metadata.json'] = fflate.strToU8(JSON.stringify({
+            version: 1,
+            exportedAt: Date.now(),
+            tracks: metadata
+        }));
+    } catch (e) {
+        console.warn('[export] metadata failed:', e);
     }
 
     let blob = null;
     try {
-        // level: 0 = STORE，音频本来就是压缩格式，不重复压缩
         const zipped = fflate.zipSync(files, { level: 0 });
         blob = new Blob([zipped], { type: 'application/zip' });
         downloadBlob(blob, getExportZipName());
@@ -516,4 +566,86 @@ async function exportAllTracksAsZip(tracks, onProgress) {
     }
 
     return { ok, failed, total, blob };
+}
+
+// ============================================================
+// 从 ZIP 导入曲目
+// - 解压 ZIP
+// - 读 metadata.json（可选，没有就退化）
+// - 把音频文件包成 File，喂给 musicPlayer.importFiles
+// ============================================================
+async function importTracksFromZip(zipFile, onProgress) {
+    if (!zipFile) return { ok: 0, failed: 0, skipped: 0, tooBig: 0, total: 0, maxReached: false, error: 'noFile' };
+    if (typeof fflate === 'undefined' || !fflate.unzipSync) {
+        console.warn('[importZip] fflate not loaded');
+        return { ok: 0, failed: 0, skipped: 0, tooBig: 0, total: 0, maxReached: false, error: 'noFflate' };
+    }
+
+    let unzipped = null;
+    try {
+        const buf = await zipFile.arrayBuffer();
+        unzipped = fflate.unzipSync(new Uint8Array(buf));
+    } catch (e) {
+        console.warn('[importZip] unzip failed:', e);
+        return { ok: 0, failed: 0, skipped: 0, tooBig: 0, total: 0, maxReached: false, error: 'unzipFailed' };
+    }
+
+    // 读 metadata.json
+    let metadataMap = null;
+    if (unzipped['metadata.json']) {
+        try {
+            const metaText = fflate.strFromU8(unzipped['metadata.json']);
+            const metaObj = JSON.parse(metaText);
+            if (metaObj && Array.isArray(metaObj.tracks)) {
+                metadataMap = {};
+                for (const m of metaObj.tracks) {
+                    if (m && m.fileName) metadataMap[m.fileName] = m;
+                }
+            }
+        } catch (e) {
+            console.warn('[importZip] metadata parse failed:', e);
+        }
+    }
+
+    // 找音频文件（只看顶层）
+    const AUDIO_EXT_RE = /\.(mp3|wav|ogg|flac|m4a|aac|webm)$/i;
+    const audioEntries = [];
+    for (const [filename, bytes] of Object.entries(unzipped)) {
+        if (filename === 'metadata.json') continue;
+        if (filename.endsWith('/')) continue;
+        if (!AUDIO_EXT_RE.test(filename)) continue;
+        audioEntries.push({ filename, bytes });
+    }
+
+    if (audioEntries.length === 0) {
+        return { ok: 0, failed: 0, skipped: 0, tooBig: 0, total: 0, maxReached: false, error: 'noAudio' };
+    }
+
+    // 把 bytes 包成 File
+    const total = audioEntries.length;
+    const audioFiles = [];
+    for (let i = 0; i < total; i++) {
+        const { filename, bytes } = audioEntries[i];
+        const baseName = filename.split('/').pop();
+        const mime = guessMimeFromFilename(baseName);
+        try {
+            const f = new File([bytes], baseName, { type: mime });
+            if (metadataMap && metadataMap[filename]) {
+                f._meta = metadataMap[filename];
+            } else if (metadataMap && metadataMap[baseName]) {
+                f._meta = metadataMap[baseName];
+            }
+            audioFiles.push(f);
+        } catch (e) {
+            console.warn('[importZip] wrap file failed:', filename, e);
+        }
+        if (typeof onProgress === 'function') {
+            try { onProgress(i + 1, total, baseName); } catch (e) {}
+        }
+        if (i < total - 1) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // 走 musicPlayer.importFiles
+    const result = await musicPlayer.importFiles(audioFiles, null);
+    return { ...result, total };
 }
