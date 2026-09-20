@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['id-ID'] = {
     bpTimeDay: 'h',
     bpTimeHour: 'j',
     bpTimeMin: 'm',
+    bpBuyLevel: 'Beli level',
+    bpBuyLevelTitle: 'Beli level',
+    bpBuyCurrentLevel: 'Level saat ini',
+    bpBuyPricePerLevel: 'Harga per level',
+    bpBuyTotalCost: 'Total biaya',
+    bpBuyAfterLevel: 'Level setelah pembelian',
+    bpBuyConfirm: 'Konfirmasi pembelian',
+    bpBuyNotEnoughCoins: 'Koin tidak cukup',
+    bpBuySuccess: 'Pembelian berhasil',
+    bpBuyFailed: 'Pembelian gagal',
 
     // ===== Battle Pass - Tugas harian =====
     bpTabDaily: 'Harian',
