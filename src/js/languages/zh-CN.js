@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['zh-CN'] = {
     bpTimeDay: '天',
     bpTimeHour: '时',
     bpTimeMin: '分',
+    bpBuyLevel: '购买等级',
+    bpBuyLevelTitle: '购买等级',
+    bpBuyCurrentLevel: '当前等级',
+    bpBuyPricePerLevel: '每级价格',
+    bpBuyTotalCost: '共需',
+    bpBuyAfterLevel: '购买后等级',
+    bpBuyConfirm: '确认购买',
+    bpBuyNotEnoughCoins: '金币不足',
+    bpBuySuccess: '购买成功',
+    bpBuyFailed: '购买失败',
 
     // ===== 通行证 - 每日任务 =====
     bpTabDaily: '每日',
