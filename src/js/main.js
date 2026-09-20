@@ -1,7 +1,8 @@
 // ============================================================
 // 常量
 // ============================================================
-const COLS=10, ROWS=20, BLOCK_SIZE=30;
+const COLS=10, ROWS=20;
+let BLOCK_SIZE = 30;
 const COLORS=['cyan','blue','orange','yellow','green','purple','red'];
 const SHAPES=[
 [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
@@ -964,11 +965,17 @@ async function init() {
     nextCanvas = $('nextCanvas'); nextCtx = nextCanvas.getContext('2d');
     nextCanvas2 = $('nextCanvas2'); nextCtx2 = nextCanvas2.getContext('2d');
     nextCanvas3 = $('nextCanvas3'); nextCtx3 = nextCanvas3.getContext('2d');
+
     createBoard();
     currentPiece = createPiece();
     nextQueue = [createPiece(), createPiece(), createPiece()];
     nextPiece = nextQueue.shift();
     nextQueue.push(createPiece());
+
+    // ★ 初始化画布尺寸（窗口自适应）—— 放到 piece 初始化之后
+    resizeCanvas();
+    window.addEventListener('resize', debounce(resizeCanvas, 200));
+
     updateNextPieceDisplay();
 
     bindEvents();
@@ -1602,12 +1609,93 @@ function drawBlock(c, x, y, color) {
     c.fillRect(x * BLOCK_SIZE + 8, y * BLOCK_SIZE + BLOCK_SIZE - 4, BLOCK_SIZE - 8, 4);
     c.fillRect(x * BLOCK_SIZE + BLOCK_SIZE - 4, y * BLOCK_SIZE + 8, 4, BLOCK_SIZE - 8);
 }
+
+// ============================================================
+// 窗口自适应：根据可用空间动态缩放画布
+// ============================================================
+function resizeCanvas() {
+    if (!canvas || !ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+
+    // 设计尺寸（游戏横排布局的原始大小）
+    const DESIGN_W = 820;
+    const DESIGN_H = 700;
+
+    // 计算缩放比
+    const scaleW = (window.innerWidth - 20) / DESIGN_W;
+    const scaleH = (window.innerHeight - 80) / DESIGN_H;
+    let scale = Math.min(scaleW, scaleH);
+    scale = Math.max(scale, 0.35);
+    scale = Math.min(scale, 1.4);
+
+    // 应用缩放到包裹层
+    const wrap = document.getElementById('gameScaleWrap');
+    if (wrap) {
+        wrap.style.transform = `scale(${scale})`;
+        const origH = wrap.scrollHeight || DESIGN_H;
+        const extra = origH * (1 - scale);
+        wrap.style.marginBottom = extra > 0 ? `-${extra}px` : '0';
+    }
+
+    // 画布固定 300×600，靠 scale 缩放
+    const baseW = 300;
+    const baseH = 600;
+    canvas.style.width = baseW + 'px';
+    canvas.style.height = baseH + 'px';
+    canvas.width = Math.round(baseW * dpr);
+    canvas.height = Math.round(baseH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    BLOCK_SIZE = baseW / COLS;
+
+    // nextCanvas 固定尺寸
+    if (nextCanvas && nextCtx) {
+        const s = 120;
+        nextCanvas.style.width = s + 'px';
+        nextCanvas.style.height = s + 'px';
+        nextCanvas.width = Math.round(s * dpr);
+        nextCanvas.height = Math.round(s * dpr);
+        nextCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    if (nextCanvas2 && nextCtx2) {
+        const s = 100;
+        nextCanvas2.style.width = s + 'px';
+        nextCanvas2.style.height = s + 'px';
+        nextCanvas2.width = Math.round(s * dpr);
+        nextCanvas2.height = Math.round(s * dpr);
+        nextCtx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    if (nextCanvas3 && nextCtx3) {
+        const s = 100;
+        nextCanvas3.style.width = s + 'px';
+        nextCanvas3.style.height = s + 'px';
+        nextCanvas3.width = Math.round(s * dpr);
+        nextCanvas3.height = Math.round(s * dpr);
+        nextCtx3.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // 清掉之前给侧边栏设的内联尺寸
+    const gameInfo = document.querySelector('.game-info');
+    if (gameInfo) { gameInfo.style.width = ''; gameInfo.style.height = ''; }
+    const nextContainer = document.querySelector('.next-piece-container');
+    if (nextContainer) { nextContainer.style.minWidth = ''; }
+
+    // 重绘
+    if (typeof drawBoard === 'function') drawBoard();
+    if (typeof drawNextPiece === 'function') drawNextPiece();
+}
+
 function drawPieceOnCanvas(context, canvasEl, piece, blockSize) {
+    // 用 CSS 显示尺寸计算（因为 canvas.width 是 ×DPR 的像素数）
+    const cssW = parseFloat(canvasEl.style.width) || canvasEl.width;
+    const cssH = parseFloat(canvasEl.style.height) || canvasEl.height;
+
     context.fillStyle = '#0f1123';
-    context.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    context.fillRect(0, 0, cssW, cssH);
     if (!piece) return;
-    const offX = (canvasEl.width / blockSize - piece.shape[0].length) / 2;
-    const offY = (canvasEl.height / blockSize - piece.shape.length) / 2;
+
+    const offX = (cssW / blockSize - piece.shape[0].length) / 2;
+    const offY = (cssH / blockSize - piece.shape.length) / 2;
     for (let y = 0; y < piece.shape.length; y++)
         for (let x = 0; x < piece.shape[y].length; x++)
             if (piece.shape[y][x]) {
