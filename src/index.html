@@ -652,15 +652,20 @@
     </div>
 
     <div class="battlepass-info">
-      <div class="bp-info-row">
-        <span class="bp-info-label" id="bpLevel">等级 1 / 50</span>
-        <span class="bp-info-days" id="bpDays">剩余 60 天</span>
-      </div>
-      <div class="bp-progress-bar">
-        <div class="bp-progress-fill" id="bpProgressFill" style="width:0%"></div>
-      </div>
-      <div class="bp-exp-text" id="bpExp">0 / 1000</div>
+  <div class="battlepass-info-left">
+    <div class="bp-info-row">
+      <span class="bp-info-label" id="bpLevel">等级 1 / 50</span>
+      <span class="bp-info-days" id="bpDays">剩余 60 天</span>
     </div>
+    <div class="bp-progress-bar">
+      <div class="bp-progress-fill" id="bpProgressFill" style="width:0%"></div>
+    </div>
+    <div class="bp-exp-text" id="bpExp">0 / 1000</div>
+  </div>
+  <div class="battlepass-info-right">
+    <button id="bpBuyLevelBtn" class="bp-buy-level-btn" data-i18n="bpBuyLevel">购买等级</button>
+  </div>
+</div>
 
     <div class="bp-tabs" id="bpTabs">
   <button class="bp-tab active" data-bp-tab="rewards" data-i18n="bpTabRewards">奖励</button>
@@ -720,6 +725,48 @@
 </div>
 
     <div class="battlepass-hint" data-i18n="bpHint">未领取的奖励将在本期结束时作废；高级通行证解锁后可领取当前等级及以下所有付费奖励</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 通行证 - 购买等级弹窗 -->
+<!-- ============================================================ -->
+<div id="bpBuyLevelPanel" class="custom-modal">
+  <div class="custom-modal-content" style="max-width:400px;">
+    <div class="custom-modal-header">
+      <div class="custom-modal-icon">⬆️</div>
+      <h3 class="custom-modal-title" data-i18n="bpBuyLevelTitle">购买等级</h3>
+    </div>
+    <div class="custom-modal-body">
+      <div class="bp-buy-row">
+        <span class="bp-buy-label" data-i18n="bpBuyCurrentLevel">当前等级</span>
+        <span class="bp-buy-value" id="bpBuyCurrentLevel">1 / 50</span>
+      </div>
+      <div class="bp-buy-row">
+        <span class="bp-buy-label" data-i18n="bpBuyPricePerLevel">每级价格</span>
+        <span class="bp-buy-value" id="bpBuyPricePerLevel">1000 💰</span>
+      </div>
+
+      <div class="bp-buy-stepper">
+        <button class="bp-buy-step-btn" id="bpBuyMinus">−</button>
+        <span class="bp-buy-step-value" id="bpBuyCount">1</span>
+        <button class="bp-buy-step-btn" id="bpBuyPlus">+</button>
+      </div>
+
+      <div class="bp-buy-row">
+        <span class="bp-buy-label" data-i18n="bpBuyTotalCost">共需</span>
+        <span class="bp-buy-value gold" id="bpBuyTotalCost">1000 💰</span>
+      </div>
+      <div class="bp-buy-row">
+        <span class="bp-buy-label" data-i18n="bpBuyAfterLevel">购买后等级</span>
+        <span class="bp-buy-value" id="bpBuyAfterLevel">2 / 50</span>
+      </div>
+      <div class="bp-buy-hint" id="bpBuyHint"></div>
+    </div>
+    <div class="custom-modal-footer">
+      <button id="bpBuyCancel" class="custom-modal-btn custom-modal-btn-secondary" data-i18n="cancel">取消</button>
+      <button id="bpBuyConfirm" class="custom-modal-btn custom-modal-btn-primary" data-i18n="bpBuyConfirm">确认购买</button>
+    </div>
   </div>
 </div>
 
@@ -831,7 +878,8 @@
 <!-- ============================================================ -->
 <!-- 游戏界面 -->
 <!-- ============================================================ -->
-<div id="gameScreen">
+<div id="gameScreen" style="display:none">
+    <div id="gameScaleWrap">
 <div class="game-header">
 <button id="backBtn" class="back-btn">← <span data-i18n="back">返回</span></button>
 <h1 class="game-title" id="gameModeTitle" data-i18n="classicTetris">经典俄罗斯方块</h1>
@@ -915,6 +963,7 @@
 <div class="controls-section">
 <button id="pauseBtn" class="control-btn pause-btn">⏸ <span data-i18n="pauseGame">暂停游戏</span> (P)</button>
 <button id="resetBtn" class="control-btn reset-btn">🔄 <span data-i18n="restartGame">重新开始</span> (R)</button>
+</div>
 </div>
 </div>
 </div>
