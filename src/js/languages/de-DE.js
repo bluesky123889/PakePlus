@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['de-DE'] = {
     bpTimeDay: 'T',
     bpTimeHour: 'Std',
     bpTimeMin: 'Min',
+    bpBuyLevel: 'Level kaufen',
+    bpBuyLevelTitle: 'Level kaufen',
+    bpBuyCurrentLevel: 'Aktuelles Level',
+    bpBuyPricePerLevel: 'Preis pro Level',
+    bpBuyTotalCost: 'Gesamtkosten',
+    bpBuyAfterLevel: 'Level nach dem Kauf',
+    bpBuyConfirm: 'Kauf bestätigen',
+    bpBuyNotEnoughCoins: 'Nicht genug Münzen',
+    bpBuySuccess: 'Kauf erfolgreich',
+    bpBuyFailed: 'Kauf fehlgeschlagen',
 
     // ===== Battle Pass - Tägliche Aufgaben =====
     bpTabDaily: 'Täglich',
