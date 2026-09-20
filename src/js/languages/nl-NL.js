@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['nl-NL'] = {
     bpTimeDay: 'd',
     bpTimeHour: 'u',
     bpTimeMin: 'min',
+    bpBuyLevel: 'Level kopen',
+    bpBuyLevelTitle: 'Level kopen',
+    bpBuyCurrentLevel: 'Huidig level',
+    bpBuyPricePerLevel: 'Prijs per level',
+    bpBuyTotalCost: 'Totale kosten',
+    bpBuyAfterLevel: 'Level na aankoop',
+    bpBuyConfirm: 'Aankoop bevestigen',
+    bpBuyNotEnoughCoins: 'Niet genoeg munten',
+    bpBuySuccess: 'Aankoop geslaagd',
+    bpBuyFailed: 'Aankoop mislukt',
 
     // ===== Battle Pass - Dagelijkse taken =====
     bpTabDaily: 'Dagelijks',
