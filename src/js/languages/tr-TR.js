@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['tr-TR'] = {
     bpTimeDay: 'g',
     bpTimeHour: 'sa',
     bpTimeMin: 'dk',
+    bpBuyLevel: 'Seviye satın al',
+    bpBuyLevelTitle: 'Seviye satın al',
+    bpBuyCurrentLevel: 'Mevcut seviye',
+    bpBuyPricePerLevel: 'Seviye başına fiyat',
+    bpBuyTotalCost: 'Toplam maliyet',
+    bpBuyAfterLevel: 'Satın alma sonrası seviye',
+    bpBuyConfirm: 'Satın almayı onayla',
+    bpBuyNotEnoughCoins: 'Yetersiz altın',
+    bpBuySuccess: 'Satın alma başarılı',
+    bpBuyFailed: 'Satın alma başarısız',
 
     // ===== Savaş Bileti - Günlük görevler =====
     bpTabDaily: 'Günlük',
