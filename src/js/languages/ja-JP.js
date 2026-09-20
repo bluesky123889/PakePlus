@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['ja-JP'] = {
     bpTimeDay: '日',
     bpTimeHour: '時間',
     bpTimeMin: '分',
+    bpBuyLevel: 'レベルを購入',
+    bpBuyLevelTitle: 'レベルを購入',
+    bpBuyCurrentLevel: '現在のレベル',
+    bpBuyPricePerLevel: 'レベルあたりの価格',
+    bpBuyTotalCost: '合計費用',
+    bpBuyAfterLevel: '購入後のレベル',
+    bpBuyConfirm: '購入を確認',
+    bpBuyNotEnoughCoins: 'コインが足りません',
+    bpBuySuccess: '購入成功',
+    bpBuyFailed: '購入失敗',
 
     // ===== バトルパス - デイリータスク =====
     bpTabDaily: 'デイリー',
