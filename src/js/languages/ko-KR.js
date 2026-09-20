@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['ko-KR'] = {
     bpTimeDay: '일',
     bpTimeHour: '시간',
     bpTimeMin: '분',
+    bpBuyLevel: '레벨 구매',
+    bpBuyLevelTitle: '레벨 구매',
+    bpBuyCurrentLevel: '현재 레벨',
+    bpBuyPricePerLevel: '레벨당 가격',
+    bpBuyTotalCost: '총 비용',
+    bpBuyAfterLevel: '구매 후 레벨',
+    bpBuyConfirm: '구매 확인',
+    bpBuyNotEnoughCoins: '코인 부족',
+    bpBuySuccess: '구매 성공',
+    bpBuyFailed: '구매 실패',
 
     // ===== 배틀 패스 - 일일 퀘스트 =====
     bpTabDaily: '일일',
