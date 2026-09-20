@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['ru-RU'] = {
     bpTimeDay: 'д',
     bpTimeHour: 'ч',
     bpTimeMin: 'м',
+    bpBuyLevel: 'Купить уровень',
+    bpBuyLevelTitle: 'Купить уровень',
+    bpBuyCurrentLevel: 'Текущий уровень',
+    bpBuyPricePerLevel: 'Цена за уровень',
+    bpBuyTotalCost: 'Общая стоимость',
+    bpBuyAfterLevel: 'Уровень после покупки',
+    bpBuyConfirm: 'Подтвердить покупку',
+    bpBuyNotEnoughCoins: 'Недостаточно монет',
+    bpBuySuccess: 'Покупка успешна',
+    bpBuyFailed: 'Покупка не удалась',
 
     // ===== Боевой пропуск - Ежедневные задания =====
     bpTabDaily: 'Ежедневно',
