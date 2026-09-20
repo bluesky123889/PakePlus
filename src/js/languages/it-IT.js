@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['it-IT'] = {
     bpTimeDay: 'g',
     bpTimeHour: 'h',
     bpTimeMin: 'min',
+    bpBuyLevel: 'Acquista livello',
+    bpBuyLevelTitle: 'Acquista livello',
+    bpBuyCurrentLevel: 'Livello attuale',
+    bpBuyPricePerLevel: 'Prezzo per livello',
+    bpBuyTotalCost: 'Costo totale',
+    bpBuyAfterLevel: 'Livello dopo l\'acquisto',
+    bpBuyConfirm: 'Conferma acquisto',
+    bpBuyNotEnoughCoins: 'Monete insufficienti',
+    bpBuySuccess: 'Acquisto riuscito',
+    bpBuyFailed: 'Acquisto fallito',
 
     // ===== Pass battaglia - Attività giornaliere =====
     bpTabDaily: 'Giornaliere',
