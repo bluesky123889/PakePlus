@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['pl-PL'] = {
     bpTimeDay: 'd',
     bpTimeHour: 'godz',
     bpTimeMin: 'min',
+    bpBuyLevel: 'Kup poziom',
+    bpBuyLevelTitle: 'Kup poziom',
+    bpBuyCurrentLevel: 'Bieżący poziom',
+    bpBuyPricePerLevel: 'Cena za poziom',
+    bpBuyTotalCost: 'Całkowity koszt',
+    bpBuyAfterLevel: 'Poziom po zakupie',
+    bpBuyConfirm: 'Potwierdź zakup',
+    bpBuyNotEnoughCoins: 'Za mało monet',
+    bpBuySuccess: 'Zakup udany',
+    bpBuyFailed: 'Zakup nie powiódł się',
 
     // ===== Przepustka bojowa - Zadania dzienne =====
     bpTabDaily: 'Dzienne',
