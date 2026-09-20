@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['zh-TW'] = {
     bpTimeDay: '天',
     bpTimeHour: '時',
     bpTimeMin: '分',
+    bpBuyLevel: '購買等級',
+    bpBuyLevelTitle: '購買等級',
+    bpBuyCurrentLevel: '當前等級',
+    bpBuyPricePerLevel: '每級價格',
+    bpBuyTotalCost: '共需',
+    bpBuyAfterLevel: '購買後等級',
+    bpBuyConfirm: '確認購買',
+    bpBuyNotEnoughCoins: '金幣不足',
+    bpBuySuccess: '購買成功',
+    bpBuyFailed: '購買失敗',
 
     // ===== 通行證 - 每日任務 =====
     bpTabDaily: '每日',
