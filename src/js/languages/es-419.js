@@ -293,6 +293,16 @@ window.LANGUAGE_PACKS['es-419'] = {
     bpTimeDay: 'd',
     bpTimeHour: 'h',
     bpTimeMin: 'min',
+    bpBuyLevel: 'Comprar nivel',
+    bpBuyLevelTitle: 'Comprar nivel',
+    bpBuyCurrentLevel: 'Nivel actual',
+    bpBuyPricePerLevel: 'Precio por nivel',
+    bpBuyTotalCost: 'Costo total',
+    bpBuyAfterLevel: 'Nivel después de la compra',
+    bpBuyConfirm: 'Confirmar compra',
+    bpBuyNotEnoughCoins: 'Monedas insuficientes',
+    bpBuySuccess: 'Compra exitosa',
+    bpBuyFailed: 'Compra fallida',
 
     // ===== Pase de batalla - Tareas diarias =====
     bpTabDaily: 'Diarias',
