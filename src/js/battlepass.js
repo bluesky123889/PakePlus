@@ -15,6 +15,7 @@ const BATTLEPASS_TASKS_STORAGE_KEY = 'tetrisBattlePassTasks';
 const BATTLEPASS_MAX_LEVEL = 50;
 const BATTLEPASS_EXP_PER_LEVEL = 1000;
 const BATTLEPASS_PREMIUM_PRICE = 5000;
+const BATTLEPASS_LEVEL_PRICE = 1000;
 
 const BP_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -68,7 +69,6 @@ const BATTLEPASS_DAILY_TASKS = [
 
 const BATTLEPASS_DAILY_COUNT = 3;
 
-// 用日期种子抽 N 条每日任务（同一天抽的结果固定）
 function pickDailyTasks(dateKey) {
     let hash = 2166136261;
     for (let i = 0; i < dateKey.length; i++) {
@@ -320,6 +320,33 @@ class BattlePassManager {
         if (typeof updateShopBadge === 'function') updateShopBadge();
         this._notifyRefresh();
         return { ok: true };
+    }
+
+    // 用金币购买 N 级（+N × 1000 exp）
+    buyLevels(count) {
+        if (count <= 0) return { ok: false, reason: 'INVALID_COUNT' };
+        if (typeof shopManager === 'undefined') return { ok: false, reason: 'NO_SHOP' };
+
+        const lv = this.getLevel();
+        if (lv >= BATTLEPASS_MAX_LEVEL) return { ok: false, reason: 'MAX_LEVEL' };
+
+        const maxBuyable = BATTLEPASS_MAX_LEVEL - lv;
+        const actualCount = Math.min(count, maxBuyable);
+        const cost = actualCount * BATTLEPASS_LEVEL_PRICE;
+
+        if (shopManager.coins < cost) return { ok: false, reason: 'NOT_ENOUGH_COINS' };
+
+        shopManager.coins -= cost;
+        shopManager.save();
+
+        const addExp = actualCount * BATTLEPASS_EXP_PER_LEVEL;
+        const maxExp = BATTLEPASS_MAX_LEVEL * BATTLEPASS_EXP_PER_LEVEL;
+        this.state.exp = Math.min(this.state.exp + addExp, maxExp);
+        this.save();
+
+        if (typeof updateShopBadge === 'function') updateShopBadge();
+        this._notifyRefresh();
+        return { ok: true, count: actualCount, cost };
     }
 
     isFreeClaimed(level) { return this.state.claimedFree.includes(level); }
@@ -578,21 +605,22 @@ class BattlePassManager {
     }
 
     formatRemaining(ms) {
-    if (ms <= 0) return '0' + languageManager.getText('bpTimeMin');
-    const d = Math.floor(ms / BP_DAY_MS);
-    const h = Math.floor((ms % BP_DAY_MS) / (60 * 60 * 1000));
-    const m = Math.floor((ms % (60 * 60 * 1000)) / 60000);
-    const t = (k, f) => {
-        const v = languageManager.getText(k);
-        return v === k ? f : v;
-    };
-    if (d > 0) return `${d}${t('bpTimeDay', 'd')} ${h}${t('bpTimeHour', 'h')}`;
-    if (h > 0) return `${h}${t('bpTimeHour', 'h')} ${m}${t('bpTimeMin', 'm')}`;
-    return `${m}${t('bpTimeMin', 'm')}`;
-   }
+        if (ms <= 0) return '0' + languageManager.getText('bpTimeMin');
+        const d = Math.floor(ms / BP_DAY_MS);
+        const h = Math.floor((ms % BP_DAY_MS) / (60 * 60 * 1000));
+        const m = Math.floor((ms % (60 * 60 * 1000)) / 60000);
+        const t = (k, f) => {
+            const v = languageManager.getText(k);
+            return v === k ? f : v;
+        };
+        if (d > 0) return `${d}${t('bpTimeDay', 'd')} ${h}${t('bpTimeHour', 'h')}`;
+        if (h > 0) return `${h}${t('bpTimeHour', 'h')} ${m}${t('bpTimeMin', 'm')}`;
+        return `${m}${t('bpTimeMin', 'm')}`;
+    }
 }
 
 const battlePassManager = new BattlePassManager();
+
 // ============================================================
 // UI
 // ============================================================
@@ -629,6 +657,30 @@ function initBattlePass() {
     // 解锁按钮
     const unlockBtn = document.getElementById('bpUnlockBtn');
     if (unlockBtn) unlockBtn.addEventListener('click', handleBattlePassUnlock);
+
+    // 购买等级按钮
+    const buyBtn = document.getElementById('bpBuyLevelBtn');
+    if (buyBtn) buyBtn.addEventListener('click', openBuyLevelPanel);
+
+    // 购买等级弹窗内部按钮
+    const bpBuyMinus = document.getElementById('bpBuyMinus');
+    const bpBuyPlus = document.getElementById('bpBuyPlus');
+    const bpBuyCancel = document.getElementById('bpBuyCancel');
+    const bpBuyConfirm = document.getElementById('bpBuyConfirm');
+
+    if (bpBuyMinus) bpBuyMinus.addEventListener('click', () => {
+        if (_bpBuyCount > 1) { _bpBuyCount--; updateBuyLevelUI(); audioSystem.playSound('click'); }
+    });
+    if (bpBuyPlus) bpBuyPlus.addEventListener('click', () => {
+        const lv = battlePassManager.getLevel();
+        const maxBuyable = BATTLEPASS_MAX_LEVEL - lv;
+        if (_bpBuyCount < maxBuyable) { _bpBuyCount++; updateBuyLevelUI(); audioSystem.playSound('click'); }
+    });
+    if (bpBuyCancel) bpBuyCancel.addEventListener('click', () => {
+        closeBuyLevelPanel();
+        audioSystem.playSound('click');
+    });
+    if (bpBuyConfirm) bpBuyConfirm.addEventListener('click', handleBuyLevelConfirm);
 
     // ★ 奖励区：鼠标滚轮 = 横向滚动
     const rewardsScroll = document.querySelector('.battlepass-levels-scroll');
@@ -724,6 +776,19 @@ function renderBattlePassPanel() {
         }
     }
 
+    // 购买等级按钮：所有 tab 都显示；满级时禁用
+    const buyBtn = document.getElementById('bpBuyLevelBtn');
+    if (buyBtn) {
+        buyBtn.style.display = 'inline-block';
+        if (lv >= BATTLEPASS_MAX_LEVEL) {
+            buyBtn.disabled = true;
+            buyBtn.textContent = t('bpMaxLevel', '已满级');
+        } else {
+            buyBtn.disabled = false;
+            buyBtn.textContent = t('bpBuyLevel', '购买等级');
+        }
+    }
+
     // 内容区（四个 tab）
     const rewardsView = document.getElementById('bpRewardsView');
     const dailyView = document.getElementById('bpDailyView');
@@ -781,7 +846,7 @@ function renderBattlePassLevels() {
         </div>`;
     }).join('');
 
-    container.querySelectorAll('[data-claim]').forEach(el => {
+        container.querySelectorAll('[data-claim]').forEach(el => {
         el.addEventListener('click', () => {
             const type = el.getAttribute('data-claim');
             const level = parseInt(el.getAttribute('data-level'));
@@ -798,17 +863,25 @@ function renderBattlePassLevels() {
                     audioSystem.playSound('targetIncrease');
                 }
             }
+            // ★ 领奖触发的重渲染不自动滚动
+            battlePassManager._suppressAutoScroll = true;
             renderBattlePassPanel();
         });
     });
 
     // 滚动到当前等级
-    const curEl = container.querySelector(`[data-level="${lv}"]`);
-    if (curEl) {
-        const scrollParent = container.parentElement;
-        if (scrollParent) {
-            const offset = curEl.offsetLeft - scrollParent.clientWidth / 3;
-            if (offset > 0) scrollParent.scrollLeft = offset;
+    // 例外：领奖触发的重渲染不滚动（保留玩家当前位置）
+    const isClaimAction = battlePassManager._suppressAutoScroll === true;
+    if (isClaimAction) {
+        battlePassManager._suppressAutoScroll = false;
+    } else {
+        const curEl = container.querySelector(`[data-level="${lv}"]`);
+        if (curEl) {
+            const scrollParent = container.parentElement;
+            if (scrollParent) {
+                const offset = curEl.offsetLeft - scrollParent.clientWidth / 3;
+                if (offset > 0) scrollParent.scrollLeft = offset;
+            }
         }
     }
 }
@@ -957,6 +1030,108 @@ function handleBattlePassUnlock() {
     }
     showSaveNotification('✅ ' + (languageManager.getText('bpUnlockSuccess') || '高级通行证已解锁'));
     audioSystem.playSound('targetIncrease');
+    renderBattlePassPanel();
+    updateBattlePassBadge();
+}
+
+// ============================================================
+// 购买等级弹窗
+// ============================================================
+let _bpBuyCount = 1;
+
+function openBuyLevelPanel() {
+    const panel = document.getElementById('bpBuyLevelPanel');
+    if (!panel) return;
+
+    const lv = battlePassManager.getLevel();
+    if (lv >= BATTLEPASS_MAX_LEVEL) {
+        showSaveNotification('❌ ' + (languageManager.getText('bpMaxLevel') || '已满级'), true);
+        return;
+    }
+
+    _bpBuyCount = 1;
+    updateBuyLevelUI();
+    showPanel(panel);
+    audioSystem.playSound('click');
+}
+
+function closeBuyLevelPanel() {
+    const panel = document.getElementById('bpBuyLevelPanel');
+    if (panel) hidePanel(panel);
+}
+
+function updateBuyLevelUI() {
+    const lv = battlePassManager.getLevel();
+    const maxBuyable = BATTLEPASS_MAX_LEVEL - lv;
+
+    if (_bpBuyCount < 1) _bpBuyCount = 1;
+    if (_bpBuyCount > maxBuyable) _bpBuyCount = maxBuyable;
+
+    const total = _bpBuyCount * BATTLEPASS_LEVEL_PRICE;
+    const afterLevel = lv + _bpBuyCount;
+
+    const t = (key, fallback) => {
+        const v = languageManager.getText(key);
+        return v === key ? fallback : v;
+    };
+
+    const curEl = document.getElementById('bpBuyCurrentLevel');
+    const priceEl = document.getElementById('bpBuyPricePerLevel');
+    const countEl = document.getElementById('bpBuyCount');
+    const costEl = document.getElementById('bpBuyTotalCost');
+    const afterEl = document.getElementById('bpBuyAfterLevel');
+    const hintEl = document.getElementById('bpBuyHint');
+    const minusBtn = document.getElementById('bpBuyMinus');
+    const plusBtn = document.getElementById('bpBuyPlus');
+    const confirmBtn = document.getElementById('bpBuyConfirm');
+
+    if (curEl) curEl.textContent = `${lv} / ${BATTLEPASS_MAX_LEVEL}`;
+    if (priceEl) priceEl.textContent = `${BATTLEPASS_LEVEL_PRICE.toLocaleString()} 💰`;
+    if (countEl) countEl.textContent = _bpBuyCount;
+    if (costEl) costEl.textContent = `${total.toLocaleString()} 💰`;
+    if (afterEl) afterEl.textContent = `${afterLevel} / ${BATTLEPASS_MAX_LEVEL}`;
+
+    if (minusBtn) minusBtn.disabled = _bpBuyCount <= 1;
+    if (plusBtn) plusBtn.disabled = _bpBuyCount >= maxBuyable;
+
+    if (confirmBtn) {
+        const coins = (typeof shopManager !== 'undefined') ? shopManager.coins : 0;
+        if (coins < total) {
+            confirmBtn.disabled = true;
+            if (hintEl) {
+                hintEl.textContent = t('bpBuyNotEnoughCoins', '金币不足');
+                hintEl.className = 'bp-buy-hint error';
+            }
+        } else {
+            confirmBtn.disabled = false;
+            if (hintEl) {
+                hintEl.textContent = '';
+                hintEl.className = 'bp-buy-hint';
+            }
+        }
+    }
+}
+
+function handleBuyLevelConfirm() {
+    const r = battlePassManager.buyLevels(_bpBuyCount);
+    const t = (key, fallback) => {
+        const v = languageManager.getText(key);
+        return v === key ? fallback : v;
+    };
+
+    if (!r.ok) {
+        let msg = '';
+        if (r.reason === 'NOT_ENOUGH_COINS') msg = t('shopNotEnoughCoins', '金币不足');
+        else if (r.reason === 'MAX_LEVEL') msg = t('bpMaxLevel', '已满级');
+        else msg = t('bpBuyFailed', '购买失败');
+        showSaveNotification('❌ ' + msg, true);
+        audioSystem.playSound('gameover');
+        return;
+    }
+
+    showSaveNotification(`✅ ${t('bpBuySuccess', '购买成功')} · +${r.count} ${t('bpLevelShort', 'Lv')} · -${r.cost.toLocaleString()} 💰`);
+    audioSystem.playSound('targetIncrease');
+    closeBuyLevelPanel();
     renderBattlePassPanel();
     updateBattlePassBadge();
 }
