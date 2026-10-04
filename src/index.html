@@ -1,1764 +1,1040 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>灵羽笔记 · 视图提示与完美居中</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        :root {
-            --bg-blur-amount: 12px;
-            --card-blur-amount: 16px;
-            --default-bg-gradient: linear-gradient(145deg, #f0f4fa 0%, #e9eef5 100%);
-            --text-primary: #1e293b;
-            --text-secondary: #334155;
-            --text-muted: #475569;
-            --text-light: #64748b;
-            --border-light: rgba(255, 255, 255, 0.3);
-            --input-border: rgba(255, 255, 255, 0.4);
-            --input-focus: #3b82f6;
-            --btn-bg: rgba(255, 255, 255, 0.15);
-            --btn-text: #1e293b;
-            --btn-primary-bg: rgba(255, 255, 255, 0.15);
-            --btn-primary-text: var(--text-primary);
-            --btn-danger-bg: rgba(239, 68, 68, 0.25);
-            --btn-danger-text: #dc2626;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.1);
-            --modal-overlay: rgba(0, 0, 0, 0.3);
-            --modal-bg: rgba(255, 255, 255, 0.2);
-            --preview-bg: transparent;
-            --base-font-size: 16px;
-            --save-toast-bg: #10b981;
-            --sidebar-bg: rgba(255, 255, 255, 0.1);
-            --note-item-bg: rgba(255, 255, 255, 0.2);
-            --note-active-border: #3b82f6;
-            --dialog-bg: rgba(255, 255, 255, 0.25);
-            --slider-track-bg: rgba(255, 255, 255, 0.3);
-            --slider-thumb-bg: rgba(255, 255, 255, 0.9);
-            --slider-thumb-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        body.dark-theme {
-            --default-bg-gradient: linear-gradient(145deg, #0a0f1c 0%, #0f172a 100%);
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-muted: #94a3b8;
-            --text-light: #94a3b8;
-            --border-light: rgba(255, 255, 255, 0.15);
-            --input-border: rgba(255, 255, 255, 0.25);
-            --btn-bg: rgba(0, 0, 0, 0.25);
-            --btn-text: #e2e8f0;
-            --btn-primary-bg: rgba(0, 0, 0, 0.25);
-            --btn-primary-text: var(--text-primary);
-            --btn-danger-bg: rgba(127, 29, 29, 0.4);
-            --btn-danger-text: #f87171;
-            --modal-bg: rgba(0, 0, 0, 0.3);
-            --preview-bg: transparent;
-            --save-toast-bg: #059669;
-            --sidebar-bg: rgba(0, 0, 0, 0.2);
-            --note-item-bg: rgba(0, 0, 0, 0.3);
-            --note-active-border: #60a5fa;
-            --dialog-bg: rgba(0, 0, 0, 0.35);
-            --slider-track-bg: rgba(255, 255, 255, 0.15);
-            --slider-thumb-bg: rgba(255, 255, 255, 0.8);
-            --slider-thumb-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        body {
-            background: var(--default-bg-gradient);
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-            color: var(--text-primary);
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-size: var(--base-font-size);
-            transition: background 0.2s ease;
-        }
-        body.custom-bg {
-            background: var(--user-bg-image, var(--default-bg-gradient));
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-
-        body.font-small { font-size: 14px; }
-        body.font-medium { font-size: 16px; }
-        body.font-large { font-size: 18px; }
-
-        ::-webkit-scrollbar { display: none; }
-        .app-container,
-        .notes-list-container,
-        .editor-panel,
-        .preview-mode-container,
-        .settings-content,
-        .modal-overlay .settings-content {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        .app-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            backdrop-filter: blur(var(--bg-blur-amount));
-        }
-
-        .app-header {
-            padding: 1rem 1.8rem;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-        body.dark-theme .app-header { background: rgba(0, 0, 0, 0.15); }
-
-        .title-section h1 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .stats-badge {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .header-actions { display: flex; gap: 12px; align-items: center; }
-        .icon-btn {
-            background: var(--btn-bg);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border-light);
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-primary);
-            transition: all 0.2s;
-        }
-        .icon-btn:hover { background-color: rgba(255,255,255,0.3); transform: scale(0.96); }
-        body.dark-theme .icon-btn:hover { background-color: rgba(255,255,255,0.15); }
-
-        .main-dashboard {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            min-height: 0;
-        }
-
-        .notes-sidebar {
-            width: 320px;
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(calc(var(--card-blur-amount) * 0.8));
-            border-right: 1px solid var(--border-light);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            flex-shrink: 0;
-            transition: width 0.25s ease, border 0.2s, padding 0.2s;
-        }
-        .notes-sidebar.collapsed {
-            width: 0;
-            border-right: none;
-            padding: 0;
-            overflow: hidden;
-            visibility: hidden;
-        }
-        .notes-sidebar.collapsed .sidebar-header,
-        .notes-sidebar.collapsed .search-container,
-        .notes-sidebar.collapsed .notes-list-container {
-            display: none;
-        }
-
-        .sidebar-header {
-            padding: 1rem 1.2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-light);
-            flex-shrink: 0;
-        }
-        .btn-new-mobile {
-            background: var(--btn-bg);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border-light);
-            color: var(--btn-text);
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-new-mobile:hover {
-            background-color: rgba(255,255,255,0.3);
-            transform: scale(0.97);
-        }
-        body.dark-theme .btn-new-mobile:hover {
-            background-color: rgba(255,255,255,0.15);
-        }
-        .search-container {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border-light);
-            flex-shrink: 0;
-        }
-        .search-input {
-            width: 100%;
-            padding: 8px 12px;
-            border-radius: 30px;
-            border: 1px solid var(--input-border);
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px);
-            color: var(--text-primary);
-            font-size: 0.8rem;
-            outline: none;
-        }
-        .search-input:focus {
-            border-color: var(--input-focus);
-            background: rgba(255, 255, 255, 0.4);
-        }
-        .notes-list-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px 10px;
-        }
-        .note-item {
-            background: var(--note-item-bg);
-            backdrop-filter: blur(8px);
-            margin-bottom: 12px;
-            border-radius: 20px;
-            padding: 14px;
-            cursor: pointer;
-            border: 1px solid var(--border-light);
-            transition: all 0.2s;
-        }
-        .note-item.active {
-            border-left: 4px solid var(--note-active-border);
-            box-shadow: 0 0 0 1px var(--note-active-border), var(--shadow-md);
-            background: rgba(255,255,255,0.35);
-            backdrop-filter: blur(12px);
-        }
-        body.dark-theme .note-item.active {
-            background: rgba(0,0,0,0.5);
-        }
-        .note-title { font-weight: 600; display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .delete-note-btn { background: none; border: none; cursor: pointer; color: var(--text-light); padding: 0 4px; font-size: 1rem; }
-        .delete-note-btn:hover { color: #ef4444; }
-        .note-meta { font-size: 0.65rem; color: var(--text-light); margin-top: 4px; }
-        .empty-state { text-align: center; padding: 2rem 1rem; color: var(--text-light); }
-
-        .editor-panel {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            overflow-y: auto;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
-        .editor-card {
-            background: transparent;
-            backdrop-filter: none;
-            border-radius: 0;
-            padding: 0;
-            box-shadow: none;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 0;
-            position: relative;
-            border: none;
-        }
-        .content-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-        .editor-mode-container, .preview-mode-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            min-height: 0;
-        }
-        .preview-mode-container {
-            background: transparent;
-            backdrop-filter: none;
-            border-radius: 0;
-            padding: 0;
-            overflow-y: auto;
-            border: none;
-        }
-        .hide-view { display: none; }
-        .note-input-title {
-            font-size: 1.6rem;
-            font-weight: 600;
-            border: none;
-            border-bottom: 2px solid var(--border-light);
-            background: transparent;
-            color: var(--text-primary);
-            outline: none;
-            padding: 0.5rem 0;
-            flex-shrink: 0;
-        }
-        .note-input-title:focus { border-bottom-color: var(--input-focus); }
-        .note-input-content {
-            flex: 1;
-            min-height: 0;
-            border: 1px solid var(--border-light);
-            border-radius: 20px;
-            padding: 1.2rem;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            resize: none;
-            background: transparent;
-            color: var(--text-primary);
-            outline: none;
-            transition: 0.2s;
-        }
-        .note-input-content:focus {
-            border-color: var(--input-focus);
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-        }
-        .editor-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border-light);
-            flex-shrink: 0;
-        }
-        /* 左侧视图提示 */
-        .view-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            padding: 0.4rem 1rem;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            border: 1px solid var(--border-light);
-        }
-        .view-indicator .icon {
-            font-size: 1.1rem;
-            line-height: 1;
-        }
-        .button-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 40px;
-            font-weight: 500;
-            border: 1px solid var(--border-light);
-            cursor: pointer;
-            background: var(--btn-bg);
-            backdrop-filter: blur(8px);
-            color: var(--btn-text);
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            line-height: 1.2;
-        }
-        .btn-primary {
-            background: var(--btn-primary-bg);
-            border: 1px solid var(--border-light);
-            color: var(--btn-primary-text);
-            backdrop-filter: blur(8px);
-        }
-        .btn-primary:hover {
-            background-color: rgba(255,255,255,0.3);
-            transform: translateY(-1px);
-        }
-        body.dark-theme .btn-primary:hover {
-            background-color: rgba(255,255,255,0.15);
-        }
-        .btn-danger {
-            background: var(--btn-danger-bg);
-            color: var(--btn-danger-text);
-            border: none;
-        }
-        .btn-danger:hover {
-            background: #b91c1c;
-            color: white;
-            transform: translateY(-1px);
-        }
-        .btn:hover { transform: translateY(-1px); background-color: rgba(255,255,255,0.3); }
-        body.dark-theme .btn:hover { background-color: rgba(255,255,255,0.15); }
-        .lock-active {
-            background-color: rgba(59, 130, 246, 0.3);
-            border-color: #3b82f6;
-        }
-        .editor-info {
-            margin-top: 0.75rem;
-            font-size: 0.7rem;
-            text-align: right;
-            color: var(--text-light);
-            flex-shrink: 0;
-        }
-
-        .save-toast {
-            position: absolute;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--save-toast-bg);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            pointer-events: none;
-            z-index: 10;
-            white-space: nowrap;
-        }
-        .save-toast.show { opacity: 1; }
-
-        .preview-content-render {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            word-break: break-word;
-            white-space: pre-wrap;
-        }
-        .preview-content-render h1 { font-size: 2rem; border-bottom: 1px solid var(--border-light); margin: 0.8rem 0; }
-        .preview-content-render h2 { font-size: 1.6rem; margin: 0.6rem 0; }
-        .preview-content-render ul, .preview-content-render ol { margin: 0.5rem 0 0.5rem 1.8rem; }
-        .preview-content-render .task-list-item {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.3rem;
-        }
-        .preview-content-render .task-list-item input.todo-checkbox {
-            width: 1.2em;
-            height: 1.2em;
-            margin-right: 0.6rem;
-            cursor: pointer;
-            accent-color: var(--input-focus);
-        }
-        .preview-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--input-focus);
-            padding-left: 18px;
-            word-break: break-word;
-        }
-
-        .custom-dialog-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: var(--modal-overlay);
-            backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            visibility: hidden;
-            opacity: 0;
-            transition: 0.2s;
-        }
-        .custom-dialog-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-        .custom-dialog {
-            background: var(--dialog-bg);
-            backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
-            padding: 1.5rem 2rem;
-            width: 360px;
-            max-width: 90%;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 20px 30px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .custom-dialog p {
-            margin-bottom: 1.5rem;
-            font-size: 1rem;
-            color: var(--text-primary);
-        }
-        .dialog-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-        .dialog-btn {
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-weight: 500;
-            border: 1px solid var(--border-light);
-            cursor: pointer;
-            background: var(--btn-bg);
-            backdrop-filter: blur(8px);
-            color: var(--btn-text);
-            transition: 0.2s;
-        }
-        .dialog-btn.btn-danger {
-            background: var(--btn-danger-bg);
-            color: var(--btn-danger-text);
-            border: none;
-        }
-        .dialog-btn.btn-danger:hover {
-            background: #b91c1c;
-            color: white;
-        }
-        .dialog-btn.cancel {
-            background: var(--btn-bg);
-            border: 1px solid var(--border-light);
-            color: var(--btn-text);
-        }
-        .dialog-btn-only {
-            background: var(--btn-primary-bg);
-            color: var(--btn-primary-text);
-            border: 1px solid var(--border-light);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: var(--modal-overlay);
-            backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: 0.2s;
-        }
-        .modal-overlay.active { visibility: visible; opacity: 1; }
-        .settings-modal-container {
-            position: relative;
-            background: var(--modal-bg);
-            backdrop-filter: blur(20px);
-            border-radius: 2rem;
-            width: 90%;
-            max-width: 760px;
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid var(--border-light);
-        }
-        .settings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-light);
-            flex-shrink: 0;
-        }
-        .settings-header h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-        .close-modal-btn {
-            font-size: 1.6rem;
-            cursor: pointer;
-            color: var(--text-light);
-            line-height: 1;
-            transition: 0.2s;
-        }
-        .close-modal-btn:hover {
-            color: var(--text-primary);
-        }
-        .settings-main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        .settings-sidebar {
-            width: 180px;
-            background: rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(8px);
-            border-right: 1px solid var(--border-light);
-            padding: 1.5rem 0;
-            overflow-y: auto;
-            flex-shrink: 0;
-        }
-        .settings-nav-item {
-            padding: 0.8rem 1.2rem;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: 0.1s;
-        }
-        .settings-nav-item.active {
-            background: var(--input-focus);
-            color: white;
-            border-left: 4px solid white;
-        }
-        .settings-content {
-            flex: 1;
-            padding: 1.8rem;
-            overflow-y: auto;
-        }
-        .settings-section { margin-bottom: 2rem; }
-        .settings-section h4 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid var(--input-focus); padding-left: 10px; }
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 52px;
-            height: 26px;
-        }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255,255,255,0.4);
-            border-radius: 34px;
-            transition: 0.3s;
-        }
-        .slider:before {
-            content: "";
-            position: absolute;
-            height: 20px; width: 20px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        input:checked + .slider { background-color: #3b82f6; }
-        input:checked + .slider:before { transform: translateX(26px); }
-        .range-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        input[type="range"].glass-slider {
-            -webkit-appearance: none;
-            width: 200px;
-            height: 6px;
-            background: var(--slider-track-bg);
-            border-radius: 10px;
-            outline: none;
-            cursor: pointer;
-            backdrop-filter: blur(2px);
-        }
-        input[type="range"].glass-slider:focus { outline: none; }
-        input[type="range"].glass-slider::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            background: var(--slider-track-bg);
-            border-radius: 10px;
-        }
-        input[type="range"].glass-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--slider-thumb-bg);
-            box-shadow: var(--slider-thumb-shadow);
-            margin-top: -6px;
-            cursor: pointer;
-            transition: transform 0.1s;
-            border: 1px solid rgba(255,255,255,0.5);
-            backdrop-filter: blur(4px);
-        }
-        input[type="range"].glass-slider::-webkit-slider-thumb:hover { transform: scale(1.2); background: rgba(255,255,255,1); }
-        input[type="range"].glass-slider::-moz-range-track {
-            width: 100%;
-            height: 6px;
-            background: var(--slider-track-bg);
-            border-radius: 10px;
-        }
-        input[type="range"].glass-slider::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--slider-thumb-bg);
-            box-shadow: var(--slider-thumb-shadow);
-            border: 1px solid rgba(255,255,255,0.5);
-            backdrop-filter: blur(4px);
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        input[type="range"].glass-slider::-moz-range-thumb:hover { transform: scale(1.2); }
-        .range-value {
-            min-width: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            padding: 2px 8px;
-            border-radius: 20px;
-            text-align: center;
-        }
-        select {
-            background: var(--btn-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border-light);
-            border-radius: 30px;
-            padding: 5px 12px;
-            font-size: 0.8rem;
-            backdrop-filter: blur(4px);
-        }
-        .bg-upload-btn {
-            background: var(--btn-primary-bg);
-            color: var(--btn-primary-text);
-            border: 1px solid var(--border-light);
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-        }
-        .image-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .gallery-item {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid var(--border-light);
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .gallery-item:hover { border-color: var(--input-focus); transform: scale(1.02); }
-        .gallery-item.active { border-color: var(--input-focus); box-shadow: 0 0 0 2px var(--input-focus); }
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .gallery-delete {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            color: white;
-        }
-        .shortcut-input {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid var(--border-light);
-            border-radius: 30px;
-            padding: 5px 12px;
-            font-size: 0.8rem;
-            width: 80px;
-            text-align: center;
-            color: var(--text-primary);
-            outline: none;
-        }
-        .shortcut-input:focus {
-            border-color: var(--input-focus);
-        }
-        .md-suggest {
-            position: fixed;
-            background: var(--modal-bg);
-            backdrop-filter: blur(20px);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            border: 1px solid var(--border-light);
-            min-width: 200px;
-            z-index: 2000;
-            display: none;
-        }
-        .md-suggest-item {
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-        }
-        .md-suggest-item.selected { background: var(--input-focus); color: white; }
-        @media (max-width: 700px) {
-            .main-dashboard { flex-direction: column; }
-            .notes-sidebar { width: 100%; max-height: 40%; border-right: none; border-bottom: 1px solid var(--border-light); }
-            .notes-sidebar.collapsed { width: 0; max-height: 0; padding: 0; visibility: hidden; }
-            .editor-panel { padding: 1rem; }
-            .settings-main { flex-direction: column; }
-            .settings-sidebar { width: 100%; display: flex; flex-wrap: wrap; padding: 0.5rem; border-right: none; border-bottom: 1px solid var(--border-light); }
-            .settings-nav-item { padding: 0.5rem 1rem; }
-            .gallery-item { width: 60px; height: 60px; }
-            input[type="range"].glass-slider { width: 160px; }
-            .custom-dialog { width: 85%; padding: 1rem; }
-            .editor-actions { flex-direction: column; align-items: stretch; gap: 8px; }
-            .view-indicator { justify-content: center; }
-            .button-group { justify-content: center; flex-wrap: wrap; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>灵羽笔记</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="app-container">
-    <div class="app-header">
-        <div class="title-section"><h1>灵羽笔记</h1></div>
-        <div class="header-actions">
-            <div class="stats-badge" id="noteCounter">📌 0 篇笔记</div>
-            <button class="icon-btn" id="settingsBtn">⚙️ 设置</button>
-        </div>
-    </div>
-    <div class="main-dashboard">
-        <div class="notes-sidebar" id="notesSidebar">
-            <div class="sidebar-header"><h3>📋 所有笔记</h3><button class="btn-new-mobile" id="newNoteSideBtn">+ 新建</button></div>
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 搜索标题或内容...">
-            </div>
-            <div class="notes-list-container" id="notesListContainer"><div class="empty-state">✨ 暂无笔记</div></div>
-        </div>
-        <div class="editor-panel">
-            <div class="editor-card">
-                <div class="content-area">
-                    <div id="editorModeContainer" class="editor-mode-container">
-                        <input type="text" id="noteTitleInput" class="note-input-title" placeholder="笔记标题 ..." autocomplete="off" disabled>
-                        <textarea id="noteContentInput" class="note-input-content" placeholder="暂无笔记，请点击左侧「新建」按钮开始" disabled></textarea>
-                    </div>
-                    <div id="previewModeContainer" class="preview-mode-container hide-view">
-                        <div id="previewContentWrapper"><div class="preview-empty">✨ 暂无内容</div></div>
-                    </div>
-                </div>
-                <div class="editor-actions">
-                    <div class="view-indicator" id="viewIndicator">
-                        <span class="icon">✏️</span>
-                        <span id="viewModeText">编辑模式</span>
-                    </div>
-                    <div class="button-group" id="actionButtonsGroup">
-                        <div id="editModeButtons">
-                            <button class="btn btn-danger" id="deleteCurrentNoteBtn">🗑️ 删除当前</button>
-                            <button class="btn" id="lockViewBtn" title="锁定当前笔记的视图模式">🔓 锁定视图</button>
-                            <button class="btn btn-primary" id="togglePreviewBtn">👁️ 预览模式</button>
-                        </div>
-                        <div id="previewModeButtons" style="display:none;">
-                            <button class="btn btn-danger" id="deleteCurrentNoteBtnPreview">🗑️ 删除当前</button>
-                            <button class="btn" id="lockViewBtnPreview" title="锁定当前笔记的视图模式">🔓 锁定视图</button>
-                            <button class="btn btn-primary" id="backToEditBtn">✏️ 返回编辑</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="editor-info" id="editorMetaInfo">未选中笔记 / 新建</div>
-                <div id="saveToast" class="save-toast">✓ 已保存</div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div id="settingsModal" class="modal-overlay">
-    <div class="settings-modal-container">
-        <div class="settings-header">
-            <h2>⚙️ 设置</h2>
-            <div class="close-modal-btn" data-modal="settingsModal">&times;</div>
-        </div>
-        <div class="settings-main">
-            <div class="settings-sidebar">
-                <div class="settings-nav-item active" data-tab="appearance">🎨 外观主题</div>
-                <div class="settings-nav-item" data-tab="glass">✨ 毛玻璃背景</div>
-                <div class="settings-nav-item" data-tab="pref">📂 笔记偏好</div>
-                <div class="settings-nav-item" data-tab="shortcut">⌨️ 快捷键</div>
-                <div class="settings-nav-item" data-tab="data">💾 数据管理</div>
-            </div>
-            <div class="settings-content">
-                <div id="tab-appearance" class="settings-section">
-                    <h4>外观主题</h4>
-                    <div class="setting-item"><span>深色模式</span><label class="toggle-switch"><input type="checkbox" id="darkModeToggle"><span class="slider"></span></label></div>
-                    <div class="setting-item"><span>字体大小</span><select id="fontSizeSelect"><option value="small">小</option><option value="medium" selected>中</option><option value="large">大</option></select></div>
-                </div>
-                <div id="tab-glass" class="settings-section" style="display:none;">
-                    <h4>毛玻璃与背景</h4>
-                    <div class="setting-item">
-                        <span>📷 背景图库</span>
-                        <button id="uploadBgBtn" class="bg-upload-btn">+ 上传新图片</button>
-                    </div>
-                    <div id="imageGallery" class="image-gallery"></div>
-                    <div class="setting-item">
-                        <span>🔮 毛玻璃强度</span>
-                        <div class="range-container">
-                            <input type="range" id="blurStrength" class="glass-slider" min="0" max="25" step="1" value="12">
-                            <span id="blurValueDisplay" class="range-value">12px</span>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <button id="resetBgBtn" class="bg-upload-btn" style="background:#64748b;">重置默认背景</button>
-                    </div>
-                </div>
-                <div id="tab-pref" class="settings-section" style="display:none;">
-                    <h4>笔记偏好</h4>
-                    <div class="setting-item"><span>列表排序</span><select id="sortOrderSelect"><option value="desc">最新在前</option><option value="asc">最早在前</option></select></div>
-                </div>
-                <div id="tab-shortcut" class="settings-section" style="display:none;">
-                    <h4>快捷键</h4>
-                    <div class="setting-item">
-                        <span>切换编辑/预览模式</span>
-                        <input type="text" id="shortcutTogglePreview" class="shortcut-input" maxlength="1" placeholder="按键">
-                    </div>
-                    <div class="setting-item">
-                        <span>切换侧边栏</span>
-                        <input type="text" id="shortcutToggleSidebar" class="shortcut-input" maxlength="1" placeholder="按键">
-                    </div>
-                    <p style="font-size:0.7rem; margin-top:8px;">点击输入框后按任意字母键即可自定义，即时生效。<br>释放编辑焦点：<kbd>ESC</kbd> 键 (固定)</p>
-                </div>
-                <div id="tab-data" class="settings-section" style="display:none;">
-                    <h4>数据管理</h4>
-                    <div class="setting-item">
-                        <span>📤 导出笔记</span>
-                        <button id="exportNotesBtn" class="bg-upload-btn">导出（选择位置）</button>
-                    </div>
-                    <div class="setting-item">
-                        <span>📥 导入笔记</span>
-                        <button id="importNotesBtn" class="bg-upload-btn">选择文件导入</button>
-                        <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                    </div>
-                    <p style="font-size:0.7rem; margin-top:8px;">导入将<strong>完全替换</strong>当前所有笔记，请提前导出备份。</p>
-                </div>
-            </div>
-        </div>
+  <video id="mainWallpaperVideo" muted loop playsinline autoplay></video>
+
+  <div id="bgLayer"></div>
+  <div id="bgDarkLayer"></div>
+
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-last-user" id="splashLastUser"></div>
+    <div class="splash-logo">✨</div>
+    <div class="splash-title">
+      <span>灵</span><span>羽</span><span>笔</span><span>记</span>
     </div>
-</div>
+    <div class="splash-bottom">
+      <div class="splash-hint" id="splashHint">按任意键以继续</div>
+      <div class="splash-spinner" id="splashSpinner"></div>
+     </div>
+    <div class="splash-version">版本1.0.0</div>
+   </div>
 
-<div id="customDialog" class="custom-dialog-overlay">
-    <div class="custom-dialog">
-        <p id="dialogMessage"></p>
-        <div class="dialog-buttons" id="dialogButtons">
-            <!-- 动态生成按钮 -->
+  <div class="app-container hidden-app" id="appContainer">
+    <header class="top-bar">
+      <div class="logo-group">
+        <div class="logo">
+          <span>✨</span> 灵羽笔记
         </div>
+        <button class="top-btn" id="noteCountBtn">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span id="noteCount">0</span> 篇笔记
+        </button>
+      </div>
+      <div class="actions">
+        <button class="top-btn" id="shortcutsBtn">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"/>
+            <line x1="6" y1="10" x2="6" y2="10"/>
+            <line x1="10" y1="10" x2="10" y2="10"/>
+            <line x1="14" y1="10" x2="14" y2="10"/>
+            <line x1="18" y1="10" x2="18" y2="10"/>
+            <line x1="6" y1="14" x2="6" y2="14"/>
+            <line x1="18" y1="14" x2="18" y2="14"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+          快捷键
+        </button>
+        <button class="top-btn" id="settingsBtn">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          设置
+        </button>
+      </div>
+    </header>
+
+    <div class="main-body">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2>
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            所有笔记
+          </h2>
+          <button class="new-note-btn" id="newNoteBtn">+ 新建</button>
+        </div>
+        <div class="category-tabs" id="categoryTabs">
+          <button class="category-tab active" data-category="all">全部</button>
+          <button class="category-tab" data-category="work">工作</button>
+          <button class="category-tab" data-category="fun">娱乐</button>
+          <button class="category-tab" data-category="other">其他</button>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" id="searchInput" placeholder="搜索标题或内容...">
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </aside>
+
+      <main class="editor-area" id="editorArea">
+        <div class="empty-state" id="emptyState">
+          <div class="emoji-big">📝</div>
+          <p>没有笔记<br>点击「新建」开始记录</p>
+        </div>
+
+        <div class="editor-wrapper hidden" id="editorWrapper" style="display: flex; flex-direction: column; height: 100%;">
+          <input type="text" class="editor-title" id="noteTitleInput" placeholder="笔记标题..." maxlength="80">
+          <textarea class="editor-content" id="noteContentInput" placeholder="在这里写下你的想法...&#10;&#10;支持 Markdown 语法：&#10;# 标题  ## 二级标题&#10;**粗体**  *斜体*  ~~删除线~~&#10;[链接](url)  - 列表&#10;&#10;按 Tab 呼出 Markdown 菜单&#10;按 Esc 释放焦点后可使用单键快捷键"></textarea>
+          <div class="editor-preview" id="notePreview"></div>
+
+          <div class="lock-overlay" id="lockOverlay">
+            <div class="lock-content">
+              <div class="lock-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <div class="lock-title">已锁定</div>
+              <div class="lock-sub">输入笔记锁密码解锁</div>
+              <div class="lock-input-row">
+                <input type="password" class="lock-input" id="lockInput" placeholder="笔记锁密码" autocomplete="off">
+                <button class="lock-unlock-btn" id="lockUnlockBtn">解锁</button>
+              </div>
+              <div class="lock-error" id="lockError"></div>
+            </div>
+          </div>
+
+          <div class="editor-footer">
+            <div class="footer-left">
+              <button class="footer-btn active" id="toggleModeBtn">
+                <span id="toggleModeIcon">
+                  <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </span>
+                <span id="toggleModeText">编辑模式</span>
+              </button>
+              <button class="footer-btn" id="lockBtn">
+                <span id="lockBtnIcon">
+                  <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                  </svg>
+                </span>
+                <span id="lockBtnText">锁定</span>
+              </button>
+              <button class="footer-btn" id="saveBtn">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                保存
+              </button>
+            </div>
+            <span class="editor-stats" id="editorStats"></span>
+             <div class="footer-right">
+              <button class="footer-btn" id="trashBtn" title="回收站">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                回收站
+              </button>
+              <button class="footer-btn danger" id="deleteNoteBtn">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+                删除当前
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-</div>
+  </div>
 
-<script>
-    (function(){
-        // 存储KEY
-        const STORAGE_KEY = "lingyu_notes_app";
-        const THEME_STORAGE_KEY = "lingyu_theme_mode";
-        const FONT_SIZE_KEY = "lingyu_font_size";
-        const SORT_ORDER_KEY = "lingyu_sort_order";
-        const BLUR_STRENGTH_KEY = "lingyu_blur_strength";
-        const BG_IMAGES_KEY = "lingyu_bg_images";
-        const ACTIVE_BG_ID_KEY = "lingyu_active_bg_id";
-        const SHORTCUT_PREVIEW_KEY = "lingyu_shortcut_preview";
-        const SHORTCUT_SIDEBAR_KEY = "lingyu_shortcut_sidebar";
-        
-        let notes = [];
-        let currentNoteId = null;
-        let isPreviewMode = false;
-        let currentSortOrder = 'desc';
-        let autoSaveTimer = null;
-        let currentSearchTerm = '';
-        let bgImages = [];
-        let activeBgId = null;
-        let shortcutPreview = 'e';
-        let shortcutSidebar = 's';
-        
-        // DOM 元素
-        const notesContainer = document.getElementById('notesListContainer');
-        const titleInput = document.getElementById('noteTitleInput');
-        const contentInput = document.getElementById('noteContentInput');
-        const deleteCurrentBtn = document.getElementById('deleteCurrentNoteBtn');
-        const deleteCurrentBtnPreview = document.getElementById('deleteCurrentNoteBtnPreview');
-        const newNoteSideBtn = document.getElementById('newNoteSideBtn');
-        const noteCounterSpan = document.getElementById('noteCounter');
-        const editorMetaInfo = document.getElementById('editorMetaInfo');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const fontSizeSelect = document.getElementById('fontSizeSelect');
-        const sortOrderSelect = document.getElementById('sortOrderSelect');
-        const togglePreviewBtn = document.getElementById('togglePreviewBtn');
-        const backToEditBtn = document.getElementById('backToEditBtn');
-        const editorModeDiv = document.getElementById('editorModeContainer');
-        const previewModeDiv = document.getElementById('previewModeContainer');
-        const previewContentWrapper = document.getElementById('previewContentWrapper');
-        const editModeButtonsDiv = document.getElementById('editModeButtons');
-        const previewModeButtonsDiv = document.getElementById('previewModeButtons');
-        const saveToast = document.getElementById('saveToast');
-        const searchInput = document.getElementById('searchInput');
-        const blurStrengthSlider = document.getElementById('blurStrength');
-        const blurValueDisplay = document.getElementById('blurValueDisplay');
-        const uploadBgBtn = document.getElementById('uploadBgBtn');
-        const resetBgBtn = document.getElementById('resetBgBtn');
-        const imageGallery = document.getElementById('imageGallery');
-        const customDialog = document.getElementById('customDialog');
-        const dialogMessage = document.getElementById('dialogMessage');
-        const dialogButtonsDiv = document.getElementById('dialogButtons');
-        const exportNotesBtn = document.getElementById('exportNotesBtn');
-        const importNotesBtn = document.getElementById('importNotesBtn');
-        const importFileInput = document.getElementById('importFileInput');
-        const sidebarEl = document.getElementById('notesSidebar');
-        const shortcutPreviewInput = document.getElementById('shortcutTogglePreview');
-        const shortcutSidebarInput = document.getElementById('shortcutToggleSidebar');
-        const lockViewBtn = document.getElementById('lockViewBtn');
-        const lockViewBtnPreview = document.getElementById('lockViewBtnPreview');
-        const viewModeTextSpan = document.getElementById('viewModeText');
-        const viewIndicatorIcon = document.querySelector('#viewIndicator .icon');
-        
-        let pendingResolve = null;
+  <div class="md-menu" id="mdMenu" tabindex="-1">
+    <div class="md-menu-group-title">格式</div>
+    <div class="md-menu-item" data-type="h1" tabindex="-1">
+      <span class="menu-icon">H1</span>
+      <span class="menu-label">一级标题</span>
+      <span class="menu-hint"># </span>
+    </div>
+    <div class="md-menu-item" data-type="h2" tabindex="-1">
+      <span class="menu-icon">H2</span>
+      <span class="menu-label">二级标题</span>
+      <span class="menu-hint">## </span>
+    </div>
+    <div class="md-menu-item" data-type="bold" tabindex="-1">
+      <span class="menu-icon">B</span>
+      <span class="menu-label">粗体</span>
+      <span class="menu-hint">** **</span>
+    </div>
+    <div class="md-menu-item" data-type="italic" tabindex="-1">
+      <span class="menu-icon">I</span>
+      <span class="menu-label">斜体</span>
+      <span class="menu-hint">* *</span>
+    </div>
+    <div class="md-menu-item" data-type="strike" tabindex="-1">
+      <span class="menu-icon">S</span>
+      <span class="menu-label">删除线</span>
+      <span class="menu-hint">~~ ~~</span>
+    </div>
+    <div class="md-menu-item" data-type="link" tabindex="-1">
+      <span class="menu-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+      </span>
+      <span class="menu-label">链接</span>
+      <span class="menu-hint">[]()</span>
+    </div>
+    <div class="md-menu-divider"></div>
+    <div class="md-menu-group-title">列表</div>
+    <div class="md-menu-item" data-type="ul" tabindex="-1">
+      <span class="menu-icon">•</span>
+      <span class="menu-label">无序列表</span>
+      <span class="menu-hint">- </span>
+    </div>
+    <div class="md-menu-item" data-type="ol" tabindex="-1">
+      <span class="menu-icon">1.</span>
+      <span class="menu-label">有序列表</span>
+      <span class="menu-hint">1. </span>
+    </div>
+    <div class="md-menu-item" data-type="todo" tabindex="-1">
+      <span class="menu-icon">☐</span>
+      <span class="menu-label">待办事项</span>
+      <span class="menu-hint">- [ ] </span>
+    </div>
+  </div>
 
-        // 纯提示弹窗（只有确定按钮）
-        function showAlert(message) {
-            return new Promise((resolve) => {
-                dialogMessage.innerText = message;
-                dialogButtonsDiv.innerHTML = `<button class="dialog-btn dialog-btn-only" id="dialogAlertBtn">确定</button>`;
-                customDialog.classList.add('active');
-                const alertBtn = document.getElementById('dialogAlertBtn');
-                const handler = () => {
-                    customDialog.classList.remove('active');
-                    alertBtn.removeEventListener('click', handler);
-                    resolve(true);
-                };
-                alertBtn.addEventListener('click', handler);
-            });
-        }
-        
-        // 确认弹窗（取消在左，确认在右且为红色透明）
-        function showConfirm(message) {
-            return new Promise((resolve) => {
-                dialogMessage.innerText = message;
-                dialogButtonsDiv.innerHTML = `
-                    <button class="dialog-btn cancel" id="dialogCancelBtn">取消</button>
-                    <button class="dialog-btn btn-danger" id="dialogConfirmBtn">确认</button>
-                `;
-                customDialog.classList.add('active');
-                const confirmBtn = document.getElementById('dialogConfirmBtn');
-                const cancelBtn = document.getElementById('dialogCancelBtn');
-                const cleanup = () => {
-                    confirmBtn.removeEventListener('click', onConfirm);
-                    cancelBtn.removeEventListener('click', onCancel);
-                };
-                const onConfirm = () => {
-                    customDialog.classList.remove('active');
-                    cleanup();
-                    resolve(true);
-                };
-                const onCancel = () => {
-                    customDialog.classList.remove('active');
-                    cleanup();
-                    resolve(false);
-                };
-                confirmBtn.addEventListener('click', onConfirm);
-                cancelBtn.addEventListener('click', onCancel);
-            });
-        }
-        
-        // 导出笔记
-        async function exportNotes() {
-            try {
-                const dataStr = JSON.stringify(notes, null, 2);
-                const blob = new Blob([dataStr], {type: 'application/json'});
-                const defaultFileName = `灵羽笔记_备份_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
-                if ('showSaveFilePicker' in window) {
-                    try {
-                        const handle = await window.showSaveFilePicker({
-                            suggestedName: defaultFileName,
-                            types: [{ description: 'JSON 文件', accept: { 'application/json': ['.json'] } }]
-                        });
-                        const writable = await handle.createWritable();
-                        await writable.write(blob);
-                        await writable.close();
-                        showSaveToastMsg('导出成功');
-                        return;
-                    } catch (err) {
-                        if (err.name === 'AbortError') {
-                            showSaveToastMsg('已取消导出');
-                            return;
-                        }
-                    }
-                }
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = defaultFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showSaveToastMsg('导出成功 (保存至默认下载文件夹)');
-            } catch (e) {
-                showAlert('导出失败：' + e.message);
-            }
-        }
-        
-        async function importNotes(file) {
-            const confirmed = await showConfirm('导入将完全替换现有笔记，确定继续吗？');
-            if (!confirmed) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (!Array.isArray(imported)) throw new Error('文件格式错误：不是数组');
-                    const validated = imported.map(item => ({
-                        id: item.id && typeof item.id === 'number' ? item.id : Date.now() + Math.random(),
-                        title: (item.title && typeof item.title === 'string' && item.title !== 'undefined') ? item.title : '未命名笔记',
-                        content: (item.content && typeof item.content === 'string' && item.content !== 'undefined') ? item.content : '',
-                        createdAt: item.createdAt || Date.now(),
-                        updatedAt: item.updatedAt || Date.now(),
-                        lockedView: (item.lockedView === 'edit' || item.lockedView === 'preview') ? item.lockedView : null
-                    }));
-                    notes = validated;
-                    currentNoteId = null;
-                    if (isPreviewMode) setPreviewMode(false);
-                    persistAndUpdate();
-                    showSaveToastMsg('导入成功');
-                } catch(err) {
-                    showAlert('导入失败：' + err.message);
-                }
-            };
-            reader.onerror = () => showAlert('读取文件失败');
-            reader.readAsText(file);
-        }
-        
-        function showSaveToastMsg(msg) {
-            saveToast.innerText = msg;
-            saveToast.classList.add('show');
-            setTimeout(() => {
-                saveToast.classList.remove('show');
-                saveToast.innerText = '✓ 已保存';
-            }, 1500);
-        }
-        
-        // 更新视图提示
-        function updateViewIndicator() {
-            if (isPreviewMode) {
-                viewModeTextSpan.innerText = '预览模式';
-                viewIndicatorIcon.innerText = '👁️';
-            } else {
-                viewModeTextSpan.innerText = '编辑模式';
-                viewIndicatorIcon.innerText = '✏️';
-            }
-        }
-        
-        // 快捷键设置
-        function loadShortcuts() {
-            const storedPreview = localStorage.getItem(SHORTCUT_PREVIEW_KEY);
-            if (storedPreview && storedPreview.length === 1) shortcutPreview = storedPreview.toLowerCase();
-            else shortcutPreview = 'e';
-            const storedSidebar = localStorage.getItem(SHORTCUT_SIDEBAR_KEY);
-            if (storedSidebar && storedSidebar.length === 1) shortcutSidebar = storedSidebar.toLowerCase();
-            else shortcutSidebar = 's';
-            shortcutPreviewInput.value = shortcutPreview.toUpperCase();
-            shortcutSidebarInput.value = shortcutSidebar.toUpperCase();
-        }
-        function saveShortcutPreview(key) {
-            if (key && key.length === 1 && /[a-z]/i.test(key)) {
-                shortcutPreview = key.toLowerCase();
-                localStorage.setItem(SHORTCUT_PREVIEW_KEY, shortcutPreview);
-                shortcutPreviewInput.value = shortcutPreview.toUpperCase();
-            } else {
-                shortcutPreviewInput.value = shortcutPreview.toUpperCase();
-            }
-        }
-        function saveShortcutSidebar(key) {
-            if (key && key.length === 1 && /[a-z]/i.test(key)) {
-                shortcutSidebar = key.toLowerCase();
-                localStorage.setItem(SHORTCUT_SIDEBAR_KEY, shortcutSidebar);
-                shortcutSidebarInput.value = shortcutSidebar.toUpperCase();
-            } else {
-                shortcutSidebarInput.value = shortcutSidebar.toUpperCase();
-            }
-        }
-        shortcutPreviewInput.addEventListener('keydown', (e) => {
-            e.preventDefault();
-            const key = e.key;
-            if (key.length === 1 && /[a-z]/i.test(key)) saveShortcutPreview(key);
-        });
-        shortcutSidebarInput.addEventListener('keydown', (e) => {
-            e.preventDefault();
-            const key = e.key;
-            if (key.length === 1 && /[a-z]/i.test(key)) saveShortcutSidebar(key);
-        });
-        
-        function toggleSidebar() { sidebarEl.classList.toggle('collapsed'); }
-        function blurCurrentEditor() {
-            if (document.activeElement === titleInput || document.activeElement === contentInput) {
-                document.activeElement.blur();
-                return true;
-            }
-            return false;
-        }
-        function closeAllModals() {
-            let closed = false;
-            if (settingsModal.classList.contains('active')) { settingsModal.classList.remove('active'); closed = true; }
-            if (customDialog.classList.contains('active')) { customDialog.classList.remove('active'); if (pendingResolve) pendingResolve(false); pendingResolve = null; closed = true; }
-            return closed;
-        }
-        function onGlobalKeydown(e) {
-            const key = e.key;
-            if (key === 'Escape') {
-                const anyModalOpen = settingsModal.classList.contains('active') || customDialog.classList.contains('active');
-                if (anyModalOpen) { e.preventDefault(); closeAllModals(); return; }
-                else { if (blurCurrentEditor()) e.preventDefault(); return; }
-            }
-            const activeTag = document.activeElement?.tagName;
-            const activeId = document.activeElement?.id;
-            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
-                if (activeId === 'shortcutTogglePreview' || activeId === 'shortcutToggleSidebar') return;
-                return;
-            }
-            if (settingsModal.classList.contains('active') || customDialog.classList.contains('active')) return;
-            const lowerKey = key.toLowerCase();
-            if (lowerKey === shortcutPreview) { e.preventDefault(); if (!isPreviewMode) setPreviewMode(true); else setPreviewMode(false); }
-            else if (lowerKey === shortcutSidebar) { e.preventDefault(); toggleSidebar(); }
-        }
-        
-        function safeString(str) { 
-            if (str === undefined || str === null) return '';
-            let s = String(str);
-            if (s === 'undefined' || s === 'null') return '';
-            return s;
-        }
-        function sanitizeNotes() {
-            let changed = false;
-            for (let n of notes) {
-                if (typeof n.title === 'string' && (n.title === 'undefined' || n.title === 'null' || n.title === undefined || n.title === null)) {
-                    n.title = '未命名笔记';
-                    changed = true;
-                }
-                if (typeof n.content === 'string' && (n.content === 'undefined' || n.content === 'null' || n.content === undefined || n.content === null)) {
-                    n.content = '';
-                    changed = true;
-                }
-            }
-            if (changed) persistAndUpdate();
-        }
-        
-        function updateEditorAccess() {
-            const hasNotes = notes.length > 0;
-            titleInput.disabled = !hasNotes;
-            contentInput.disabled = !hasNotes;
-            if (!hasNotes) {
-                titleInput.placeholder = '暂无笔记，请点击左侧「新建」按钮开始';
-                contentInput.placeholder = '暂无笔记，请点击左侧「新建」按钮开始';
-                editorMetaInfo.innerHTML = '✨ 暂无笔记，点击左上角 + 新建';
-            } else {
-                titleInput.placeholder = '笔记标题 ...';
-                contentInput.placeholder = '在这里写下你的灵感……\n按 Tab 键快速插入 Markdown 符号，支持 - [ ] 待办和 - [x] 已完成，预览模式下点击复选框可切换状态并自动保存';
-                if (currentNoteId === null) editorMetaInfo.innerHTML = '✨ 新建笔记模式 · 内容自动保存';
-            }
-        }
-        
-        // 锁定相关：为当前笔记设置锁定模式或清除锁定
-        async function toggleLockForCurrentNote() {
-            if (!currentNoteId) {
-                await showAlert('没有选中任何笔记');
-                return;
-            }
-            const note = notes.find(n => n.id === currentNoteId);
-            if (!note) return;
-            const currentMode = isPreviewMode ? 'preview' : 'edit';
-            if (note.lockedView === currentMode) {
-                note.lockedView = null;
-                showSaveToastMsg('已解锁当前笔记的视图');
-            } else {
-                note.lockedView = currentMode;
-                showSaveToastMsg(`已锁定当前笔记为「${currentMode === 'preview' ? '预览' : '编辑'}」模式`);
-            }
-            persistAndUpdate();
-            updateLockButtonUI();
-        }
-        
-        function updateLockButtonUI() {
-            const lockedMode = currentNoteId ? (notes.find(n => n.id === currentNoteId)?.lockedView) : null;
-            let icon = '🔓', title = '锁定当前笔记的视图模式';
-            if (lockedMode) {
-                icon = '🔒';
-                title = `已锁定为${lockedMode === 'preview' ? '预览' : '编辑'}模式，点击解锁`;
-            }
-            if (lockViewBtn) { lockViewBtn.innerHTML = `${icon} 锁定视图`; lockViewBtn.title = title; }
-            if (lockViewBtnPreview) { lockViewBtnPreview.innerHTML = `${icon} 锁定视图`; lockViewBtnPreview.title = title; }
-            const shouldHighlight = (lockedMode !== null && lockedMode === (isPreviewMode ? 'preview' : 'edit'));
-            const highlightClass = shouldHighlight ? 'lock-active' : '';
-            if (lockViewBtn) lockViewBtn.className = `btn ${highlightClass}`;
-            if (lockViewBtnPreview) lockViewBtnPreview.className = `btn ${highlightClass}`;
-        }
-        
-        // 背景图库管理
-        function saveBgImages() { localStorage.setItem(BG_IMAGES_KEY, JSON.stringify(bgImages.map(({id, dataUrl}) => ({id, dataUrl})))); }
-        function loadBgImages() {
-            const stored = localStorage.getItem(BG_IMAGES_KEY);
-            if (stored) { try { bgImages = JSON.parse(stored); } catch(e) { bgImages = []; } } else { bgImages = []; }
-            const savedActiveId = localStorage.getItem(ACTIVE_BG_ID_KEY);
-            if (savedActiveId && bgImages.some(img => img.id === savedActiveId)) activeBgId = savedActiveId;
-            else if (bgImages.length > 0) activeBgId = bgImages[0].id;
-            else activeBgId = null;
-            applyActiveBackground();
-            renderGallery();
-        }
-        function applyActiveBackground() {
-            if (activeBgId) {
-                const img = bgImages.find(i => i.id === activeBgId);
-                if (img) { document.body.style.setProperty('--user-bg-image', `url(${img.dataUrl})`); document.body.classList.add('custom-bg'); return; }
-            }
-            document.body.classList.remove('custom-bg');
-            document.body.style.removeProperty('--user-bg-image');
-        }
-        function addBgImage(dataUrl) {
-            const newId = Date.now().toString();
-            bgImages.push({ id: newId, dataUrl });
-            saveBgImages();
-            if (!activeBgId) { activeBgId = newId; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId); applyActiveBackground(); }
-            renderGallery();
-        }
-        async function deleteBgImage(id) {
-            if (bgImages.length === 1) {
-                await showAlert("至少保留一张背景图片，无法删除。如需清空请使用「重置默认背景」");
-                return;
-            }
-            const idx = bgImages.findIndex(i => i.id === id);
-            if (idx !== -1) {
-                bgImages.splice(idx, 1);
-                saveBgImages();
-                if (activeBgId === id) { activeBgId = bgImages.length ? bgImages[0].id : null; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId || ''); applyActiveBackground(); }
-                renderGallery();
-            }
-        }
-        function setActiveBg(id) { activeBgId = id; localStorage.setItem(ACTIVE_BG_ID_KEY, activeBgId); applyActiveBackground(); renderGallery(); }
-        function resetToDefaultBg() { activeBgId = null; localStorage.removeItem(ACTIVE_BG_ID_KEY); applyActiveBackground(); renderGallery(); }
-        function renderGallery() {
-            if (!imageGallery) return;
-            if (bgImages.length === 0) { imageGallery.innerHTML = '<div style="color:var(--text-light); padding:8px;">暂无背景图片，点击上方按钮上传</div>'; return; }
-            let html = '';
-            bgImages.forEach(img => { const isActive = (activeBgId === img.id);
-                html += `<div class="gallery-item ${isActive ? 'active' : ''}" data-id="${img.id}"><img src="${img.dataUrl}" alt="背景预览"><div class="gallery-delete" data-id="${img.id}" data-delete="true">✕</div></div>`;
-            });
-            imageGallery.innerHTML = html;
-            document.querySelectorAll('.gallery-item').forEach(el => {
-                el.addEventListener('click', (e) => { if (e.target.classList.contains('gallery-delete')) return; const id = el.dataset.id; if (id) setActiveBg(id); });
-                const delBtn = el.querySelector('.gallery-delete');
-                if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); const id = delBtn.dataset.id; if (id) deleteBgImage(id); });
-            });
-        }
-        const hiddenFileInput = document.createElement('input');
-        hiddenFileInput.type = 'file';
-        hiddenFileInput.accept = 'image/jpeg,image/png,image/webp';
-        hiddenFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) { const reader = new FileReader(); reader.onload = (ev) => { addBgImage(ev.target.result); }; reader.readAsDataURL(file); }
-            hiddenFileInput.value = '';
-        });
-        uploadBgBtn.addEventListener('click', () => hiddenFileInput.click());
-        resetBgBtn.addEventListener('click', () => resetToDefaultBg());
-        
-        function applyBlurStrength(value) {
-            let px = value + 'px';
-            document.documentElement.style.setProperty('--bg-blur-amount', px);
-            document.documentElement.style.setProperty('--card-blur-amount', (parseInt(value) * 1.3) + 'px');
-            blurValueDisplay.innerText = px;
-            localStorage.setItem(BLUR_STRENGTH_KEY, value);
-        }
-        function loadBlurStrength() {
-            const savedBlur = localStorage.getItem(BLUR_STRENGTH_KEY);
-            if (savedBlur !== null) { let val = parseInt(savedBlur); if (isNaN(val)) val = 12; blurStrengthSlider.value = val; applyBlurStrength(val); }
-            else { blurStrengthSlider.value = 12; applyBlurStrength(12); }
-        }
-        blurStrengthSlider.addEventListener('input', (e) => { let val = parseInt(e.target.value); if (isNaN(val)) val = 0; if (val < 0) val = 0; if (val > 25) val = 25; applyBlurStrength(val); });
-        
-        // 笔记核心逻辑
-        function escapeHtml(str) { let s = safeString(str); return s.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-        function formatTime(ts){ if(!ts) return '未知'; let d=new Date(ts); return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; }
-        function getFilteredNotes(){
-            let filtered = notes.filter(n => {
-                if(!currentSearchTerm.trim()) return true;
-                const term = currentSearchTerm.trim().toLowerCase();
-                return (n.title||'').toLowerCase().includes(term) || (n.content||'').toLowerCase().includes(term);
-            });
-            return filtered.sort((a,b)=>currentSortOrder==='desc' ? (b.updatedAt||b.id)-(a.updatedAt||a.id) : (a.updatedAt||a.id)-(b.updatedAt||b.id));
-        }
-        function persistAndUpdate(){ 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); 
-            updateCount(); 
-            renderList(); 
-            if(!isPreviewMode) syncForm(); 
-            else refreshPreview();
-            updateEditorAccess();
-            updateLockButtonUI();
-        }
-        function updateCount(){ noteCounterSpan.innerHTML = `📌 ${notes.length} 篇笔记`; }
-        function renderList(){
-            let filtered = getFilteredNotes();
-            if(filtered.length===0){ notesContainer.innerHTML=`<div class="empty-state">${currentSearchTerm?'🔍 未找到相关笔记':'🍃 暂无笔记'}</div>`; return; }
-            let html='';
-            for(let n of filtered){
-                let title = safeString(n.title);
-                if(title === '') title = '无标题';
-                let timeStr = formatTime(n.updatedAt||n.createdAt);
-                html+=`<div class="note-item ${currentNoteId===n.id?'active':''}" data-note-id="${n.id}"><div class="note-title"><span>📄 ${escapeHtml(title.slice(0,28))}</span><button class="delete-note-btn" data-delete-id="${n.id}">🗑️</button></div><div class="note-meta">🕒 ${timeStr}</div></div>`;
-            }
-            notesContainer.innerHTML=html;
-        }
-        function syncForm(){
-            if(currentNoteId){
-                let n=notes.find(x=>x.id===currentNoteId);
-                if(n){ 
-                    titleInput.value = safeString(n.title);
-                    contentInput.value = safeString(n.content);
-                    let displayTitle = safeString(n.title);
-                    if(displayTitle === '') displayTitle = '无标题';
-                    editorMetaInfo.innerHTML=`✏️ 正在编辑: “${escapeHtml(displayTitle.slice(0,35))}” · 最后更新 ${formatTime(n.updatedAt)}`; 
-                    return; 
-                }
-            }
-            titleInput.value=''; contentInput.value=''; editorMetaInfo.innerHTML='✨ 新建笔记模式 · 内容自动保存';
-        }
-        function renderMarkdownWithTodos(md){
-            let source = safeString(md);
-            if(!source) return '';
-            let lines = source.split('\n'), htmlLines=[];
-            for(let i=0;i<lines.length;i++){
-                let line=lines[i];
-                let todo=line.match(/^-\s*\[\s*\]\s+(.*)$/);
-                let done=line.match(/^-\s*\[x\]\s+(.*)$/i);
-                if(todo) htmlLines.push(`<div class="task-list-item" data-line="${i}"><input type="checkbox" class="todo-checkbox" data-line="${i}"> <span>${escapeHtml(todo[1])}</span></div>`);
-                else if(done) htmlLines.push(`<div class="task-list-item" data-line="${i}"><input type="checkbox" class="todo-checkbox" data-line="${i}" checked> <span style="text-decoration:line-through;opacity:0.7;">${escapeHtml(done[1])}</span></div>`);
-                else htmlLines.push(line);
-            }
-            let raw = htmlLines.join('\n');
-            raw = raw.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-            raw = raw.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
-            raw = raw.replace(/^### (.*$)/gm, '<h3>$1</h3>').replace(/^## (.*$)/gm, '<h2>$1</h2>').replace(/^# (.*$)/gm, '<h1>$1</h1>');
-            let final = raw.split('\n'), out=[], inList=false;
-            for(let ln of final){
-                if(ln.match(/^-\s+[^\[]/)){
-                    if(!inList) out.push('<ul>'), inList=true;
-                    out.push(`<li>${ln.replace(/^-\s+/, '')}</li>`);
-                } else { if(inList) out.push('</ul>'), inList=false; out.push(ln); }
-            }
-            if(inList) out.push('</ul>');
-            return out.map(l=>l.trim()? (l.match(/^<h[1-3]|<ul|<li|<div|^<a/) ? l : `<p>${l}</p>`) : '<br>').join('');
-        }
-        function refreshPreview(){
-            let t=titleInput.value.trim(), c=contentInput.value;
-            if(!t && !c){ previewContentWrapper.innerHTML='<div class="preview-empty">📭 暂无内容</div>'; return; }
-            previewContentWrapper.innerHTML=`<div class="preview-title">${escapeHtml(t||'无标题笔记')}</div><div class="preview-content-render">${renderMarkdownWithTodos(c)}</div>`;
-            previewContentWrapper.querySelectorAll('.todo-checkbox').forEach(cb=>{ cb.removeEventListener('change', handleTodoToggle); cb.addEventListener('change', handleTodoToggle); });
-        }
-        function handleTodoToggle(e){
-            let cb=e.target, idx=parseInt(cb.dataset.line), lines=contentInput.value.split('\n');
-            if(lines[idx]===undefined) return;
-            let isChecked=cb.checked, newLine=isChecked? lines[idx].replace(/-\s*\[\s*\]/, '- [x]') : lines[idx].replace(/-\s*\[x\]/i, '- [ ]');
-            if(newLine!==lines[idx]){ lines[idx]=newLine; contentInput.value=lines.join('\n'); saveCurrentNote(true); if(isPreviewMode) refreshPreview(); }
-        }
-        function setPreviewMode(en){
-            isPreviewMode=en;
-            if(en){ 
-                editorModeDiv.classList.add('hide-view'); 
-                previewModeDiv.classList.remove('hide-view'); 
-                editModeButtonsDiv.style.display='none'; 
-                previewModeButtonsDiv.style.display='flex'; 
-                refreshPreview(); 
-            } else { 
-                editorModeDiv.classList.remove('hide-view'); 
-                previewModeDiv.classList.add('hide-view'); 
-                editModeButtonsDiv.style.display='flex'; 
-                previewModeButtonsDiv.style.display='none'; 
-                syncForm(); 
-            }
-            updateViewIndicator();
-            updateLockButtonUI();
-        }
-        function saveCurrentNote(showToast=true){
-            let rawTitle = safeString(titleInput.value).trim();
-            let rawContent = safeString(contentInput.value);
-            let newTitle = rawTitle;
-            if(newTitle === ''){
-                if(rawContent.trim() !== ''){
-                    let autoTitle = rawContent.trim().replace(/\n/g, ' ').slice(0, 28);
-                    newTitle = autoTitle + (autoTitle.length >= 28 ? '…' : '');
-                    if(newTitle === '') newTitle = '随笔';
-                } else {
-                    newTitle = '未命名笔记';
-                }
-            }
-            if (newTitle === 'undefined' || newTitle === 'null') newTitle = '未命名笔记';
-            const now = Date.now();
-            if(currentNoteId !== null){
-                const idx = notes.findIndex(n => n.id === currentNoteId);
-                if(idx !== -1){
-                    notes[idx].title = newTitle;
-                    notes[idx].content = rawContent;
-                    notes[idx].updatedAt = now;
-                    persistAndUpdate();
-                    if(showToast) showSaveToastMsg();
-                    return;
-                }
-            }
-            const newId = Date.now();
-            notes.unshift({
-                id: newId,
-                title: newTitle,
-                content: rawContent,
-                createdAt: now,
-                updatedAt: now,
-                lockedView: null
-            });
-            currentNoteId = newId;
-            persistAndUpdate();
-            if(showToast) showSaveToastMsg();
-        }
-        function triggerAutoSave(){ 
-            if(autoSaveTimer) clearTimeout(autoSaveTimer);
-            autoSaveTimer = setTimeout(() => {
-                if (!titleInput.disabled && !isPreviewMode && notes.length > 0) saveCurrentNote(true);
-                autoSaveTimer = null;
-            }, 500);
-        }
-        async function deleteNoteById(id){
-            const confirmed = await showConfirm('确定要删除这篇笔记吗？');
-            if (!confirmed) return;
-            let idx=notes.findIndex(n=>n.id===id);
-            if(idx!==-1) notes.splice(idx,1);
-            if(currentNoteId===id){ currentNoteId=null; if(isPreviewMode) setPreviewMode(false); titleInput.value=''; contentInput.value=''; editorMetaInfo.innerHTML='✨ 新建笔记模式 · 内容自动保存'; }
-            persistAndUpdate();
-        }
-        async function deleteCurrent(){ if(currentNoteId) await deleteNoteById(currentNoteId); else await showAlert('没有选中任何笔记'); }
-        function createEmptyNoteNow(){
-            let now=Date.now();
-            notes.unshift({id:now, title:'未命名笔记', content:'', createdAt:now, updatedAt:now, lockedView:null});
-            currentNoteId=now;
-            if (isPreviewMode) setPreviewMode(false);
-            persistAndUpdate(); 
-            titleInput.value=''; contentInput.value=''; 
-            editorMetaInfo.innerHTML='✏️ 正在编辑: “未命名笔记” · 刚刚创建';
-            if(autoSaveTimer) clearTimeout(autoSaveTimer);
-        }
-        
-        function loadNoteToEdit(id){
-            let n=notes.find(x=>x.id===id);
-            if(!n) return;
-            currentNoteId=n.id;
-            titleInput.value = safeString(n.title);
-            contentInput.value = safeString(n.content);
-            if (n.lockedView === 'preview') {
-                if (!isPreviewMode) setPreviewMode(true);
-                else refreshPreview();
-            } else if (n.lockedView === 'edit') {
-                if (isPreviewMode) setPreviewMode(false);
-                else syncForm();
-            } else {
-                if (isPreviewMode) setPreviewMode(false);
-                else syncForm();
-            }
-            let displayTitle = safeString(n.title);
-            if(displayTitle === '') displayTitle = '无标题';
-            editorMetaInfo.innerHTML=`✏️ 正在编辑: “${escapeHtml(displayTitle.slice(0,35))}” · 最后更新 ${formatTime(n.updatedAt)}`;
-            renderList();
-            updateLockButtonUI();
-        }
-        
-        function handleSearchInput(){ currentSearchTerm=searchInput.value; renderList(); }
-        function applyFontSize(size){ document.body.classList.remove('font-small','font-medium','font-large'); document.body.classList.add(size==='small'?'font-small':size==='large'?'font-large':'font-medium'); localStorage.setItem(FONT_SIZE_KEY,size); }
-        function applySortOrder(order){ currentSortOrder=order; localStorage.setItem(SORT_ORDER_KEY,order); renderList(); }
-        function initSettings(){
-            let savedTheme=localStorage.getItem(THEME_STORAGE_KEY);
-            let isDark = savedTheme==='dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if(isDark){ document.body.classList.add('dark-theme'); darkModeToggle.checked=true; } else { document.body.classList.remove('dark-theme'); darkModeToggle.checked=false; }
-            let savedFont=localStorage.getItem(FONT_SIZE_KEY); applyFontSize(savedFont && ['small','medium','large'].includes(savedFont)?savedFont:'medium'); fontSizeSelect.value=localStorage.getItem(FONT_SIZE_KEY)||'medium';
-            let savedSort=localStorage.getItem(SORT_ORDER_KEY); if(savedSort==='asc'||savedSort==='desc') currentSortOrder=savedSort; sortOrderSelect.value=currentSortOrder;
-            loadBlurStrength();
-            loadBgImages();
-            loadShortcuts();
-        }
-        function loadInitialData(){
-            let stored=localStorage.getItem(STORAGE_KEY);
-            if(stored){ 
-                try{ 
-                    notes=JSON.parse(stored); 
-                    notes=notes.filter(n=>n&&typeof n.id==='number').map(n=>({
-                        ...n, 
-                        title: (n.title && typeof n.title === 'string' && n.title !== 'undefined') ? n.title : '未命名笔记',
-                        content: (n.content && typeof n.content === 'string' && n.content !== 'undefined') ? n.content : '',
-                        createdAt: n.createdAt||n.id, 
-                        updatedAt: n.updatedAt||n.id,
-                        lockedView: (n.lockedView === 'edit' || n.lockedView === 'preview') ? n.lockedView : null
-                    })); 
-                } catch(e){ notes=[]; } 
-            }
-            if(!notes.length){ let now=Date.now(); notes=[{ id:now-86400000, title:'✨ 灵羽笔记· 欢迎', content:'你可以自由记录灵感。\n- 按 **Tab** 键呼出Markdown符号列表\n- 支持待办事项：\n- [ ] 未完成的任务\n- [x] 已完成的任务\n- 预览模式下点击复选框可切换状态并自动保存\n- 在设置中可上传多张背景图片，点击缩略图自由切换', createdAt:now-86400000, updatedAt:now-86400000, lockedView:null }]; }
-            sanitizeNotes();
-            currentNoteId=null; isPreviewMode=false;
-            persistAndUpdate(); 
-            titleInput.value=''; contentInput.value=''; 
-            editorModeDiv.classList.remove('hide-view'); previewModeDiv.classList.add('hide-view'); 
-            editModeButtonsDiv.style.display='flex'; previewModeButtonsDiv.style.display='none';
-            updateEditorAccess();
-            updateLockButtonUI();
-            updateViewIndicator();
-        }
-        
-        // Tab 菜单逻辑
-        let suggestItems=['# 一级标题','## 二级标题','- 无序列表','1. 有序列表','**粗体**','*斜体*','[链接](url)','- [ ] 待办事项','- [x] 已完成事项'];
-        let suggestDiv=null, isSuggestActive=false, currentSuggestIndex=0;
-        function getCaretCoordinates(el,pos){
-            let div=document.createElement('div'), styles=getComputedStyle(el);
-            for(let p of ['direction','boxSizing','width','height','overflowX','overflowY','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','paddingTop','paddingRight','paddingBottom','paddingLeft','fontStyle','fontVariant','fontWeight','fontStretch','fontSize','fontSizeAdjust','lineHeight','fontFamily','textAlign','textTransform','textIndent','textDecoration','letterSpacing','wordSpacing']) div.style[p]=styles[p];
-            div.style.position='absolute';
-            div.style.visibility='hidden';
-            div.style.whiteSpace='pre-wrap';
-            div.style.wordWrap='break-word';
-            div.textContent=el.value.substring(0,pos);
-            let span=document.createElement('span');
-            span.textContent=el.value.substring(pos)||'.';
-            div.appendChild(span);
-            document.body.appendChild(div);
-            let coord={top:span.offsetTop+parseInt(styles.lineHeight), left:span.offsetLeft};
-            document.body.removeChild(div);
-            return coord;
-        }
-        function showSuggestAtCaret(inputEl){
-            if(suggestDiv) suggestDiv.remove();
-            let pos=inputEl.selectionStart, coords=getCaretCoordinates(inputEl,pos), rect=inputEl.getBoundingClientRect();
-            let left = rect.left + coords.left;
-            let top = rect.top + coords.top;
-            const MENU_HEIGHT = suggestItems.length * 40;
-            const viewportHeight = window.innerHeight;
-            let finalTop = top;
-            if (top + MENU_HEIGHT > viewportHeight - 20) { finalTop = top - MENU_HEIGHT; if (finalTop < 10) finalTop = 10; }
-            suggestDiv = document.createElement('div');
-            suggestDiv.className = 'md-suggest';
-            suggestDiv.style.left = left + 'px';
-            suggestDiv.style.top = finalTop + 'px';
-            for(let i=0;i<suggestItems.length;i++){
-                let d=document.createElement('div');
-                d.className='md-suggest-item'+(i===currentSuggestIndex?' selected':'');
-                d.textContent=suggestItems[i];
-                d.addEventListener('click',()=>{
-                    let insertText=suggestItems[i];
-                    if(insertText.startsWith('- [ ]')) insertText='- [ ] ';
-                    else if(insertText.startsWith('- [x]')) insertText='- [x] ';
-                    else insertText=insertText.split(' ')[0]+' ';
-                    insertAtCursor(inputEl,insertText);
-                    hideSuggest();
-                });
-                suggestDiv.appendChild(d);
-            }
-            document.body.appendChild(suggestDiv);
-            suggestDiv.style.display='block';
-            isSuggestActive=true;
-        }
-        function hideSuggest(){ if(suggestDiv){ suggestDiv.remove(); suggestDiv=null; } isSuggestActive=false; currentSuggestIndex=0; }
-        function navigateSuggest(delta){
-            if(!suggestDiv) return;
-            let items=suggestDiv.querySelectorAll('.md-suggest-item');
-            items[currentSuggestIndex]?.classList.remove('selected');
-            currentSuggestIndex=(currentSuggestIndex+delta+items.length)%items.length;
-            items[currentSuggestIndex]?.classList.add('selected');
-        }
-        function insertSelected(){
-            if(!suggestDiv) return;
-            let items=suggestDiv.querySelectorAll('.md-suggest-item');
-            let selectedText=items[currentSuggestIndex].textContent;
-            let activeEl=document.activeElement;
-            if(activeEl && (activeEl.id==='noteTitleInput'||activeEl.id==='noteContentInput')){
-                let insertVal=selectedText;
-                if(insertVal.startsWith('- [ ]')) insertVal='- [ ] ';
-                else if(insertVal.startsWith('- [x]')) insertVal='- [x] ';
-                else insertVal=insertVal.split(' ')[0]+' ';
-                insertAtCursor(activeEl,insertVal);
-            }
-            hideSuggest();
-        }
-        function insertAtCursor(field,text){
-            let start=field.selectionStart,end=field.selectionEnd;
-            field.value=field.value.slice(0,start)+text+field.value.slice(end);
-            field.selectionStart=field.selectionEnd=start+text.length;
-            field.focus();
-            if(isPreviewMode) refreshPreview();
-            triggerAutoSave();
-        }
-        document.addEventListener('keydown', (e)=>{
-            if(isSuggestActive){
-                if(e.key === 'Tab'){ e.preventDefault(); if(e.shiftKey) navigateSuggest(-1); else navigateSuggest(1); return; }
-                else if(e.key === 'ArrowUp'){ e.preventDefault(); navigateSuggest(-1); }
-                else if(e.key === 'ArrowDown'){ e.preventDefault(); navigateSuggest(1); }
-                else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); insertSelected(); }
-                else if(e.key === 'Escape'){ e.preventDefault(); hideSuggest(); }
-                else { hideSuggest(); }
-                return;
-            }
-            if(e.key === 'Tab' && (document.activeElement===titleInput||document.activeElement===contentInput)){
-                e.preventDefault();
-                showSuggestAtCaret(document.activeElement);
-                return;
-            }
-            onGlobalKeydown(e);
-        });
-        
-        function switchSettingsTab(tabId){ document.querySelectorAll('.settings-nav-item').forEach(i=>i.classList.remove('active')); document.querySelector(`.settings-nav-item[data-tab="${tabId}"]`).classList.add('active'); document.getElementById('tab-appearance').style.display=tabId==='appearance'?'block':'none'; document.getElementById('tab-glass').style.display=tabId==='glass'?'block':'none'; document.getElementById('tab-pref').style.display=tabId==='pref'?'block':'none'; document.getElementById('tab-shortcut').style.display=tabId==='shortcut'?'block':'none'; document.getElementById('tab-data').style.display=tabId==='data'?'block':'none'; }
-        function bindEvents(){
-            notesContainer.addEventListener('click',e=>{ let del=e.target.closest('.delete-note-btn'); if(del){ e.stopPropagation(); deleteNoteById(parseInt(del.dataset.deleteId)); return; } let item=e.target.closest('.note-item'); if(item && item.dataset.noteId) loadNoteToEdit(parseInt(item.dataset.noteId)); });
-            newNoteSideBtn.addEventListener('click',createEmptyNoteNow);
-            deleteCurrentBtn.addEventListener('click',deleteCurrent);
-            if(deleteCurrentBtnPreview) deleteCurrentBtnPreview.addEventListener('click',deleteCurrent);
-            togglePreviewBtn.addEventListener('click',()=>setPreviewMode(true));
-            backToEditBtn.addEventListener('click',()=>setPreviewMode(false));
-            settingsBtn.addEventListener('click',()=>settingsModal.classList.add('active'));
-            document.querySelectorAll('[data-modal="settingsModal"]').forEach(btn=>btn.addEventListener('click',()=>settingsModal.classList.remove('active')));
-            settingsModal.addEventListener('click',e=>{ if(e.target===settingsModal) settingsModal.classList.remove('active'); });
-            darkModeToggle.addEventListener('change',e=>{ if(e.target.checked) document.body.classList.add('dark-theme'), localStorage.setItem(THEME_STORAGE_KEY,'dark'); else document.body.classList.remove('dark-theme'), localStorage.setItem(THEME_STORAGE_KEY,'light'); });
-            fontSizeSelect.addEventListener('change',e=>applyFontSize(e.target.value));
-            sortOrderSelect.addEventListener('change',e=>applySortOrder(e.target.value));
-            titleInput.addEventListener('input',()=>{ if(isPreviewMode) refreshPreview(); triggerAutoSave(); });
-            contentInput.addEventListener('input',()=>{ if(isPreviewMode) refreshPreview(); triggerAutoSave(); });
-            searchInput.addEventListener('input', handleSearchInput);
-            document.querySelectorAll('.settings-nav-item').forEach(item=>item.addEventListener('click',()=>switchSettingsTab(item.dataset.tab)));
-            exportNotesBtn.addEventListener('click', exportNotes);
-            importNotesBtn.addEventListener('click', () => importFileInput.click());
-            importFileInput.addEventListener('change', (e) => { if (e.target.files.length) importNotes(e.target.files[0]); importFileInput.value = ''; });
-            if (lockViewBtn) lockViewBtn.addEventListener('click', toggleLockForCurrentNote);
-            if (lockViewBtnPreview) lockViewBtnPreview.addEventListener('click', toggleLockForCurrentNote);
-        }
-        initSettings(); loadInitialData(); bindEvents();
-    })();
-</script>
+  <div class="link-tooltip" id="linkTooltip"></div>
+
+  <div class="custom-context-menu" id="customContextMenu">
+    <div class="ctx-item" data-action="cut">
+      <span class="ctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="3"/>
+          <circle cx="6" cy="18" r="3"/>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+          <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+        </svg>
+      </span>
+      <span class="ctx-label">剪切</span>
+      <span class="ctx-shortcut">Ctrl+X</span>
+    </div>
+    <div class="ctx-item" data-action="copy">
+      <span class="ctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+      </span>
+      <span class="ctx-label">复制</span>
+      <span class="ctx-shortcut">Ctrl+C</span>
+    </div>
+    <div class="ctx-item" data-action="paste">
+      <span class="ctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        </svg>
+      </span>
+      <span class="ctx-label">粘贴</span>
+      <span class="ctx-shortcut">Ctrl+V</span>
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="selectAll">
+      <span class="ctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+        </svg>
+      </span>
+      <span class="ctx-label">全选</span>
+      <span class="ctx-shortcut">Ctrl+A</span>
+    </div>
+  </div>
+
+  <div class="note-context-menu" id="noteContextMenu">
+    <div class="nctx-item" data-action="pin">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </span>
+      <span class="nctx-label" id="nctxPinLabel">置顶</span>
+    </div>
+
+    <div class="nctx-divider"></div>
+    <div class="nctx-group-title">分类</div>
+    <div class="nctx-item" data-action="cat-work">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+      </span>
+      <span class="nctx-label">工作</span>
+    </div>
+    <div class="nctx-item" data-action="cat-fun">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/>
+          <line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+      </span>
+      <span class="nctx-label">娱乐</span>
+    </div>
+    <div class="nctx-item" data-action="cat-other">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </span>
+      <span class="nctx-label">其他</span>
+    </div>
+
+    <div class="nctx-divider"></div>
+    <div class="nctx-item" data-action="export-md">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </span>
+      <span class="nctx-label">导出 .md</span>
+    </div>
+    <div class="nctx-item danger" data-action="delete">
+      <span class="nctx-icon">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="10" y1="11" x2="10" y2="17"/>
+          <line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </span>
+      <span class="nctx-label">删除</span>
+    </div>
+  </div>
+
+  <div class="trash-overlay" id="trashOverlay">
+    <div class="trash-panel">
+      <div class="trash-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          回收站
+        </div>
+        <button class="close-btn" id="trashCloseBtn">✕</button>
+      </div>
+      <div class="trash-body">
+        <div class="trash-list" id="trashList"></div>
+      </div>
+      <div class="trash-footer">
+        <button class="btn-danger" id="emptyTrashBtn">清空回收站</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-overlay" id="dialogOverlay">
+    <div class="dialog-box" id="dialogBox">
+      <div class="dialog-title" id="dialogTitle">提示</div>
+      <div class="dialog-message" id="dialogMessage"></div>
+      <div id="dialogCustom"></div>
+      <div class="dialog-buttons" id="dialogButtons"></div>
+    </div>
+  </div>
+
+  <div class="picker-overlay" id="pickerOverlay">
+    <div class="picker-panel">
+      <div class="picker-header">
+        <div class="title" id="pickerTitle">选择</div>
+        <button class="close-btn" id="pickerCloseBtn">✕</button>
+      </div>
+      <div class="picker-body">
+        <div class="picker-grid" id="pickerGrid"></div>
+      </div>
+      <div class="picker-hint" id="pickerHint">点击任意一项即可切换</div>
+    </div>
+  </div>
+
+  <div class="wallpaper-overlay" id="wallpaperOverlay">
+    <div class="wallpaper-panel">
+      <div class="wallpaper-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          动态壁纸
+        </div>
+        <button class="close-btn" id="wallpaperCloseBtn">✕</button>
+      </div>
+      <div class="wallpaper-body">
+        <div class="wallpaper-toolbar">
+          <div class="wallpaper-toolbar-hint">建议视频时长 10-30 秒，文件小于 100MB</div>
+          <button class="wallpaper-add-btn" id="wallpaperAddBtn">
+            <span>+</span> 选择视频
+          </button>
+          <input type="file" id="wallpaperFileInput" accept="video/mp4,video/webm" style="display:none;">
+        </div>
+        <div class="wallpaper-grid" id="wallpaperGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="crop-overlay" id="cropOverlay">
+    <div class="crop-panel">
+      <div class="crop-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          调整头像
+        </div>
+        <button class="close-btn" id="cropCloseBtn">✕</button>
+      </div>
+      <div class="crop-stage" id="cropStage">
+        <canvas id="cropCanvas"></canvas>
+      </div>
+      <div class="crop-controls">
+        <span class="zoom-icon">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input type="range" class="crop-zoom" id="cropZoom" min="100" max="300" value="100">
+      </div>
+      <div class="crop-footer">
+        <button class="crop-btn reset" id="cropResetBtn">重置</button>
+        <button class="crop-btn cancel" id="cropCancelBtn">取消</button>
+        <button class="crop-btn confirm" id="cropConfirmBtn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-overlay" id="loginOverlay">
+        <button class="login-about-btn" id="loginAboutBtn">
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      关于
+    </button>
+
+    <button class="login-wallpaper-btn" id="loginWallpaperBtn">
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      动态壁纸
+    </button>
+
+    <div class="login-left">
+      <div class="login-left-title">✨ 灵羽笔记</div>
+      <div class="login-left-subtitle">记录你的每一刻灵感</div>
+    </div>
+
+    <div class="login-right">
+      <div class="login-form">
+        <div class="login-form-title" id="loginFormTitle">登录 / 注册</div>
+
+        <div class="login-field">
+          <label for="loginUsername">用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名" maxlength="20" autocomplete="off">
+        </div>
+
+        <div class="login-field">
+          <label for="loginPassword">密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码" maxlength="50" autocomplete="off">
+        </div>
+
+        <div class="login-options-row">
+          <label class="login-remember" for="loginRemember">
+            <input type="checkbox" id="loginRemember">
+            <span class="checkbox-box"></span>
+            <span>记住密码</span>
+          </label>
+          <button class="login-forgot-btn" id="loginForgotBtn">忘记密码？</button>
+        </div>
+
+        <button class="login-btn" id="loginSubmitBtn">登录</button>
+
+        <div class="login-switch">
+          <span id="loginSwitchText">还没有账号？</span>
+          <button class="login-switch-btn" id="loginSwitchBtn">点此注册</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          设置
+        </div>
+        <button class="close-btn" id="closeSettingsBtn">✕</button>
+      </div>
+
+      <div class="settings-body">
+        <div class="settings-nav" id="settingsNav">
+          <div class="nav-item active" data-page="page-appearance">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 3v18"/>
+                <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/>
+              </svg>
+            </span>
+            外观主题
+          </div>
+          <div class="nav-item" data-page="page-wallpaper">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </span>
+            动态壁纸
+          </div>
+          <div class="nav-item" data-page="page-glass">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>
+                <path d="M19 3l.6 1.9L21.5 5.5l-1.9.6L19 8l-.6-1.9L16.5 5.5l1.9-.6z"/>
+              </svg>
+            </span>
+            毛玻璃背景
+          </div>
+          <div class="nav-item" data-page="page-pref">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </span>
+            笔记偏好
+          </div>
+          <div class="nav-item" data-page="page-shortcut">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <line x1="6" y1="10" x2="6" y2="10"/>
+                <line x1="10" y1="10" x2="10" y2="10"/>
+                <line x1="14" y1="10" x2="14" y2="10"/>
+                <line x1="18" y1="10" x2="18" y2="10"/>
+                <line x1="6" y1="14" x2="6" y2="14"/>
+                <line x1="18" y1="14" x2="18" y2="14"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
+              </svg>
+            </span>
+            快捷键
+          </div>
+          <div class="nav-item" data-page="page-data">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+            </span>
+            数据管理
+          </div>
+          <div class="nav-item" data-page="page-security">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </span>
+            安全
+          </div>
+          <div class="nav-item" data-page="page-account">
+            <span class="nav-icon">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            账户
+          </div>
+        </div>
+
+        <div class="settings-content">
+          <div class="settings-page active" id="page-appearance">
+            <div class="setting-row">
+              <span class="setting-label">深色模式</span>
+              <div class="switch" id="darkModeSwitch"></div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">动画效果</span>
+              <div class="switch on" id="animationSwitch"></div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">精美鼠标</span>
+              <div class="switch" id="customCursorSwitch"></div>
+            </div>
+            <div class="setting-row" id="customCursorImageRow" style="display:none;">
+              <span class="setting-label">自定义光标</span>
+              <button class="btn-secondary" id="openCursorPanelBtn">管理</button>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-wallpaper">
+            <div class="setting-block">
+              <div class="setting-block-title">动态壁纸预览</div>
+              <div class="setting-block-sub">当前使用的动态壁纸</div>
+              <div class="setting-block-row">
+                <div class="preview-thumb-wrapper" id="wallpaperPreviewWrapper">
+                  <img class="preview-thumb" id="wallpaperPreview" alt="">
+                </div>
+                <button class="btn-secondary" id="switchWallpaperBtn">切换</button>
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-block-row" style="margin-top:0;">
+                <div>
+                  <div class="setting-block-title">上传动态壁纸</div>
+                  <div class="setting-block-sub">建议视频时长 10-30 秒，文件小于 100MB</div>
+                </div>
+                <button class="wallpaper-add-btn" id="settingsWallpaperAddBtn">
+                  <span>+</span> 上传
+                </button>
+                <input type="file" id="settingsWallpaperFileInput" accept="video/mp4,video/webm" style="display:none;">
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-block-row" style="margin-top:0;">
+                <div>
+                  <div class="setting-block-title">应用到主界面</div>
+                  <div class="setting-block-sub">主界面背景也使用这个视频</div>
+                </div>
+                <div class="switch" id="mainWallpaperSwitch"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-glass">
+            <div class="setting-block">
+              <div class="setting-block-title">背景图片预览</div>
+              <div class="setting-block-sub">当前使用的背景图片</div>
+              <div class="setting-block-row">
+                <div class="preview-thumb-wrapper" id="bgPreviewWrapper">
+                  <img class="preview-thumb" id="bgPreview" alt="">
+                </div>
+                <button class="btn-secondary" id="switchBgBtn">切换</button>
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-block-title">上传背景图片</div>
+              <div class="setting-block-sub">从链接或本地添加背景</div>
+              <div class="gallery-add-row" style="margin-top:12px;">
+                <input type="text" class="text-input" id="galleryUrlInput" placeholder="粘贴图片链接后点添加...">
+                <button class="btn-primary" id="galleryAddUrlBtn">添加链接</button>
+                <button class="btn-secondary" id="galleryAddFileBtn">本地图片</button>
+                <input type="file" id="galleryFileInput" accept="image/*" multiple style="display:none;">
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-block-title">毛玻璃效果强度</div>
+              <div class="setting-block-sub">调整控制面板的模糊程度</div>
+              <div class="setting-block-row">
+                <input type="range" class="slider" id="blurSlider" min="0" max="100" value="0">
+                <span class="slider-value" id="blurValue">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-pref">
+            <div class="setting-row">
+              <span class="setting-label">字体大小</span>
+              <select class="select-box" id="fontSizeSelect">
+                <option value="small">小</option>
+                <option value="medium" selected>中</option>
+                <option value="large">大</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">默认视图</span>
+              <select class="select-box" id="defaultPreviewSelect">
+                <option value="edit">编辑模式</option>
+                <option value="preview">预览模式</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">侧边栏默认</span>
+              <select class="select-box" id="sidebarDefaultSelect">
+                <option value="show">显示</option>
+                <option value="hide">隐藏</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">自动保存</span>
+              <select class="select-box" id="autoSaveSelect">
+                <option value="5">每 5 分钟</option>
+                <option value="10">每 10 分钟</option>
+                <option value="15">每 15 分钟</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">列表排序</span>
+              <select class="select-box" id="sortSelect">
+                <option value="updatedAt">按更新时间</option>
+                <option value="createdAt">按创建时间</option>
+                <option value="title">按标题</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <span class="setting-label">回收站保留时长</span>
+              <select class="select-box" id="trashRetentionSelect">
+                <option value="7">7 天</option>
+                <option value="15">15 天</option>
+                <option value="30">30 天</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-shortcut">
+            <div class="setting-row">
+              <span class="setting-label">切换编辑/预览模式</span>
+              <div class="shortcut-input" id="shortcutToggleMode" data-shortcut="toggleMode">E</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">切换侧边栏</span>
+              <div class="shortcut-input" id="shortcutToggleSidebar" data-shortcut="toggleSidebar">B</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">新建笔记</span>
+              <div class="shortcut-input" id="shortcutNewNote" data-shortcut="newNote">N</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">删除当前笔记</span>
+              <div class="shortcut-input" id="shortcutDeleteNote" data-shortcut="deleteNote">D</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">切换深色模式</span>
+              <div class="shortcut-input" id="shortcutToggleDark" data-shortcut="toggleDark">T</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">打开设置</span>
+              <div class="shortcut-input" id="shortcutOpenSettings" data-shortcut="openSettings">S</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">导出数据</span>
+              <div class="shortcut-input" id="shortcutExport" data-shortcut="export">Ctrl+E</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">锁定/解锁</span>
+              <div class="shortcut-input" id="shortcutLock" data-shortcut="lock">L</div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; padding-top:20px;">
+              <button class="btn-secondary" id="resetShortcutsBtn">重置所有快捷键</button>
+            </div>
+            <div style="font-size:0.75rem; color: rgba(255,255,255,0.45); margin-top: 12px; line-height: 1.7;">
+              点击快捷键框后，按下新的按键即可录入（单键或组合键均可）。<br>
+              任意两个快捷键不能相同，冲突会提示。<br>
+              按 Esc 取消录入。<br>
+              编辑时按 Esc 可释放焦点，之后单键快捷键才能生效。
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-data">
+            <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="setting-label">默认保存位置</span>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn-secondary" id="pickSaveDirBtn">选择文件夹</button>
+                  <button class="btn-secondary" id="clearSaveDirBtn" style="display:none;">清除</button>
+                </div>
+              </div>
+              <div class="save-dir-display" id="saveDirDisplay">未设置</div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">导出数据 (JSON)</span>
+              <button class="btn-primary" id="exportBtn">导出为 JSON</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">导出数据 (ZIP)</span>
+              <button class="btn-primary" id="exportZipBtn">导出为 ZIP</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">导入数据</span>
+              <button class="btn-secondary" id="importBtn">从 JSON 导入</button>
+              <input type="file" id="importFileInput" accept=".json" style="display:none;">
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">导入 ZIP</span>
+              <button class="btn-secondary" id="importZipBtn">从 ZIP 导入</button>
+              <input type="file" id="importZipFileInput" accept=".zip" style="display:none;">
+            </div>
+            <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="setting-label">存储用量</span>
+                <button class="btn-secondary" id="refreshUsageBtn" style="padding:5px 12px; font-size:0.75rem;">刷新</button>
+              </div>
+              <div class="storage-usage-box" id="storageUsageBox">
+                <div class="usage-row"><span class="label">localStorage</span><span class="value" id="usageLocal">计算中...</span></div>
+                <div class="usage-row"><span class="label">IndexedDB</span><span class="value" id="usageIdb">计算中...</span></div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">清空所有笔记</span>
+              <button class="btn-danger" id="clearAllBtn">清空</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">清空背景图库</span>
+              <button class="btn-danger" id="clearGalleryBtn">清空</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">清理未引用的笔记图片</span>
+              <button class="btn-danger" id="cleanOrphanImagesBtn">清理</button>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-security">
+            <div class="setting-block">
+              <div class="setting-block-title">笔记锁密码</div>
+              <div class="setting-block-sub">用于解锁被锁定的笔记，独立于登录密码</div>
+              <div class="setting-block-row">
+                <span class="setting-label" id="noteLockStatus">未设置</span>
+                <button class="btn-primary" id="setNoteLockPasswordBtn">设置 / 修改</button>
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-block-title">查看笔记锁密码</div>
+              <div class="setting-block-sub">需要先验证登录密码才能查看</div>
+              <div class="setting-block-row">
+                <span class="setting-label" id="noteLockPasswordDisplay">••••••</span>
+                <button class="btn-secondary" id="viewNoteLockPasswordBtn">查看</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-page" id="page-account">
+            <div class="account-card">
+              <div class="account-avatar" id="accountAvatar">
+                <span id="accountAvatarLetter">A</span>
+                <div class="avatar-hover">
+                  <span class="avatar-hover-icon">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </span>
+                  <span>更换</span>
+                </div>
+              </div>
+              <div class="account-info">
+                <div class="account-username" id="accountUsername">-</div>
+                <div class="account-meta" id="accountMeta">-</div>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">修改密码</span>
+              <button class="btn-secondary" id="changePasswordBtn">修改密码</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">查看恢复密钥</span>
+              <button class="btn-secondary" id="viewRecoveryBtn">查看</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">重新生成恢复密钥</span>
+              <button class="btn-secondary" id="regenRecoveryBtn">重新生成</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">切换账号</span>
+              <button class="btn-secondary" id="logoutBtn">退出登录</button>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">注销账号</span>
+              <button class="btn-danger" id="deleteAccountBtn">注销账号</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-overlay" id="progressOverlay">
+    <div class="progress-box">
+      <div class="progress-title" id="progressTitle">正在处理...</div>
+      <div class="progress-row">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-overlay" id="aboutOverlay">
+    <div class="about-panel">
+      <div class="about-header">
+        <div class="title">关于灵羽笔记</div>
+        <button class="close-btn" id="aboutCloseBtn">✕</button>
+      </div>
+      <div class="about-body">
+        <div class="about-logo">✨</div>
+        <div class="about-name">灵羽笔记</div>
+        <div class="about-version">版本 1.0.0 -LTSC</div>
+        <div class="about-desc">
+          一个完全在浏览器中运行的本地笔记应用。<br>
+          数据只保存在你的设备上，不上传任何服务器。
+        </div>
+        <div class="about-list">
+          <div class="about-list-title">主要功能</div>
+          <div class="about-list-item">· Markdown 笔记与实时预览</div>
+          <div class="about-list-item">· 多用户、独立设置、笔记锁</div>
+          <div class="about-list-item">· 毛玻璃背景与动态壁纸</div>
+          <div class="about-list-item">· ZIP 导入导出、数据备份</div>
+        </div>
+        <div class="about-footer">
+          © 2026 灵羽笔记 | 版本 1.0.0 -LTSC| 使用HTML5 Canvas和JavaScript开发
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="shortcuts-overlay" id="shortcutsOverlay">
+    <div class="shortcuts-panel">
+      <div class="shortcuts-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"/>
+            <line x1="6" y1="10" x2="6" y2="10"/>
+            <line x1="10" y1="10" x2="10" y2="10"/>
+            <line x1="14" y1="10" x2="14" y2="10"/>
+            <line x1="18" y1="10" x2="18" y2="10"/>
+            <line x1="6" y1="14" x2="6" y2="14"/>
+            <line x1="18" y1="14" x2="18" y2="14"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+          键位一览
+        </div>
+        <button class="close-btn" id="shortcutsCloseBtn">✕</button>
+      </div>
+      <div class="shortcuts-body">
+        <div class="shortcuts-list" id="shortcutsList"></div>
+        <div class="shortcuts-hint">可在「设置 → 快捷键」中修改</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cursor-overlay" id="cursorOverlay">
+    <div class="cursor-panel">
+      <div class="cursor-panel-header">
+        <div class="title">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+          </svg>
+          自定义光标
+        </div>
+        <button class="close-btn" id="cursorCloseBtn">✕</button>
+      </div>
+      <div class="cursor-panel-body">
+        <div class="cursor-card">
+          <div class="cursor-card-title">正常</div>
+          <div class="cursor-card-sub">默认状态下的光标图片</div>
+          <div class="cursor-card-preview" id="cursorPreviewThumb"></div>
+          <div class="cursor-card-actions">
+            <button class="btn-primary" id="uploadCursorBtn">上传</button>
+            <button class="btn-secondary" id="resetCursorBtn">恢复默认</button>
+          </div>
+        </div>
+
+        <div class="cursor-card">
+          <div class="cursor-card-title">文本</div>
+          <div class="cursor-card-sub">悬停输入框、文本域时的光标图片</div>
+          <div class="cursor-card-preview" id="cursorTextPreviewThumb"></div>
+          <div class="cursor-card-actions">
+            <button class="btn-primary" id="uploadCursorTextBtn">上传</button>
+            <button class="btn-secondary" id="resetCursorTextBtn">恢复默认</button>
+          </div>
+        </div>
+
+        <div class="cursor-card">
+          <div class="cursor-card-title">悬停</div>
+          <div class="cursor-card-sub">悬停按钮、链接等可点击元素时的光标图片</div>
+          <div class="cursor-card-preview" id="cursorPointerPreviewThumb"></div>
+          <div class="cursor-card-actions">
+            <button class="btn-primary" id="uploadCursorPointerBtn">上传</button>
+            <button class="btn-secondary" id="resetCursorPointerBtn">恢复默认</button>
+          </div>
+        </div>
+
+        <div class="cursor-panel-hint">
+          建议使用 32×32 或 64×64 的透明 PNG / SVG<br>
+          不设置"文本"时会沿用"正常"光标
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="cursorImageInput" accept="image/png,image/svg+xml,image/webp,image/jpeg" style="display:none;">
+  <input type="file" id="cursorTextImageInput" accept="image/png,image/svg+xml,image/webp,image/jpeg" style="display:none;">
+  <input type="file" id="cursorPointerImageInput" accept="image/png,image/svg+xml,image/webp,image/jpeg" style="display:none;">
+
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <script src="js/fflate.min.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
