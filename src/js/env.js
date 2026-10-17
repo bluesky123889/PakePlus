@@ -6,7 +6,7 @@
 (function (VP) {
   'use strict';
 
-  // ===== 运行环境状态（放在 VP 上，不碰 window）=====
+  // ===== 运行环境状态 =====
   VP.env = {
     isTauri: false,
     tauriDialog: null,
@@ -14,7 +14,6 @@
     tauriCore: null
   };
 
-  // ===== Tauri 引用初始化 =====
   VP.initTauriRefs = function () {
     if (!VP.env.isTauri) return;
     const T = window.__TAURI__ || {};
@@ -23,7 +22,6 @@
     VP.env.tauriCore = T.core || null;
   };
 
-  // ===== 环境检测（可重试）=====
   VP.detectTauri = function () {
     const detected = !!(window.__TAURI__ || window.__TAURI_INTERNALS__);
     if (detected && !VP.env.isTauri) {
@@ -35,7 +33,6 @@
     return VP.env.isTauri;
   };
 
-  // 首次立即检测
   if (window.__TAURI__ || window.__TAURI_INTERNALS__) {
     VP.env.isTauri = true;
     document.body.classList.add('is-tauri');
@@ -106,8 +103,9 @@
     return true;
   };
 
+  // 返回 -1 表示未知/读取失败，0 表示真空文件
   VP.getFileSize = async function (path) {
-    if (!VP.env.isTauri || !VP.env.tauriFs) return 0;
+    if (!VP.env.isTauri || !VP.env.tauriFs) return -1;
     try {
       if (typeof VP.env.tauriFs.stat === 'function') {
         const s = await VP.env.tauriFs.stat(path);
@@ -119,8 +117,9 @@
       }
     } catch (e) {
       console.warn('读取文件大小失败:', path, e);
+      return -1;
     }
-    return 0;
+    return -1;
   };
 
 })(window.VP);
