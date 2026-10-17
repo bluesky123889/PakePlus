@@ -34,7 +34,18 @@ window.VP = window.VP || {};
   VP.DIR_NAMES_KEY = 'playerDirNames';
   VP.LAST_VIEW_KEY = 'playerLastView';
   VP.FILE_REF_PREFIX = 'fref:';
+  VP.SUBTITLE_KEY = 'playerSubtitles';
+  VP.SUBTITLE_STYLE_KEY = 'playerSubtitleStyle';
   VP.DIR_PREFIX = 'dir:';
+
+  // ===== 字幕默认样式 =====
+  VP.DEFAULT_SUBTITLE_STYLE = {
+    fontSize: 24,
+    color: '#ffffff',
+    bgOpacity: 75,
+    outline: 2,
+    position: 'bottom'
+  };
 
   // ===== 默认快捷键 =====
   VP.DEFAULT_SHORTCUTS = {
@@ -90,6 +101,7 @@ window.VP = window.VP || {};
   VP.selectionMode = false;
   VP.selectedIds = new Set();
   VP.settings = { speed: 1, ratio: 'contain', brightness: 100, contrast: 100, saturation: 100 };
+  VP.subtitleStyle = { ...VP.DEFAULT_SUBTITLE_STYLE };
   VP.dbPromise = null;
 
   VP.searchQuery = '';
@@ -121,6 +133,11 @@ window.VP = window.VP || {};
 
   VP.rootDragId = null;
   VP.rootDragPath = null;
+
+  // ===== 外挂字幕状态 =====
+  VP.currentSubtitles = [];
+  VP.subtitleMap = {};
+  VP.subtitleLines = [];
 
   // ===== DOM 引用 =====
   function $(id) { return document.getElementById(id); }
@@ -175,6 +192,7 @@ window.VP = window.VP || {};
     fullscreenIcon: $('fullscreenIcon'),
     exitFullscreenIcon: $('exitFullscreenIcon'),
     settingsBtn: $('settingsBtn'),
+    lockBtn: $('lockBtn'),
     videoControls: $('videoControls'),
     volumePopupWrap: $('volumePopupWrap'),
     volumePopup: $('volumePopup'),
@@ -238,7 +256,25 @@ window.VP = window.VP || {};
     folderRefreshBtn: $('folderRefreshBtn'),
     folderPathBar: $('folderPathBar'),
     folderPathText: $('folderPathText'),
-    folderPathBackBtn: $('folderPathBackBtn')
+    folderPathBackBtn: $('folderPathBackBtn'),
+    // 字幕
+    subtitleOverlay: $('subtitleOverlay'),
+    subtitleBtn: $('subtitleBtn'),
+    subtitleInput: $('subtitleInput'),
+    // 字幕设置 UI
+    subtitleFontSizeSlider: $('subtitleFontSizeSlider'),
+    subtitleFontSizeValue: $('subtitleFontSizeValue'),
+    subtitleColorInput: $('subtitleColorInput'),
+    subtitleColorValue: $('subtitleColorValue'),
+    subtitleColorPresets: $('subtitleColorPresets'),
+    subtitleBgOpacitySlider: $('subtitleBgOpacitySlider'),
+    subtitleBgOpacityValue: $('subtitleBgOpacityValue'),
+    subtitleOutlineSlider: $('subtitleOutlineSlider'),
+    subtitleOutlineValue: $('subtitleOutlineValue'),
+    subtitlePositionControl: $('subtitlePositionControl'),
+    subtitlePreviewBox: $('subtitlePreviewBox'),
+    subtitlePreviewText: $('subtitlePreviewText'),
+    resetSubtitleSettings: $('resetSubtitleSettings')
   };
 
   // ===== 工具函数 =====
@@ -252,6 +288,7 @@ window.VP = window.VP || {};
   };
 
   VP.formatSize = function (bytes) {
+    if (bytes === -1 || bytes === null || bytes === undefined) return '—';
     if (!bytes) return '0 B';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -270,6 +307,16 @@ window.VP = window.VP || {};
     return String(str).replace(/[&<>"']/g, m => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[m]);
+  };
+
+  VP.escapeTextKeepBr = function (str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/&lt;br&gt;/g, '<br>');
   };
 
   VP.showToast = function (text) {
@@ -309,6 +356,8 @@ window.VP = window.VP || {};
       const cancelText = options.cancelText || '取消';
       const danger = !!options.danger;
       const customHTML = options.customHTML || null;
+      const onOk = typeof options.onOk === 'function' ? options.onOk : null;
+      const onOpen = typeof options.onOpen === 'function' ? options.onOpen : null;
 
       let iconPath = VP.ICONS.info;
       if (type === 'confirm' && danger) {
@@ -339,7 +388,6 @@ window.VP = window.VP || {};
         dom.dialogCancelBtn.style.display = 'none';
       }
 
-      // checkbox 支持
       const cbOptions = options.checkbox;
       if (cbOptions && dom.dialogCheckboxRow) {
         dom.dialogCheckboxRow.style.display = 'flex';
@@ -357,6 +405,10 @@ window.VP = window.VP || {};
           dom.dialogInput.focus();
           dom.dialogInput.select();
         }, 100);
+      }
+
+      if (onOpen) {
+        setTimeout(() => { try { onOpen(); } catch (e) { console.error(e); } }, 60);
       }
 
       function cleanup() {
@@ -391,6 +443,13 @@ window.VP = window.VP || {};
         if (type === 'prompt') result = dom.dialogInput.value;
         else if (options.checkbox) result = { ok: true, checked: dom.dialogCheckbox.checked };
         else result = true;
+
+        if (onOk) {
+          let shouldClose = true;
+          try { shouldClose = onOk(result); } catch (e) { console.error(e); }
+          if (shouldClose === false) return;
+        }
+
         cleanup();
         resolve(result);
       };
@@ -474,19 +533,42 @@ window.VP = window.VP || {};
     return VP.isFileRef(item) || VP.isDirNode(item);
   };
 
-  VP.getVisibleVideos = function () {
-    if (VP.currentPath === null) {
-      return VP.playlist.filter(v => !VP.isDirNode(v) && VP.isRootVideo(v));
+  VP.getViewItems = function () {
+    if (VP.searchQuery) {
+      return {
+        dirs: [],
+        videos: VP.playlist.filter(v => !VP.isDirNode(v))
+      };
     }
-    return VP.playlist.filter(v =>
-      !VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath
-    );
+
+    if (VP.currentPath === null) {
+      return {
+        dirs: VP.playlist.filter(v => VP.isDirNode(v) && VP.rootDirs.includes(v.path)),
+        videos: VP.playlist.filter(v => !VP.isDirNode(v) && !v.path)
+      };
+    }
+
+    return {
+      dirs: VP.playlist.filter(v => VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath),
+      videos: VP.playlist.filter(v => !VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath)
+    };
+  };
+
+  VP.getVisibleVideos = function () {
+    return VP.getViewItems().videos;
   };
 
   VP.isRootVideo = function (item) {
     if (!item.path) return false;
     const parent = VP.dirname(item.path);
     return VP.rootDirs.includes(parent);
+  };
+
+  VP.splitPath = function (fullPath) {
+    if (!fullPath) return [];
+    const sep = fullPath.includes('\\') ? '\\' : '/';
+    const parts = fullPath.split(sep);
+    return parts.filter((p, i) => p !== '' || i === 0);
   };
 
 })(window.VP);
