@@ -79,7 +79,7 @@
     VP.applyDensity();
   };
 
-    VP.applyDensity = function () {
+  VP.applyDensity = function () {
     dom.playlistPanel.classList.toggle('compact', VP.isCompact);
     dom.densityIcon.innerHTML = VP.isCompact ? VP.ICONS.densityCompact : VP.ICONS.density;
     dom.densityBtn.classList.toggle('active', VP.isCompact);
@@ -245,36 +245,18 @@
     VP.updateFolderPathBar();
   };
 
-  // 取当前视图下的直接子项
-  VP.getCurrentViewItems = function () {
-    if (VP.searchQuery) {
-      return {
-        dirs: [],
-        videos: VP.playlist.filter(v => !VP.isDirNode(v))
-      };
-    }
-
-    if (VP.currentPath === null) {
-      return {
-        dirs: VP.playlist.filter(v => VP.isDirNode(v) && VP.rootDirs.includes(v.path)),
-        videos: []
-      };
-    }
-    return {
-      dirs: VP.playlist.filter(v => VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath),
-      videos: VP.playlist.filter(v => !VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath)
-    };
-  };
+  VP.getCurrentViewItems = VP.getViewItems;
 
   // ===== 列表渲染 =====
   VP.renderPlaylist = function () {
     const videoCount = VP.playlist.filter(v => !VP.isDirNode(v)).length;
     dom.playlistCount.textContent = videoCount;
 
+    dom.playlistItems.innerHTML = '';
+    dom.playlistItems.appendChild(dom.playlistNoResult);
+    dom.playlistNoResult.classList.remove('show');
+
     if (VP.playlist.length === 0) {
-      dom.playlistItems.innerHTML = '';
-      dom.playlistItems.appendChild(dom.playlistNoResult);
-      dom.playlistNoResult.classList.remove('show');
       dom.playlistItems.insertAdjacentHTML('afterbegin', `
         <div class="playlist-empty">
           <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
@@ -285,10 +267,7 @@
       return;
     }
 
-    dom.playlistItems.innerHTML = '';
-    dom.playlistItems.appendChild(dom.playlistNoResult);
-
-    const view = VP.getCurrentViewItems();
+    const view = VP.getViewItems();
 
     if (view.dirs.length === 0 && view.videos.length === 0) {
       const empty = document.createElement('div');
@@ -296,7 +275,7 @@
       if (VP.searchQuery) {
         empty.innerHTML = `<div>没有匹配的视频</div>`;
       } else if (VP.currentPath === null) {
-        empty.innerHTML = `<div>还没有添加任何根目录<br><span style="font-size:12px;color:rgba(255,255,255,0.35)">点击上方 📁 按钮添加文件夹</span></div>`;
+        empty.innerHTML = `<div>还没有添加任何根目录<br><span style="font-size:12px;color:rgba(255,255,255,0.35)">点击上方 📁 按钮添加文件夹，或点击 + 导入视频</span></div>`;
       } else {
         empty.innerHTML = `<div>这个文件夹是空的</div>`;
       }
@@ -349,7 +328,6 @@
         VP.enterFolder(dir.path);
       });
 
-      // 根视图下，根目录行可拖拽排序
       if (VP.currentPath === null) {
         el.draggable = true;
 
@@ -400,7 +378,7 @@
     if (VP.searchQuery) {
       sortedVideos = sortedAll.filter(v => !VP.isDirNode(v));
     } else if (VP.currentPath === null) {
-      sortedVideos = [];
+      sortedVideos = sortedAll.filter(v => !VP.isDirNode(v) && !v.path);
     } else {
       sortedVideos = sortedAll.filter(v => !VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath);
     }
@@ -454,7 +432,7 @@
         : '';
 
       const sizeText = isRef
-        ? (item.size > 0 ? VP.formatSize(item.size) : '外部引用')
+        ? (item.size > 0 ? VP.formatSize(item.size) : (item.size === -1 ? '大小未知' : '外部引用'))
         : VP.formatSize(item.size);
 
       const displayName = VP.getDisplayName(item);
@@ -522,7 +500,6 @@
         VP.switchToVideo(item.id);
       });
 
-      // 拖拽排序：手动模式下都允许（同目录校验在 handleReorderDrop 里）
       const canDrag = !VP.selectionMode && VP.sortMode === 'manual';
       el.draggable = canDrag;
       el.addEventListener('dragstart', (e) => {
@@ -612,7 +589,6 @@
     VP.dragOverPosition = null;
   };
 
-  // 视频重排（同目录内）
   VP.handleReorderDrop = function (targetId, position) {
     if (!VP.dragItemId || VP.dragItemId === targetId) {
       VP.clearDragHints();
@@ -626,14 +602,13 @@
       return;
     }
 
-    // 同目录校验
     const dragItem = VP.playlist[fromIdx];
     const targetItem = VP.playlist[toIdx];
     const dragDir = dragItem.path ? VP.dirname(dragItem.path) : null;
     const targetDir = targetItem.path ? VP.dirname(targetItem.path) : null;
     if (dragDir !== targetDir) {
       VP.clearDragHints();
-      VP.showOSD(VP.ICONS.info, '只能在同一文件夹内排序');
+      VP.showOSD(VP.ICONS.info, '只能在同一目录内排序');
       return;
     }
 
@@ -655,7 +630,6 @@
     VP.dragItemId = null;
   };
 
-  // 根目录重排
   VP.reorderRootDir = function (fromPath, toPath, position) {
     if (!fromPath || !toPath || fromPath === toPath) return;
     const fromIdx = VP.rootDirs.indexOf(fromPath);
@@ -730,6 +704,7 @@
     let width = '—', height = '—', duration = '—';
     let tempSrc = null;
     let tempBlob = null;
+    let tempVideo = null;
 
     try {
       if (isRef) {
@@ -743,7 +718,7 @@
       }
 
       if (tempSrc) {
-        const tempVideo = document.createElement('video');
+        tempVideo = document.createElement('video');
         tempVideo.preload = 'metadata';
         tempVideo.muted = true;
         tempVideo.src = tempSrc;
@@ -763,12 +738,20 @@
     } catch (e) {
       console.warn('读取元数据失败:', e);
     } finally {
-      if (tempBlob && tempSrc) URL.revokeObjectURL(tempSrc);
+      if (tempVideo) {
+        try { tempVideo.removeAttribute('src'); tempVideo.load(); } catch (e) {}
+      }
+      if (tempBlob && tempSrc) {
+        try { URL.revokeObjectURL(tempSrc); } catch (e) {}
+      }
     }
 
     VP.hideToast();
 
     const tags = VP.getItemTags(id);
+    const sizeDisplay = item.size === -1
+      ? '未知（点"重新扫描"可读取）'
+      : VP.formatSize(item.size);
 
     const html = `
       <div class="detail-row">
@@ -791,11 +774,11 @@
       </div>
       <div class="detail-row">
         <div class="detail-label">文件大小</div>
-        <div class="detail-value">${item.size > 0 ? VP.formatSize(item.size) : '未知（点"重新扫描"可读取）'}</div>
+        <div class="detail-value">${sizeDisplay}</div>
       </div>` : `
       <div class="detail-row">
         <div class="detail-label">文件大小</div>
-        <div class="detail-value">${VP.formatSize(item.size)}</div>
+        <div class="detail-value">${sizeDisplay}</div>
       </div>`}
       <div class="detail-row">
         <div class="detail-label">文件类型</div>
@@ -832,7 +815,7 @@
   };
 
   // ===== 标签编辑 =====
-  VP.showTagEditor = async function (id) {
+  VP.showTagEditor = function (id) {
     const item = VP.playlist.find(v => v.id === id);
     if (!item) return;
     const displayName = VP.getDisplayName(item);
@@ -844,68 +827,90 @@
       <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:8px">提示：输入标签后按 Enter 添加，点击标签上的 × 删除。可添加多个。</div>
     `;
 
-    const resultPromise = VP.showDialog({
+    return VP.showDialog({
       type: 'alert',
       title: '编辑标签',
       customHTML: html,
-      okText: '保存'
-    });
-
-    setTimeout(() => {
-      const wrap = document.getElementById('tagEditWrap');
-      if (!wrap) return;
-
-      function renderTags() {
-        wrap.innerHTML = '';
-        currentTags.forEach((tag, idx) => {
-          const chip = document.createElement('div');
-          chip.className = 'tag-edit-chip';
-          chip.innerHTML = `
-            <span>${VP.escapeHtml(tag)}</span>
-            <button data-idx="${idx}"><svg viewBox="0 0 24 24">${VP.ICONS.close}</svg></button>
-          `;
-          chip.querySelector('button').addEventListener('click', () => {
-            currentTags.splice(idx, 1);
-            renderTags();
-          });
-          wrap.appendChild(chip);
-        });
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'tag-edit-input';
-        input.placeholder = '输入标签…';
-        input.addEventListener('keydown', (e) => {
-          if (e.code === 'Enter' && input.value.trim()) {
-            e.preventDefault();
-            e.stopPropagation();
-            const newTag = input.value.trim();
-            if (!currentTags.includes(newTag)) currentTags.push(newTag);
-            input.value = '';
-            renderTags();
-            setTimeout(() => {
-              const newInput = wrap.querySelector('.tag-edit-input');
-              if (newInput) newInput.focus();
-            }, 0);
-          }
-        });
-        wrap.appendChild(input);
-      }
-
-      renderTags();
-
-      dom.dialogOkBtn.onclick = () => {
+      okText: '保存',
+      onOk: () => {
         if (currentTags.length > 0) VP.tagMap[id] = currentTags.slice();
         else delete VP.tagMap[id];
         VP.saveTags();
         VP.renderPlaylist();
         VP.renderTagBar();
         VP.showOSD(VP.ICONS.check, '标签已更新');
-        dom.dialogOverlay.classList.remove('show');
-      };
-    }, 50);
+        return true;
+      },
+      onOpen: () => {
+        const wrap = document.getElementById('tagEditWrap');
+        if (!wrap) return;
 
-    await resultPromise;
+        function renderTags() {
+          wrap.innerHTML = '';
+          currentTags.forEach((tag, idx) => {
+            const chip = document.createElement('div');
+            chip.className = 'tag-edit-chip';
+            chip.innerHTML = `
+              <span>${VP.escapeHtml(tag)}</span>
+              <button data-idx="${idx}"><svg viewBox="0 0 24 24">${VP.ICONS.close}</svg></button>
+            `;
+            chip.querySelector('button').addEventListener('click', () => {
+              currentTags.splice(idx, 1);
+              renderTags();
+            });
+            wrap.appendChild(chip);
+          });
+
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'tag-edit-input';
+          input.placeholder = '输入标签…';
+          input.addEventListener('keydown', (e) => {
+            if (e.code === 'Enter' && input.value.trim()) {
+              e.preventDefault();
+              e.stopPropagation();
+              const newTag = input.value.trim();
+              if (!currentTags.includes(newTag)) currentTags.push(newTag);
+              input.value = '';
+              renderTags();
+              setTimeout(() => {
+                const newInput = wrap.querySelector('.tag-edit-input');
+                if (newInput) newInput.focus();
+              }, 0);
+            }
+          });
+          wrap.appendChild(input);
+          setTimeout(() => input.focus(), 0);
+        }
+
+        renderTags();
+      }
+    });
+  };
+
+  // ===== 清理子项辅助（#3 新增） =====
+  VP.purgeChildData = async function (ids) {
+    let dbCount = 0;
+    for (const id of ids) {
+      const it = VP.playlist.find(v => v.id === id);
+      if (it && !VP.isFileRef(it) && !VP.isDirNode(it)) {
+        try { await VP.dbDelete(id); dbCount++; } catch (e) {}
+      }
+      if (VP.videoProgress[id]) delete VP.videoProgress[id];
+      if (VP.watchedSet.has(id)) VP.watchedSet.delete(id);
+      if (VP.renameMap[id]) delete VP.renameMap[id];
+      if (VP.tagMap[id]) delete VP.tagMap[id];
+      if (VP.subtitleMap[id]) delete VP.subtitleMap[id];
+      VP.selectedIds.delete(id);
+    }
+    if (ids.length > 0) {
+      VP.saveVideoProgress();
+      VP.saveWatched();
+      VP.saveRenames();
+      VP.saveTags();
+      VP.saveSubtitles();
+    }
+    return dbCount;
   };
 
   // ===== 删除单个 =====
@@ -936,8 +941,34 @@
       }
 
       const idsToRemove = new Set(toRemove.map(v => v.id));
+
+      // 【#3 修复】清理所有子项的进度/已看/重命名/标签/字幕/DB 记录
+      const childIds = Array.from(idsToRemove);
+      await VP.purgeChildData(childIds);
+
+      // 如果当前播放的视频在删除范围内，重置播放器
+      const removingCurrent = VP.currentVideoId && idsToRemove.has(VP.currentVideoId);
+
       VP.playlist = VP.playlist.filter(v => !idsToRemove.has(v.id));
-      idsToRemove.forEach(rid => VP.selectedIds.delete(rid));
+
+      if (removingCurrent) {
+        if (VP.currentObjectURL) {
+          URL.revokeObjectURL(VP.currentObjectURL);
+          VP.currentObjectURL = null;
+        }
+        dom.video.removeAttribute('src');
+        dom.video.load();
+        VP.hasVideo = false;
+        VP.currentVideoId = null;
+        VP.setControlsEnabled(false);
+        dom.placeholder.classList.remove('hidden');
+        dom.progressPlayed.style.width = '0%';
+        dom.progressThumb.style.left = '0%';
+        dom.currentTimeDisplay.textContent = '0:00';
+        dom.durationDisplay.textContent = '0:00';
+        VP.updatePlayPauseIcon();
+        VP.resetPreviewThumbnail();
+      }
 
       await VP.savePlaylistMeta();
       VP.renderPlaylist();
@@ -949,6 +980,8 @@
       if (VP.currentPath && (VP.currentPath === item.path ||
           VP.currentPath.startsWith(prefix1) || VP.currentPath.startsWith(prefix2))) {
         VP.goAllView();
+      } else if (!VP.hasVideo && playlistLength() > 0) {
+        await switchToFirstVideo();
       }
       return;
     }
@@ -957,7 +990,6 @@
     const displayName = VP.getDisplayName(item);
     const isRef = VP.isFileRef(item);
 
-    // Tauri 模式 + 文件引用视频 → 提供"同时删除源文件"勾选
     const canDeleteSource = VP.env.isTauri && isRef;
 
     let confirmResult;
@@ -994,7 +1026,7 @@
       await new Promise(resolve => setTimeout(resolve, 250));
     }
 
-    // 删源文件
+    let sourceDeleteFailed = false;
     if (deleteSource) {
       try {
         const fs = VP.env.tauriFs;
@@ -1002,24 +1034,16 @@
           await fs.remove(item.path);
           VP.showOSD(VP.ICONS.check, '源文件已删除');
         } else {
-          VP.dlgAlert('当前 Tauri fs 插件不支持 remove 操作', '错误');
+          sourceDeleteFailed = true;
         }
       } catch (err) {
         console.error('删除源文件失败:', err);
-        VP.dlgAlert('删除源文件失败：' + (err && err.message ? err.message : err), '错误');
+        sourceDeleteFailed = true;
       }
     }
 
-    if (!isRef) {
-      try { await VP.dbDelete(id); } catch (err) {}
-    }
+    await VP.purgeChildData([id]);
 
-    if (VP.videoProgress[id]) { delete VP.videoProgress[id]; VP.saveVideoProgress(); }
-    if (VP.watchedSet.has(id)) { VP.watchedSet.delete(id); VP.saveWatched(); }
-    if (VP.renameMap[id]) { delete VP.renameMap[id]; VP.saveRenames(); }
-    if (VP.tagMap[id]) { delete VP.tagMap[id]; VP.saveTags(); }
-
-    VP.selectedIds.delete(id);
     VP.playlist = VP.playlist.filter(v => v.id !== id);
 
     if (VP.currentVideoId === id) {
@@ -1047,6 +1071,10 @@
     VP.updateStorageInfo();
     VP.updateFolderPathBar();
 
+    if (sourceDeleteFailed) {
+      VP.dlgAlert('列表项已移除，但源文件删除失败。\n可能原因：文件被占用、权限不足或文件不存在。', '源文件删除失败');
+    }
+
     if (!VP.hasVideo && playlistLength() > 0) {
       await switchToFirstVideo();
     } else {
@@ -1054,7 +1082,6 @@
     }
   };
 
-  // 辅助
   function playlistLength() {
     return VP.playlist.filter(v => !VP.isDirNode(v)).length;
   }
@@ -1077,12 +1104,19 @@
 
     VP.showToast(`正在添加 ${videoFiles.length} 个视频…`);
     let addedCount = 0;
+    const failedNames = [];
 
     for (const file of videoFiles) {
+      const id = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+      const record = { id, name: file.name, type: file.type, size: file.size, blob: file, addedAt: Date.now() };
       try {
-        const id = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
-        const record = { id, name: file.name, type: file.type, size: file.size, blob: file, addedAt: Date.now() };
         await VP.dbPut(record);
+      } catch (err) {
+        console.error('保存视频失败:', err);
+        failedNames.push(file.name);
+        continue;
+      }
+      try {
         VP.playlist.push({
           id: record.id,
           type: 'video',
@@ -1091,7 +1125,10 @@
           addedAt: record.addedAt
         });
         addedCount++;
-      } catch (err) { console.error('保存视频失败:', err); }
+      } catch (err) {
+        try { await VP.dbDelete(id); } catch (e) {}
+        failedNames.push(file.name);
+      }
     }
 
     await VP.savePlaylistMeta();
@@ -1105,8 +1142,13 @@
     VP.hideToast();
     VP.updateStorageInfo();
 
-    if (addedCount < videoFiles.length) {
-      VP.dlgAlert(`成功添加 ${addedCount} 个视频，${videoFiles.length - addedCount} 个失败（可能是存储空间不足）`, '提示');
+    if (failedNames.length > 0) {
+      const preview = failedNames.slice(0, 5).join('\n');
+      const more = failedNames.length > 5 ? `\n…等 ${failedNames.length} 个` : '';
+      VP.dlgAlert(
+        `成功添加 ${addedCount} 个视频，${failedNames.length} 个失败（可能是存储空间不足）：\n\n${preview}${more}`,
+        '部分添加失败'
+      );
     }
   };
 
@@ -1147,6 +1189,112 @@
     await VP.scanFolder(dir, true);
   };
 
+  // ===== 自动匹配字幕（#14 新增） =====
+  const SUBTITLE_EXT_RE = /\.(srt|vtt|ass|ssa)$/i;
+  const VIDEO_EXT_RE = /\.(mp4|webm|mov|mkv|avi|flv|wmv|m4v|ogv)$/i;
+
+  async function readSubtitleText(path) {
+    if (!VP.env.tauriFs) return '';
+    try {
+      if (typeof VP.env.tauriFs.readFile === 'function') {
+        const bytes = await VP.env.tauriFs.readFile(path);
+        const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        // 先试 UTF-8（严格模式）
+        try {
+          let text = new TextDecoder('utf-8', { fatal: true }).decode(u8);
+          if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+          return text;
+        } catch (e) {
+          // 回退 GBK
+          try {
+            let text = new TextDecoder('gbk').decode(u8);
+            if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+            return text;
+          } catch (e2) {
+            let text = new TextDecoder('utf-8').decode(u8);
+            if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+            return text;
+          }
+        }
+      }
+      if (typeof VP.env.tauriFs.readTextFile === 'function') {
+        let text = await VP.env.tauriFs.readTextFile(path);
+        if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+        return text || '';
+      }
+    } catch (err) {
+      console.warn('读取字幕失败:', path, err);
+    }
+    return '';
+  }
+
+  VP.autoMatchSubtitles = async function (videos, subtitles) {
+    const LANG_SUFFIXES = [
+      '',
+      '.zh', '.zh-CN', '.zh-Hans', '.zh-Hant', '.chs', '.cht', '.cn', '.sc', '.tc', '.chi', '.zho',
+      '.en', '.eng', '.en-US', '.en-GB',
+      '.ja', '.jp', '.jpn',
+      '.ko', '.kr', '.kor'
+    ];
+
+    const subsByDir = new Map();
+    for (const sub of subtitles) {
+      if (!subsByDir.has(sub.parentDir)) subsByDir.set(sub.parentDir, []);
+      subsByDir.get(sub.parentDir).push(sub);
+    }
+
+    let matched = 0;
+    let skipped = 0;
+
+    for (const video of videos) {
+      const videoId = VP.FILE_REF_PREFIX + video.fullPath;
+
+      if (VP.subtitleMap[videoId]) {
+        skipped++;
+        continue;
+      }
+
+      const dirSubs = subsByDir.get(video.parentDir);
+      if (!dirSubs || dirSubs.length === 0) continue;
+
+      const videoBase = video.name.replace(/\.[^.]+$/, '');
+      let found = null;
+
+      for (const suffix of LANG_SUFFIXES) {
+        const targetBase = (videoBase + suffix).toLowerCase();
+        const hit = dirSubs.find(s => {
+          const subBase = s.name.replace(/\.[^.]+$/, '').toLowerCase();
+          return subBase === targetBase;
+        });
+        if (hit) { found = hit; break; }
+      }
+
+      if (!found) continue;
+
+      const content = await readSubtitleText(found.fullPath);
+      if (!content || content.trim() === '') continue;
+
+      let captions;
+      if (content.includes('[Script Info]')) {
+        captions = VP.parseASS(content);
+      } else {
+        captions = VP.parseSRT(content);
+      }
+      if (!captions || captions.length === 0) {
+        console.warn('字幕解析为空，跳过:', found.fullPath);
+        continue;
+      }
+
+      VP.subtitleMap[videoId] = content;
+      matched++;
+    }
+
+    if (matched > 0) VP.saveSubtitles();
+
+    return { matched, skipped };
+  };
+
+  // ===== 扫描文件夹 =====
   VP.scanFolder = async function (dirPath, asRoot) {
     if (!dirPath) return;
 
@@ -1157,21 +1305,23 @@
 
     VP.showToast('正在扫描文件夹…');
 
-    const MAX_DEPTH = 3;
-    const MAX_FILES = 500;
+    const MAX_DEPTH = 8;
+    const MAX_FILES = 5000;
 
     const videoEntries = [];
     const dirSet = new Set();
+    const subtitleEntries = []; // 【#14】收集字幕文件
 
     async function walk(dir, depth) {
       if (depth > MAX_DEPTH) return;
       if (videoEntries.length >= MAX_FILES) return;
 
-      let entries;
+     let entries;
       try {
         entries = await VP.env.tauriFs.readDir(dir);
       } catch (err) {
         console.warn('跳过无法读取的目录:', dir, err);
+        failedDirs.push(dir);
         return;
       }
 
@@ -1183,7 +1333,9 @@
         const fullPath = VP.joinPath(dir, name);
 
         if (isFile) {
-          if (/\.(mp4|webm|mov|mkv|avi|flv|wmv|m4v|ogv)$/i.test(name)) {
+          if (SUBTITLE_EXT_RE.test(name)) {
+            subtitleEntries.push({ name, fullPath, parentDir: dir });
+          } else if (VIDEO_EXT_RE.test(name)) {
             videoEntries.push({ name, fullPath, parentDir: dir });
             let d = dir;
             while (d && d.length >= dirPath.length) {
@@ -1208,7 +1360,6 @@
       return;
     }
 
-    // 按名称自然排序
     videoEntries.sort((a, b) =>
       a.name.localeCompare(b.name, 'zh-CN', { numeric: true, sensitivity: 'base' })
     );
@@ -1222,6 +1373,17 @@
         const size = await VP.getFileSize(v.fullPath);
         sizeMap.set(v.fullPath, size);
       }));
+    }
+
+    // 【#14】匹配字幕
+    let subtitleMatchResult = { matched: 0, skipped: 0 };
+    if (subtitleEntries.length > 0) {
+      VP.showToast(`正在匹配字幕…`);
+      try {
+        subtitleMatchResult = await VP.autoMatchSubtitles(videoEntries, subtitleEntries);
+      } catch (e) {
+        console.warn('字幕匹配失败:', e);
+      }
     }
 
     let addedVideos = 0;
@@ -1251,12 +1413,13 @@
       const id = VP.FILE_REF_PREFIX + v.fullPath;
       if (VP.playlist.find(p => p.id === id)) continue;
 
+      const size = sizeMap.get(v.fullPath);
       VP.playlist.push({
         id,
         type: 'video',
         name: v.name,
         path: v.fullPath,
-        size: sizeMap.get(v.fullPath) || 0,
+        size: size === undefined ? -1 : size,
         addedAt: Date.now(),
         isFileRef: true
       });
@@ -1271,12 +1434,16 @@
     VP.updateFolderPathBar();
     VP.hideToast();
 
-    if (addedVideos === 0 && addedDirs === 0) {
+        const truncated = videoEntries.length >= MAX_FILES;
+    if (addedVideos === 0 && addedDirs === 0 && subtitleMatchResult.matched === 0) {
       VP.showOSD(VP.ICONS.info, '文件夹内容已在列表中');
     } else {
       let msg = '';
       if (addedDirs > 0) msg += `${addedDirs} 个文件夹`;
       if (addedVideos > 0) msg += (msg ? '、' : '') + `${addedVideos} 个视频`;
+      if (subtitleMatchResult.matched > 0) msg += (msg ? '、' : '') + `${subtitleMatchResult.matched} 个字幕`;
+      if (truncated) msg += `（已达上限 ${MAX_FILES}）`;
+      if (failedDirs.length > 0) msg += `，${failedDirs.length} 个目录无法读取`;
       VP.showOSD(VP.ICONS.check, `已添加 ${msg}`);
     }
 
@@ -1292,61 +1459,6 @@
     }
     for (const dir of VP.rootDirs) {
       await VP.scanFolder(dir, false);
-    }
-  };
-
-  VP.clearFolderRefs = async function () {
-    const refs = VP.playlist.filter(p => VP.isFileRef(p) || VP.isDirNode(p));
-    if (refs.length === 0) {
-      VP.dlgAlert('当前没有文件夹引用的视频', '提示');
-      return;
-    }
-
-    const ok = await VP.dlgConfirm(
-      `确定要移除 ${refs.length} 个文件夹引用的视频/文件夹吗？\n（不会删除原文件）`,
-      '清空文件夹引用',
-      { danger: true, okText: '移除' }
-    );
-    if (!ok) return;
-
-    const removingCurrent = refs.some(p => p.id === VP.currentVideoId);
-
-    VP.playlist = VP.playlist.filter(p => !VP.isFileRef(p) && !VP.isDirNode(p));
-
-    if (removingCurrent) {
-      if (VP.currentObjectURL) {
-        URL.revokeObjectURL(VP.currentObjectURL);
-        VP.currentObjectURL = null;
-      }
-      dom.video.removeAttribute('src');
-      dom.video.load();
-      VP.hasVideo = false;
-      VP.currentVideoId = null;
-      VP.setControlsEnabled(false);
-      dom.placeholder.classList.remove('hidden');
-      dom.progressPlayed.style.width = '0%';
-      dom.progressThumb.style.left = '0%';
-      dom.currentTimeDisplay.textContent = '0:00';
-      dom.durationDisplay.textContent = '0:00';
-      VP.updatePlayPauseIcon();
-      VP.resetPreviewThumbnail();
-    }
-
-    try { localStorage.removeItem(VP.LAST_DIR_KEY); } catch (e) {}
-    VP.rootDirs = [];
-    VP.saveRootDirs();
-    VP.currentPath = null;
-
-    await VP.savePlaylistMeta();
-    VP.renderPlaylist();
-    VP.renderTagBar();
-    VP.updateFolderPathBar();
-    VP.updateStorageInfo();
-
-    VP.showOSD(VP.ICONS.check, '已清空文件夹引用');
-
-    if (!VP.hasVideo && playlistLength() > 0) {
-      await switchToFirstVideo();
     }
   };
 
@@ -1398,22 +1510,7 @@
       );
       if (ok) {
         VP.showToast(`正在移除 ${missingIds.length} 个失效项…`);
-        for (const id of missingIds) {
-          const it = VP.playlist.find(v => v.id === id);
-          if (it && !VP.isFileRef(it)) {
-            try { await VP.dbDelete(id); } catch (e) {}
-          }
-          if (VP.videoProgress[id]) delete VP.videoProgress[id];
-          if (VP.watchedSet.has(id)) VP.watchedSet.delete(id);
-          if (VP.renameMap[id]) delete VP.renameMap[id];
-          if (VP.tagMap[id]) delete VP.tagMap[id];
-          if (VP.currentVideoId === id) VP.currentVideoId = null;
-        }
-        VP.saveVideoProgress();
-        VP.saveWatched();
-        VP.saveRenames();
-        VP.saveTags();
-
+        await VP.purgeChildData(missingIds);
         VP.playlist = VP.playlist.filter(p => !missingIds.includes(p.id));
 
         if (!VP.hasVideo) {
@@ -1488,41 +1585,50 @@
     }
 
     const sep = VP.currentPath.includes('\\') ? '\\' : '/';
-    const segs = VP.currentPath.split(sep);
+    const segs = VP.splitPath(VP.currentPath);
+    if (segs.length === 0) {
+      dom.folderPathText.innerHTML = `<span class="folder-path-crumb active">${VP.escapeHtml(VP.currentPath)}</span>`;
+      return;
+    }
 
     const rootDir = VP.rootDirs.find(r =>
       VP.currentPath === r || VP.currentPath.startsWith(r + sep)
     );
-    const rootSegs = rootDir ? rootDir.split(sep) : [];
-    const rootDepth = rootSegs.length;
+
+    let displaySegs = segs;
+    if (rootDir) {
+      const rootSegs = VP.splitPath(rootDir);
+      displaySegs = segs.slice(rootSegs.length - 1);
+    }
+
+    let acc = rootDir || (segs.length > 0 ? segs[0] + sep : '');
 
     const parts = [];
-    let acc = '';
+    displaySegs.forEach((seg, idx) => {
+      if (idx > 0 || !rootDir) {
+        acc = acc.endsWith(sep) ? acc + seg : acc + sep + seg;
+      } else {
+        acc = rootDir + sep + seg;
+      }
 
-    segs.forEach((seg, i) => {
-      if (seg === '') { acc += sep; return; }
-      acc = (i === 0) ? seg : (acc.endsWith(sep) ? acc + seg : acc + sep + seg);
-
-      if (i < rootDepth - 1) return;
+      const isLast = idx === displaySegs.length - 1;
+      const isRoot = rootDir && acc === rootDir;
+      const displaySeg = VP.getDirDisplayName(acc, seg);
 
       if (parts.length > 0) {
         parts.push(`<span class="folder-path-sep">${sep}</span>`);
       }
-      const isLast = i === segs.length - 1;
-      const isRoot = rootDir && acc === rootDir;
-      const displaySeg = VP.getDirDisplayName(acc, seg);
       parts.push(
         `<span class="folder-path-crumb ${isLast ? 'active' : ''}" data-path="${VP.escapeHtml(acc)}"${isRoot ? ' data-root="1"' : ''}>${VP.escapeHtml(displaySeg)}</span>`
       );
     });
 
-    dom.folderPathText.innerHTML = parts.join('');
+    if (displaySegs.length === 0 && rootDir) {
+      const rootName = VP.getDirDisplayName(rootDir, rootDir.split(/[\\/]/).pop() || rootDir);
+      parts.push(`<span class="folder-path-crumb active">${VP.escapeHtml(rootName)}</span>`);
+    }
 
-    dom.folderPathText.querySelectorAll('.folder-path-crumb').forEach(crumb => {
-      crumb.addEventListener('click', () => {
-        VP.enterFolder(crumb.dataset.path);
-      });
-    });
+    dom.folderPathText.innerHTML = parts.join('');
   };
 
 })(window.VP);
