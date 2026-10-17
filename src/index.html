@@ -44,6 +44,9 @@
       <div class="video-wrapper" id="videoWrapper">
         <video id="videoPlayer" preload="metadata" playsinline></video>
 
+        <!-- 字幕显示层 -->
+        <div id="subtitleOverlay" class="subtitle-overlay"></div>
+
         <button class="center-play" id="centerPlayBtn" aria-label="播放">
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
@@ -108,7 +111,7 @@
             <div class="progress-thumb" id="progressThumb"></div>
           </div>
           <div class="preview-thumbnail" id="previewThumbnail">
-            <canvas id="previewCanvas" width="160" height="90"></canvas>
+            <canvas id="previewCanvas" width="480" height="270"></canvas>
           </div>
           <div class="progress-hover-time" id="progressHoverTime">0:00</div>
         </div>
@@ -138,6 +141,11 @@
           </div>
 
           <div class="right-buttons">
+            <!-- 字幕按钮 -->
+            <button class="ctrl-btn" id="subtitleBtn" aria-label="加载外挂字幕" title="加载外挂字幕">
+              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z"/></svg>
+            </button>
+
             <button class="ctrl-btn" id="lockBtn" aria-label="锁定控制栏" title="锁定控制栏" data-shortcut="lock">
               <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
               <span class="key-badge" data-badge="lock"></span>
@@ -184,241 +192,308 @@
         </div>
       </div>
 
+      <!-- ===== 全新双栏设置面板 ===== -->
       <div class="settings-overlay" id="settingsOverlay"></div>
       <div class="settings-panel" id="settingsPanel">
-        <div class="settings-header">
-          <h3>
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <!-- 左侧导航栏 -->
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             设置
-          </h3>
-          <button class="settings-close" id="settingsClose" aria-label="关闭设置">
-            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-          </button>
+          </div>
+          <div class="settings-nav">
+            <button class="settings-nav-item active" data-tab="playback">
+              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              外观主题
+            </button>
+            <button class="settings-nav-item" data-tab="subtitle">
+              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z"/></svg>
+              字幕偏好
+            </button>
+            <button class="settings-nav-item" data-tab="shortcuts">
+              <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+              快捷键
+            </button>
+            <button class="settings-nav-item" data-tab="data">
+              <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+              数据管理
+            </button>
+            <button class="settings-nav-item" data-tab="about">
+              <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+              关于
+            </button>
+          </div>
         </div>
 
-        <div class="settings-tabs">
-          <button class="settings-tab active" data-tab="playback">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            播放
-          </button>
-          <button class="settings-tab" data-tab="shortcuts">
-            <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
-            快捷键
-          </button>
-          <button class="settings-tab" data-tab="data">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-            数据
-          </button>
-          <button class="settings-tab" data-tab="about">
-            <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
-            关于
-          </button>
-        </div>
-
-        <div class="settings-body">
-          <div class="settings-tab-content active" id="tab-playback">
-            <div class="setting-group">
-              <div class="setting-label">
-                <span>播放速度</span>
-                <span class="value" id="speedValue">1x</span>
-              </div>
-              <div class="segment-control" id="speedControl">
-                <button data-speed="0.5">0.5x</button>
-                <button data-speed="0.75">0.75x</button>
-                <button data-speed="1" class="active">1x</button>
-                <button data-speed="1.25">1.25x</button>
-                <button data-speed="1.5">1.5x</button>
-                <button data-speed="2">2x</button>
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <div class="setting-label"><span>画面比例</span></div>
-              <div class="segment-control" id="ratioControl">
-                <button data-ratio="contain" class="active">适应</button>
-                <button data-ratio="fill">铺满</button>
-                <button data-ratio="16-9">16:9</button>
-                <button data-ratio="4-3">4:3</button>
-                <button data-ratio="21-9">21:9</button>
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <div class="setting-label">
-                <span>亮度</span>
-                <span class="value" id="brightnessValue">100%</span>
-              </div>
-              <div class="setting-slider">
-                <input type="range" id="brightnessSlider" min="50" max="150" value="100" step="1">
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <div class="setting-label">
-                <span>对比度</span>
-                <span class="value" id="contrastValue">100%</span>
-              </div>
-              <div class="setting-slider">
-                <input type="range" id="contrastSlider" min="50" max="150" value="100" step="1">
-              </div>
-            </div>
-
-            <div class="setting-group">
-              <div class="setting-label">
-                <span>饱和度</span>
-                <span class="value" id="saturationValue">100%</span>
-              </div>
-              <div class="setting-slider">
-                <input type="range" id="saturationSlider" min="0" max="200" value="100" step="1">
-              </div>
-            </div>
-
-            <button class="reset-btn" id="resetSettings">
-              <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-              恢复默认设置
+        <!-- 右侧主内容区 -->
+        <div class="settings-main">
+          <div class="settings-main-header">
+            <h3 id="settingsMainTitle">外观主题</h3>
+            <button class="settings-close" id="settingsClose" aria-label="关闭设置">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           </div>
 
-          <div class="settings-tab-content" id="tab-shortcuts">
-            <div class="toggle-row">
-              <span class="toggle-row-label">在按钮上显示快捷键</span>
-              <button class="toggle-switch" id="toggleBadges" aria-label="切换角标显示"></button>
-            </div>
-
-            <div class="shortcut-hint">
-              点击右侧的编辑按钮，然后按下新按键即可修改快捷键。按 Esc 取消编辑。
-            </div>
-            <div class="shortcut-list" id="shortcutList"></div>
-            <button class="shortcut-reset-btn" id="resetShortcuts">
-              <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-              恢复默认快捷键
-            </button>
-          </div>
-
-          <div class="settings-tab-content" id="tab-data">
-            <div class="data-section">
-              <div class="data-section-title">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                存储空间
+          <div class="settings-body">
+            <!-- 1. 外观主题 -->
+            <div class="settings-tab-content active" id="tab-playback">
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">播放速度</span>
+                </div>
+                <div class="segment-control" id="speedControl">
+                  <button data-speed="0.5">0.5x</button>
+                  <button data-speed="0.75">0.75x</button>
+                  <button data-speed="1" class="active">1x</button>
+                  <button data-speed="1.25">1.25x</button>
+                  <button data-speed="1.5">1.5x</button>
+                  <button data-speed="2">2x</button>
+                </div>
               </div>
-              <div class="data-desc">
-                视频文件保存在浏览器本地（IndexedDB）。如果空间不足，导入新视频会失败。
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">画面比例</span>
+                </div>
+                <div class="segment-control" id="ratioControl">
+                  <button data-ratio="contain" class="active">适应</button>
+                  <button data-ratio="fill">铺满</button>
+                  <button data-ratio="16-9">16:9</button>
+                  <button data-ratio="4-3">4:3</button>
+                  <button data-ratio="21-9">21:9</button>
+                </div>
               </div>
-              <div class="storage-bar">
-                <div class="storage-bar-fill" id="storageBarFill" style="width: 0%"></div>
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">亮度</span>
+                  <span class="value" id="brightnessValue">100%</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="brightnessSlider" min="50" max="150" value="100" step="1">
+                </div>
               </div>
-              <div class="storage-detail">
-                <span id="storageUsed">计算中…</span>
-                <span id="storageQuota">—</span>
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">对比度</span>
+                  <span class="value" id="contrastValue">100%</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="contrastSlider" min="50" max="150" value="100" step="1">
+                </div>
               </div>
-            </div>
-
-            <div class="data-divider"></div>
-
-            <div class="data-section">
-              <div class="data-section-title">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                导出配置
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">饱和度</span>
+                  <span class="value" id="saturationValue">100%</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="saturationSlider" min="0" max="200" value="100" step="1">
+                </div>
               </div>
-              <div class="data-desc">
-                将当前的播放设置、快捷键配置、界面偏好导出为 JSON 文件，可用于备份或迁移到其他设备。
-              </div>
-              <button class="data-btn primary" id="exportConfigBtn">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                导出配置文件
+              <button class="reset-btn" id="resetSettings" style="margin-top:20px;">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                恢复默认设置
               </button>
             </div>
 
-            <div class="data-divider"></div>
-
-            <div class="data-section">
-              <div class="data-section-title">
-                <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
-                导入配置
+            <!-- 2. 字幕偏好 -->
+            <div class="settings-tab-content" id="tab-subtitle">
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">字号</span>
+                  <span class="value" id="subtitleFontSizeValue">24px</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="subtitleFontSizeSlider" min="12" max="48" value="24" step="1">
+                </div>
               </div>
-              <div class="data-desc">
-                选择之前导出的 JSON 文件，导入后会覆盖当前的设置和快捷键配置。
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">字体颜色</span>
+                  <span class="value" id="subtitleColorValue">#FFFFFF</span>
+                </div>
+                <div class="setting-color-row">
+                  <input type="color" id="subtitleColorInput" value="#ffffff">
+                  <div class="setting-color-presets" id="subtitleColorPresets">
+                    <button class="color-preset" data-color="#ffffff" style="background:#ffffff"></button>
+                    <button class="color-preset" data-color="#ffe14d" style="background:#ffe14d"></button>
+                    <button class="color-preset" data-color="#7d8cff" style="background:#7d8cff"></button>
+                    <button class="color-preset" data-color="#ff9b9b" style="background:#ff9b9b"></button>
+                    <button class="color-preset" data-color="#a8ffb8" style="background:#a8ffb8"></button>
+                  </div>
+                </div>
               </div>
-              <button class="data-btn" id="importConfigBtn">
-                <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
-                选择配置文件
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">背景不透明度</span>
+                  <span class="value" id="subtitleBgOpacityValue">75%</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="subtitleBgOpacitySlider" min="0" max="100" value="75" step="1">
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-label">
+                  <span class="setting-title">描边宽度</span>
+                  <span class="value" id="subtitleOutlineValue">2px</span>
+                </div>
+                <div class="setting-slider">
+                  <input type="range" id="subtitleOutlineSlider" min="0" max="6" value="2" step="1">
+                </div>
+              </div>
+              <div class="setting-row" style="display:block;">
+                <div class="setting-row-label" style="margin-bottom:12px;">
+                  <span class="setting-title">预览效果</span>
+                </div>
+                <div class="subtitle-preview-box" id="subtitlePreviewBox">
+                  <span id="subtitlePreviewText">示例字幕 Sample Text</span>
+                </div>
+              </div>
+              <button class="reset-btn" id="resetSubtitleSettings" style="margin-top:20px;">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                恢复默认字幕样式
               </button>
-              <input type="file" id="configInput" accept=".json,application/json">
-            </div>
-          </div>
-
-          <div class="settings-tab-content" id="tab-about">
-            <div class="about-hero">
-              <div class="about-logo">
-                <svg viewBox="0 0 24 24">
-                  <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
-                </svg>
-              </div>
-              <div class="about-name">视频播放器</div>
-              <div class="about-version">v1.0.0</div>
             </div>
 
-            <div class="about-desc">
-              一个轻量、高效、无广告的本地视频播放器。支持桌面版文件夹引用模式，可直接读取原文件夹中的视频，不占用额外存储空间。
+            <!-- 3. 快捷键 -->
+            <div class="settings-tab-content" id="tab-shortcuts">
+              <div class="toggle-row" style="margin-bottom:16px;">
+                <span class="toggle-row-label">在按钮上显示快捷键</span>
+                <button class="toggle-switch" id="toggleBadges" aria-label="切换角标显示"></button>
+              </div>
+
+              <div class="shortcut-hint" style="margin-bottom:16px;">
+                点击右侧的编辑按钮，然后按下新按键即可修改快捷键。按 Esc 取消编辑。
+              </div>
+              <div class="shortcut-list" id="shortcutList"></div>
+              <button class="shortcut-reset-btn" id="resetShortcuts" style="margin-top:20px;">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                恢复默认快捷键
+              </button>
             </div>
 
-            <div class="about-features">
-              <div class="about-feature">
-                <div class="about-feature-icon">
-                  <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+            <!-- 4. 数据管理 -->
+            <div class="settings-tab-content" id="tab-data">
+              <div class="data-section" style="margin-bottom:24px;">
+                <div class="data-section-title">
+                  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  存储空间
                 </div>
-                <div class="about-feature-text">
-                  <div class="about-feature-title">文件夹引用</div>
-                  <div class="about-feature-desc">桌面版可直接读取原文件夹视频，不占额外空间</div>
+                <div class="data-desc">
+                  视频文件保存在浏览器本地（IndexedDB）。如果空间不足，导入新视频会失败。
                 </div>
-              </div>
-
-              <div class="about-feature">
-                <div class="about-feature-icon">
-                  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                <div class="storage-bar">
+                  <div class="storage-bar-fill" id="storageBarFill" style="width: 0%"></div>
                 </div>
-                <div class="about-feature-text">
-                  <div class="about-feature-title">进度记忆</div>
-                  <div class="about-feature-desc">自动记住每个视频的播放进度，随时继续观看</div>
+                <div class="storage-detail">
+                  <span id="storageUsed">计算中…</span>
+                  <span id="storageQuota">—</span>
                 </div>
               </div>
 
-              <div class="about-feature">
-                <div class="about-feature-icon">
-                  <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+              <div class="data-section" style="margin-bottom:24px;">
+                <div class="data-section-title">
+                  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  导出配置
                 </div>
-                <div class="about-feature-text">
-                  <div class="about-feature-title">标签管理</div>
-                  <div class="about-feature-desc">给视频打标签，按标签快速筛选</div>
+                <div class="data-desc">
+                  将当前的播放设置、字幕样式、快捷键配置、界面偏好导出为 JSON 文件，可用于备份或迁移到其他设备。
                 </div>
+                <button class="data-btn primary" id="exportConfigBtn">
+                  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  导出配置文件
+                </button>
               </div>
 
-              <div class="about-feature">
-                <div class="about-feature-icon">
-                  <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+              <div class="data-section">
+                <div class="data-section-title">
+                  <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                  导入配置
                 </div>
-                <div class="about-feature-text">
-                  <div class="about-feature-title">自定义快捷键</div>
-                  <div class="about-feature-desc">所有操作都支持自定义快捷键，按钮上可显示提示</div>
+                <div class="data-desc">
+                  选择之前导出的 JSON 文件，导入后会覆盖当前的设置和快捷键配置。
                 </div>
+                <button class="data-btn" id="importConfigBtn">
+                  <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                  选择配置文件
+                </button>
+                <input type="file" id="configInput" accept=".json,application/json" style="display:none;">
+              </div>
+            </div>
+
+            <!-- 5. 关于 -->
+            <div class="settings-tab-content" id="tab-about">
+              <div class="about-hero">
+                <div class="about-logo">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
+                  </svg>
+                </div>
+                <div class="about-name">视频播放器</div>
+                <div class="about-version">v1.0.0</div>
               </div>
 
-              <div class="about-feature">
-                <div class="about-feature-icon">
-                  <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-                </div>
-                <div class="about-feature-text">
-                  <div class="about-feature-title">配置导入导出</div>
-                  <div class="about-feature-desc">一键备份和迁移所有设置，跨设备无缝同步</div>
-                </div>
+              <div class="about-desc">
+                一个轻量、高效、无广告的本地视频播放器。支持桌面版文件夹引用模式，可直接读取原文件夹中的视频，不占用额外存储空间。
               </div>
 
-              <div class="about-env">
-                <div class="about-env-label">
-                  <svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
-                  运行环境
+              <div class="about-features">
+                <div class="about-feature">
+                  <div class="about-feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+                  </div>
+                  <div class="about-feature-text">
+                    <div class="about-feature-title">文件夹引用</div>
+                    <div class="about-feature-desc">桌面版可直接读取原文件夹视频，不占额外空间</div>
+                  </div>
                 </div>
-                <div class="about-env-value" id="aboutEnvValue">检测中…</div>
+
+                <div class="about-feature">
+                  <div class="about-feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                  </div>
+                  <div class="about-feature-text">
+                    <div class="about-feature-title">进度记忆</div>
+                    <div class="about-feature-desc">自动记住每个视频的播放进度，随时继续观看</div>
+                  </div>
+                </div>
+
+                <div class="about-feature">
+                  <div class="about-feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                  </div>
+                  <div class="about-feature-text">
+                    <div class="about-feature-title">标签管理</div>
+                    <div class="about-feature-desc">给视频打标签，按标签快速筛选</div>
+                  </div>
+                </div>
+
+                <div class="about-feature">
+                  <div class="about-feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                  </div>
+                  <div class="about-feature-text">
+                    <div class="about-feature-title">自定义快捷键</div>
+                    <div class="about-feature-desc">所有操作都支持自定义快捷键，按钮上可显示提示</div>
+                  </div>
+                </div>
+
+                <div class="about-feature">
+                  <div class="about-feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+                  </div>
+                  <div class="about-feature-text">
+                    <div class="about-feature-title">配置导入导出</div>
+                    <div class="about-feature-desc">一键备份和迁移所有设置，跨设备无缝同步</div>
+                  </div>
+                </div>
+
+                <div class="about-env">
+                  <div class="about-env-label">
+                    <svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+                    运行环境
+                  </div>
+                  <div class="about-env-value" id="aboutEnvValue">检测中…</div>
+                </div>
               </div>
             </div>
           </div>
@@ -450,7 +525,7 @@
             <button class="icon-btn" id="selectModeBtn" title="批量选择">
               <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </button>
-            <button class="icon-btn primary" id="importBtn" title="导入视频（会占用浏览器存储空间）">
+            <button class="icon-btn primary browser-only" id="importBtn" title="导入视频（会占用浏览器存储空间）">
               <svg viewBox="0 0 24 24">
                 <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
               </svg>
@@ -585,6 +660,9 @@
   </div>
 
   <input type="file" id="fileInput" accept="video/*" multiple>
+  
+  <!-- 字幕文件选择器 -->
+  <input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa" style="display:none;">
 
   <script src="js/core.js"></script>
   <script src="js/env.js"></script>
