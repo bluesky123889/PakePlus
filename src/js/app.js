@@ -58,16 +58,30 @@
     document.querySelectorAll('#speedControl button').forEach(btn => {
       btn.classList.toggle('active', parseFloat(btn.dataset.speed) === VP.settings.speed);
     });
-    document.getElementById('speedValue').textContent = VP.settings.speed === 1 ? '1x' : VP.settings.speed + 'x';
+    
+    const speedValEl = document.getElementById('speedValue');
+    if (speedValEl) {
+      speedValEl.textContent = VP.settings.speed === 1 ? '1x' : VP.settings.speed + 'x';
+    }
+
     document.querySelectorAll('#ratioControl button').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.ratio === VP.settings.ratio);
     });
-    document.getElementById('brightnessSlider').value = VP.settings.brightness;
-    document.getElementById('brightnessValue').textContent = VP.settings.brightness + '%';
-    document.getElementById('contrastSlider').value = VP.settings.contrast;
-    document.getElementById('contrastValue').textContent = VP.settings.contrast + '%';
-    document.getElementById('saturationSlider').value = VP.settings.saturation;
-    document.getElementById('saturationValue').textContent = VP.settings.saturation + '%';
+
+    const bSlider = document.getElementById('brightnessSlider');
+    if (bSlider) bSlider.value = VP.settings.brightness;
+    const bVal = document.getElementById('brightnessValue');
+    if (bVal) bVal.textContent = VP.settings.brightness + '%';
+
+    const cSlider = document.getElementById('contrastSlider');
+    if (cSlider) cSlider.value = VP.settings.contrast;
+    const cVal = document.getElementById('contrastValue');
+    if (cVal) cVal.textContent = VP.settings.contrast + '%';
+
+    const sSlider = document.getElementById('saturationSlider');
+    if (sSlider) sSlider.value = VP.settings.saturation;
+    const sVal = document.getElementById('saturationValue');
+    if (sVal) sVal.textContent = VP.settings.saturation + '%';
   };
 
   // ===== 根目录持久化 =====
@@ -303,6 +317,7 @@
     VP.showControls();
     VP.updateStorageInfo();
     VP.updateAboutEnv();
+    VP.syncSubtitleStyleUI();
   };
 
   VP.closeSettings = function () {
@@ -327,7 +342,7 @@
   VP.buildConfigJson = function () {
     const lines = [];
     lines.push('{');
-    lines.push('  "_readme": "这是视频播放器的配置文件。包含播放设置、快捷键配置、界面偏好。修改后可通过播放器设置 → 数据 → 导入配置来恢复。注意：所有以 _ 开头的字段都是中文注释，导入时会被自动忽略。",');
+    lines.push('  "_readme": "这是视频播放器的配置文件。包含播放设置、字幕样式、快捷键配置、界面偏好。修改后可通过播放器设置 → 数据 → 导入配置来恢复。注意：所有以 _ 开头的字段都是中文注释，导入时会被自动忽略。",');
     lines.push('');
     lines.push('  "_导出时间": "' + new Date().toLocaleString('zh-CN') + '",');
     lines.push('');
@@ -357,6 +372,26 @@
     lines.push('');
     lines.push('    "_saturation说明": "饱和度百分比，范围 0 ~ 200，100 表示原饱和度",');
     lines.push('    "saturation": ' + VP.settings.saturation);
+    lines.push('  },');
+    lines.push('');
+    lines.push('  "_subtitleStyle说明": "===== 字幕样式 =====",');
+    lines.push('');
+    lines.push('  "subtitleStyle": {');
+    lines.push('');
+    lines.push('    "_fontSize说明": "字号（px），范围 12 ~ 48",');
+    lines.push('    "fontSize": ' + VP.subtitleStyle.fontSize + ',');
+    lines.push('');
+    lines.push('    "_color说明": "字体颜色，十六进制如 #ffffff",');
+    lines.push('    "color": "' + VP.subtitleStyle.color + '",');
+    lines.push('');
+    lines.push('    "_bgOpacity说明": "背景不透明度，0 ~ 100",');
+    lines.push('    "bgOpacity": ' + VP.subtitleStyle.bgOpacity + ',');
+    lines.push('');
+    lines.push('    "_outline说明": "文字描边宽度（px），0 ~ 6",');
+    lines.push('    "outline": ' + VP.subtitleStyle.outline + ',');
+    lines.push('');
+    lines.push('    "_position说明": "垂直位置，可选 bottom / middle / top",');
+    lines.push('    "position": "' + VP.subtitleStyle.position + '"');
     lines.push('  },');
     lines.push('');
     lines.push('  "_shortcuts说明": "===== 快捷键配置 =====",');
@@ -434,10 +469,11 @@
 
         const config = VP.stripComments(rawConfig);
         const newSettings = config.settings || null;
+        const newSubtitleStyle = config.subtitleStyle || null;
         const newShortcuts = config.shortcuts || null;
         const newPreferences = config.preferences || null;
 
-        if (!newSettings && !newShortcuts) throw new Error('配置内容为空');
+        if (!newSettings && !newShortcuts && !newSubtitleStyle) throw new Error('配置内容为空');
 
         if (newSettings) {
           VP.settings = {
@@ -448,6 +484,18 @@
             saturation: typeof newSettings.saturation === 'number' ? newSettings.saturation : 100
           };
           localStorage.setItem(VP.SETTINGS_KEY, JSON.stringify(VP.settings));
+        }
+
+        if (newSubtitleStyle) {
+          VP.subtitleStyle = {
+            fontSize: typeof newSubtitleStyle.fontSize === 'number' ? newSubtitleStyle.fontSize : 24,
+            color: typeof newSubtitleStyle.color === 'string' ? newSubtitleStyle.color : '#ffffff',
+            bgOpacity: typeof newSubtitleStyle.bgOpacity === 'number' ? newSubtitleStyle.bgOpacity : 75,
+            outline: typeof newSubtitleStyle.outline === 'number' ? newSubtitleStyle.outline : 2,
+            position: ['bottom', 'middle', 'top'].includes(newSubtitleStyle.position)
+              ? newSubtitleStyle.position : 'bottom'
+          };
+          localStorage.setItem(VP.SUBTITLE_STYLE_KEY, JSON.stringify(VP.subtitleStyle));
         }
 
         if (newShortcuts) {
@@ -471,6 +519,8 @@
 
         VP.applySettings();
         VP.updateSettingsUI();
+        VP.applySubtitleStyle();
+        VP.syncSubtitleStyleUI();
         VP.renderShortcuts();
         VP.updateKeyBadges();
         dom.toggleBadges.classList.toggle('on', VP.showKeyBadges);
@@ -502,6 +552,8 @@
       VP.loadRenames();
       VP.loadTags();
       VP.loadDirNames();
+      VP.loadSubtitles();
+      VP.loadSubtitleStyle();
 
       const metaList = VP.loadPlaylistMeta();
       if (metaList.length === 0) { VP.renderPlaylist(); VP.renderTagBar(); return; }
@@ -520,7 +572,10 @@
         try {
           const allRecords = await VP.dbGetAll();
           allRecords.forEach(r => recordMap.set(r.id, r));
-        } catch (e) {}
+        } catch (e) {
+          console.error('【致命错误】读取 IndexedDB 失败！:', e);
+          VP.dlgAlert('读取本地视频数据失败，可能是缓存损坏。\n请尝试清除软件缓存或重装。\n\n错误详情：' + e.message, '数据异常');
+        }
       }
 
       VP.playlist = [];
@@ -541,7 +596,7 @@
             type: 'video',
             name: m.name,
             path: m.path,
-            size: m.size || 0,
+            size: m.size === -1 ? -1 : (m.size || 0),
             addedAt: m.addedAt,
             isFileRef: true,
             missing: !!m.missing
@@ -557,9 +612,17 @@
             addedAt: r.addedAt
           });
         }
+        else {
+          VP.playlist.push({
+            id: m.id,
+            type: 'video',
+            name: m.name,
+            size: m.size || 0,
+            addedAt: m.addedAt
+          });
+        }
       });
 
-      // 恢复上次浏览的目录
       try {
         const lastView = localStorage.getItem(VP.LAST_VIEW_KEY);
         if (lastView && VP.rootDirs.some(r =>
@@ -584,10 +647,11 @@
       }
       VP.hideToast();
     } catch (err) {
-      console.error('初始化失败:', err);
+      console.error('初始化严重崩溃:', err);
       VP.hideToast();
       VP.renderPlaylist();
       VP.renderTagBar();
+      VP.dlgAlert('启动初始化失败：' + err.message, '错误');
     }
   };
 
@@ -713,14 +777,28 @@
     if (VP.hasVideo) dom.centerPlayBtn.classList.add('show');
   });
 
-  document.querySelectorAll('.settings-tab').forEach(tab => {
+  document.querySelectorAll('.settings-nav-item').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      // 1. 切换左侧导航项状态
+      document.querySelectorAll('.settings-nav-item').forEach(t => t.classList.remove('active'));
+      // 2. 切换右侧内容区
       document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
+      
       tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-      if (tab.dataset.tab === 'data') VP.updateStorageInfo();
-      if (tab.dataset.tab === 'about') VP.updateAboutEnv();
+      const tabId = tab.dataset.tab;
+      const content = document.getElementById('tab-' + tabId);
+      if (content) content.classList.add('active');
+
+      // 3. 更新右侧顶部大标题
+      const titleEl = document.getElementById('settingsMainTitle');
+      if (titleEl) {
+        titleEl.textContent = tab.textContent.trim();
+      }
+
+      // 4. 数据同步与刷新
+      if (tabId === 'data') VP.updateStorageInfo();
+      if (tabId === 'about') VP.updateAboutEnv();
+      if (tabId === 'subtitle') VP.syncSubtitleStyleUI();
     });
   });
 
@@ -742,29 +820,114 @@
     });
   });
 
-  document.getElementById('brightnessSlider').addEventListener('input', (e) => {
-    VP.settings.brightness = parseInt(e.target.value);
-    document.getElementById('brightnessValue').textContent = VP.settings.brightness + '%';
-    VP.applySettings(); VP.saveSettings();
-  });
+  const brightnessSlider = document.getElementById('brightnessSlider');
+  if (brightnessSlider) {
+    brightnessSlider.addEventListener('input', (e) => {
+      VP.settings.brightness = parseInt(e.target.value);
+      const bVal = document.getElementById('brightnessValue');
+      if (bVal) bVal.textContent = VP.settings.brightness + '%';
+      VP.applySettings(); VP.saveSettings();
+    });
+  }
 
-  document.getElementById('contrastSlider').addEventListener('input', (e) => {
-    VP.settings.contrast = parseInt(e.target.value);
-    document.getElementById('contrastValue').textContent = VP.settings.contrast + '%';
-    VP.applySettings(); VP.saveSettings();
-  });
+  const contrastSlider = document.getElementById('contrastSlider');
+  if (contrastSlider) {
+    contrastSlider.addEventListener('input', (e) => {
+      VP.settings.contrast = parseInt(e.target.value);
+      const cVal = document.getElementById('contrastValue');
+      if (cVal) cVal.textContent = VP.settings.contrast + '%';
+      VP.applySettings(); VP.saveSettings();
+    });
+  }
 
-  document.getElementById('saturationSlider').addEventListener('input', (e) => {
-    VP.settings.saturation = parseInt(e.target.value);
-    document.getElementById('saturationValue').textContent = VP.settings.saturation + '%';
-    VP.applySettings(); VP.saveSettings();
-  });
+  const saturationSlider = document.getElementById('saturationSlider');
+  if (saturationSlider) {
+    saturationSlider.addEventListener('input', (e) => {
+      VP.settings.saturation = parseInt(e.target.value);
+      const sVal = document.getElementById('saturationValue');
+      if (sVal) sVal.textContent = VP.settings.saturation + '%';
+      VP.applySettings(); VP.saveSettings();
+    });
+  }
 
   dom.resetSettings.addEventListener('click', () => {
     VP.settings = { speed: 1, ratio: 'contain', brightness: 100, contrast: 100, saturation: 100 };
     VP.applySettings(); VP.updateSettingsUI(); VP.saveSettings();
     VP.showOSD(VP.ICONS.check, '已恢复默认设置');
   });
+
+  // ===== 字幕样式配置（#11） =====
+  if (dom.subtitleFontSizeSlider) {
+    dom.subtitleFontSizeSlider.addEventListener('input', (e) => {
+      VP.subtitleStyle.fontSize = parseInt(e.target.value);
+      if (dom.subtitleFontSizeValue) dom.subtitleFontSizeValue.textContent = VP.subtitleStyle.fontSize + 'px';
+      VP.applySubtitleStyle();
+      VP.updateSubtitlePreview();
+      VP.saveSubtitleStyle();
+    });
+  }
+
+  if (dom.subtitleColorInput) {
+    dom.subtitleColorInput.addEventListener('input', (e) => {
+      VP.subtitleStyle.color = e.target.value;
+      if (dom.subtitleColorValue) dom.subtitleColorValue.textContent = e.target.value.toUpperCase();
+      if (dom.subtitleColorPresets) {
+        dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.color.toLowerCase() === e.target.value.toLowerCase());
+        });
+      }
+      VP.applySubtitleStyle();
+      VP.updateSubtitlePreview();
+      VP.saveSubtitleStyle();
+    });
+  }
+
+  if (dom.subtitleColorPresets) {
+    dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.color;
+        VP.subtitleStyle.color = color;
+        if (dom.subtitleColorInput) dom.subtitleColorInput.value = color;
+        if (dom.subtitleColorValue) dom.subtitleColorValue.textContent = color.toUpperCase();
+        dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(b => {
+          b.classList.toggle('active', b.dataset.color.toLowerCase() === color.toLowerCase());
+        });
+        VP.applySubtitleStyle();
+        VP.updateSubtitlePreview();
+        VP.saveSubtitleStyle();
+      });
+    });
+  }
+
+  if (dom.subtitleBgOpacitySlider) {
+    dom.subtitleBgOpacitySlider.addEventListener('input', (e) => {
+      VP.subtitleStyle.bgOpacity = parseInt(e.target.value);
+      if (dom.subtitleBgOpacityValue) dom.subtitleBgOpacityValue.textContent = VP.subtitleStyle.bgOpacity + '%';
+      VP.applySubtitleStyle();
+      VP.updateSubtitlePreview();
+      VP.saveSubtitleStyle();
+    });
+  }
+
+  if (dom.subtitleOutlineSlider) {
+    dom.subtitleOutlineSlider.addEventListener('input', (e) => {
+      VP.subtitleStyle.outline = parseInt(e.target.value);
+      if (dom.subtitleOutlineValue) dom.subtitleOutlineValue.textContent = VP.subtitleStyle.outline + 'px';
+      VP.applySubtitleStyle();
+      VP.updateSubtitlePreview();
+      VP.saveSubtitleStyle();
+    });
+  }
+
+  if (dom.resetSubtitleSettings) {
+    dom.resetSubtitleSettings.addEventListener('click', () => {
+      VP.subtitleStyle = { ...VP.DEFAULT_SUBTITLE_STYLE };
+      VP.applySubtitleStyle();
+      VP.syncSubtitleStyleUI();
+      VP.saveSubtitleStyle();
+      VP.showOSD(VP.ICONS.check, '已恢复默认字幕样式');
+    });
+  }
 
   dom.resetShortcuts.addEventListener('click', VP.resetShortcutsToDefault);
 
@@ -817,8 +980,20 @@
     );
   });
 
-  // 给按钮加波纹效果
-  [dom.densityBtn, dom.sortDirBtn].forEach(el => attachRipple(el));
+  dom.subtitleBtn.addEventListener('click', () => {
+    if (!VP.hasVideo) {
+      VP.showOSD(VP.ICONS.info, '请先播放视频再加载字幕');
+      return;
+    }
+    dom.subtitleInput.click();
+  });
+
+  dom.subtitleInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      VP.loadSubtitle(e.target.files[0]);
+    }
+    dom.subtitleInput.value = '';
+  });
 
   function enterSelectionMode() {
     VP.selectionMode = true;
@@ -899,6 +1074,7 @@
 
     const ids = Array.from(VP.selectedIds);
     let deletedCurrent = false;
+    const sourceDeleteFailed = [];
 
     for (const id of ids) {
       const it = VP.playlist.find(v => v.id === id);
@@ -908,9 +1084,12 @@
           const fs = VP.env.tauriFs;
           if (typeof fs.remove === 'function') {
             await fs.remove(it.path);
+          } else {
+            sourceDeleteFailed.push(it.name);
           }
         } catch (err) {
           console.error('删除源文件失败:', err);
+          sourceDeleteFailed.push(it.name);
         }
       }
 
@@ -922,12 +1101,14 @@
       if (VP.watchedSet.has(id)) VP.watchedSet.delete(id);
       if (VP.renameMap[id]) delete VP.renameMap[id];
       if (VP.tagMap[id]) delete VP.tagMap[id];
+      if (VP.subtitleMap[id]) delete VP.subtitleMap[id];
       if (VP.currentVideoId === id) deletedCurrent = true;
     }
     VP.saveVideoProgress();
     VP.saveWatched();
     VP.saveRenames();
     VP.saveTags();
+    VP.saveSubtitles();
 
     VP.playlist = VP.playlist.filter(v => !VP.selectedIds.has(v.id));
 
@@ -947,6 +1128,7 @@
       dom.currentTimeDisplay.textContent = '0:00';
       dom.durationDisplay.textContent = '0:00';
       VP.updatePlayPauseIcon();
+      VP.resetPreviewThumbnail();
     }
 
     await VP.savePlaylistMeta();
@@ -960,6 +1142,15 @@
     VP.renderTagBar();
     VP.updateStorageInfo();
     VP.updateFolderPathBar();
+
+    if (sourceDeleteFailed.length > 0) {
+      const preview = sourceDeleteFailed.slice(0, 5).join('\n');
+      const more = sourceDeleteFailed.length > 5 ? `\n…等 ${sourceDeleteFailed.length} 个` : '';
+      VP.dlgAlert(
+        `列表项已移除，但以下 ${sourceDeleteFailed.length} 个源文件删除失败\n（可能被占用或权限不足）：\n\n${preview}${more}`,
+        '部分源文件删除失败'
+      );
+    }
   });
 
   document.addEventListener('click', (e) => {
@@ -1238,6 +1429,7 @@
   });
 
   dom.playPauseBtn.addEventListener('click', () => { VP.togglePlayPause(); VP.resetControlsTimer(); });
+  dom.lockBtn.addEventListener('click', () => { VP.toggleLock(); VP.resetControlsTimer(); });
   dom.fullscreenBtn.addEventListener('click', () => { VP.toggleFullscreen(); VP.resetControlsTimer(); });
   dom.prevBtn.addEventListener('click', () => { VP.playPrev(); VP.resetControlsTimer(); });
   dom.nextBtn.addEventListener('click', () => { VP.playNext(); VP.resetControlsTimer(); });
@@ -1326,7 +1518,12 @@
     VP.updateProgress();
     VP.updateNavButtons();
   });
-  dom.video.addEventListener('timeupdate', VP.updateProgress);
+
+  dom.video.addEventListener('timeupdate', () => {
+    VP.updateProgress();
+    VP.updateSubtitle();
+  });
+
   dom.video.addEventListener('progress', VP.updateProgress);
   dom.video.addEventListener('play', VP.updatePlayPauseIcon);
   dom.video.addEventListener('pause', () => {
@@ -1466,7 +1663,7 @@
     }
   });
 
-  // ===== 清理旧格式快捷键（兼容）=====
+  // ===== 清理旧格式快捷键 =====
   (function cleanupOldLabels() {
     try {
       const raw = localStorage.getItem(VP.SHORTCUTS_KEY);
@@ -1497,7 +1694,13 @@
   VP.updateFullscreenIcon();
   VP.updateVolumeUI();
   VP.loadSettings();
+  VP.loadSubtitleStyle();
   VP.updateAboutEnv();
+
+  if (VP.env.isTauri) {
+    if (dom.importBtn) dom.importBtn.style.display = 'none';
+    if (dom.fileInput) dom.fileInput.remove();
+  }
 
   VP.showControls();
   VP.updateStorageInfo();
