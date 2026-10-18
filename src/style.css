@@ -1490,8 +1490,8 @@ video.ratio-original { object-fit: contain; }
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.98);
-  width: 820px;
-  height: 560px;
+  width: 620px;
+  height: 500px;
   max-width: 90vw;
   max-height: 90vh;
   background: #141721;
@@ -1789,54 +1789,6 @@ video.ratio-original { object-fit: contain; }
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-}
-
-.setting-color-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.setting-color-row input[type="color"] {
-  width: 44px;
-  height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: transparent;
-  cursor: pointer;
-  padding: 2px;
-  flex-shrink: 0;
-}
-
-.setting-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-.setting-color-row input[type="color"]::-webkit-color-swatch {
-  border: none;
-  border-radius: 6px;
-}
-
-.setting-color-presets {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.color-preset {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-  padding: 0;
-  outline: none;
-  flex-shrink: 0;
-}
-
-.color-preset:hover { transform: scale(1.12); }
-
-.color-preset.active {
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 2px rgba(125, 140, 255, 0.3);
 }
 
 .subtitle-preview-box {
@@ -3129,7 +3081,7 @@ body.is-tauri .browser-hint { display: none; }
   --subtitle-color: #ffffff;
   --subtitle-bg: rgba(0, 0, 0, 0.75);
   --subtitle-outline: 2px;
-  --subtitle-bottom: 80px;
+  --subtitle-bottom: 30px;
 }
 
 /* 绝对定位的各个字幕组 */
@@ -3145,28 +3097,31 @@ body.is-tauri .browser-hint { display: none; }
   text-align: center;
 }
 
-/* 🌟 歌词-日文（固定顶部） */
+/* 歌词-日文（固定顶部） */
 .sub-group-lyric-top {
-  top: 20px; 
+  top: 40px !important;
 }
 
-/* 🌟 歌词-中文（固定底部） */
-.sub-group-lyric-bottom {
-  bottom: var(--subtitle-bottom); 
+/* 歌词-中文 / 普通中文 / 纯中文对话 / 双语容器：统一使用变量底部位置 */
+.sub-group-lyric-bottom,
+.sub-group-zh,
+.sub-group-other,
+.sub-group-dialogue {
+  bottom: var(--subtitle-bottom, 30px) !important;
+  top: auto !important;
 }
 
-/* 普通中文（底部） */
-.sub-group-zh { 
-  bottom: var(--subtitle-bottom); /* 改为完全一致，确保底部对齐 */
-}
-/* 纯中文的单语对话使用 other 组 */
-.sub-group-other { 
-  bottom: var(--subtitle-bottom); 
+/* 双语容器垂直排布 */
+.sub-group-dialogue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
-/* 普通日文/外文（顶部，对应普通双语的外文） */
-.sub-group-jp { 
-  top: 60px; 
+/* 普通日文/外文（对应普通双语的外文，固定顶部） */
+.sub-group-jp {
+  top: 40px !important;
 }
 
 /* 基础字幕行样式 */
@@ -3198,49 +3153,325 @@ body.is-tauri .browser-hint { display: none; }
 /* 移动端适配 */
 @media (max-width: 768px) {
   .subtitle-overlay { --subtitle-font-size: 18px; }
-  
-  .sub-group-lyric-top, .sub-group-jp {
-    top: 40px;
-  }
-  
-  /* 移动端也强制中文/日文/歌词完全对齐，统一都在底部 56px */
-  .sub-group-lyric-bottom, 
-  .sub-group-other,
-  .sub-group-zh {
-    bottom: 56px !important; 
-    top: auto !important;
-  }
-}
 
-/* ============================================================
- * 终极字幕位置覆盖（直接追加在最底部，保证生效）
- * ============================================================ */
-
-/* 1. 顶部日语歌词（离顶部紧凑一点） */
-.sub-group-lyric-top,
-.sub-group-jp {
-  top: 40px !important;
-}
-
-/* 2. 底部中文（离底部紧凑，和顶部视觉对称） */
-.sub-group-lyric-bottom,
-.sub-group-zh,
-.sub-group-other {
-  bottom: 30px !important;
-  top: auto !important;
-}
-
-/* 3. 手机端强制同步位置 */
-@media (max-width: 768px) {
   .sub-group-lyric-top,
   .sub-group-jp {
     top: 30px !important;
   }
-  
-  .sub-group-lyric-bottom,
-  .sub-group-zh,
-  .sub-group-other {
-    bottom: 20px !important;
-    top: auto !important;
-  }
+}
+
+/* assjs 渲染层容器 */
+.video-wrapper > [data-assjs] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ===== 字幕控制栏浮层 ===== */
+.subtitle-popup-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.subtitle-popup {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px) scale(0.95);
+  transform-origin: bottom center;
+  background: rgba(15, 18, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 14px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+}
+
+.subtitle-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.subtitle-popup .segment-control {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.subtitle-popup .segment-control button.active {
+  background: #4f6ef7;
+  color: #fff;
+}
+
+/* ===== 倍速控制浮层（新增） ===== */
+.speed-popup-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.speed-popup {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px) scale(0.95);
+  transform-origin: bottom center;
+  background: rgba(15, 18, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 12px;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+}
+
+.speed-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.speed-popup .segment-control {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.speed-popup .segment-control button.active {
+  background: #4f6ef7;
+  color: #fff;
+}
+
+/* 按钮上的倍速文字 */
+.speed-btn-label {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 倍速非 1x 时高亮，提醒用户当前被改了速度 */
+#speedBtn.active-speed {
+  background: rgba(79, 110, 247, 0.25);
+  color: #a8b8ff;
+}
+
+/* 强制覆盖以前的 75% 高度，改用变量控制 */
+.danmaku-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 75%; 
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+  opacity: 0.9; 
+  transition: height 0.2s, opacity 0.2s;
+}
+
+/* assjs 渲染出的特效弹幕容器（我们修改它的缩放和透明度） */
+.video-wrapper > .ASS-box {
+  transform-origin: top center;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+/* ===== 3. 原生字幕层（最底层） ===== */
+.subtitle-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3; /* 原生字幕在最下面 */
+  pointer-events: none;
+}
+
+/* 字幕组的定位修正 */
+.sub-group { z-index: 3; }
+
+/* ===== 弹幕控制浮层 ===== */
+.danmaku-popup-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.danmaku-popup {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px) scale(0.95);
+  transform-origin: bottom center;
+  background: rgba(15, 18, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 14px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+}
+
+.danmaku-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.sub-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.sub-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* ===== 纯文字控制按钮 ===== */
+.ctrl-btn.text-btn {
+  width: auto;
+  min-width: 52px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 1px;
+  border-radius: 10px;
+}
+
+/* 倍速的字体稍微特殊一点，用等宽数字防抖动 */
+.ctrl-btn.text-btn #speedBtnLabel {
+  font-family: 'Cascadia Mono', 'Consolas', monospace;
+  letter-spacing: 0;
+  font-size: 14px;
+}
+
+/* 如果倍速非 1x，依然保留高亮提醒 */
+.ctrl-btn.text-btn.active-speed {
+  background: rgba(79, 110, 247, 0.25);
+  color: #a8b8ff;
+}
+
+/* ===== 更多菜单浮层 ===== */
+.more-popup-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.more-popup {
+  position: absolute;
+  bottom: 54px;
+  right: 0;
+  background: rgba(15, 18, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 8px;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.95);
+  transform-origin: bottom right;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+}
+
+.more-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.more-popup .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.more-popup .menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.more-popup .menu-item svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* ===== 弹幕设置浮层：独立定位 ===== */
+.danmaku-popup {
+  position: absolute;
+  bottom: 54px;
+  right: 80px; 
+  left: auto;
+  transform: translateY(8px) scale(0.95);
+  transform-origin: bottom right;
+  background: rgba(15, 18, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 14px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+}
+
+.danmaku-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
