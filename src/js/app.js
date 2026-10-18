@@ -1,6 +1,6 @@
 /* ============================================================
  * app.js —— 设置、快捷键、配置导入导出、事件绑定、启动编排
- * 依赖：core.js, env.js, player.js, playlist.js
+ * 依赖：core.js, env.js, player.js, playlist.js, danmaku.js
  * ============================================================ */
 
 (function (VP) {
@@ -55,14 +55,18 @@
   };
 
   VP.updateSettingsUI = function () {
-    document.querySelectorAll('#speedControl button').forEach(btn => {
+    document.querySelectorAll('#speedControlPopup button').forEach(btn => {
       btn.classList.toggle('active', parseFloat(btn.dataset.speed) === VP.settings.speed);
     });
-    
-    const speedValEl = document.getElementById('speedValue');
-    if (speedValEl) {
-      speedValEl.textContent = VP.settings.speed === 1 ? '1x' : VP.settings.speed + 'x';
-    }
+
+    const speedBtnLabel = document.getElementById('speedBtnLabel');
+    if (speedBtnLabel) speedBtnLabel.textContent = VP.settings.speed + 'x';
+
+    const speedPopupValue = document.getElementById('speedPopupValue');
+    if (speedPopupValue) speedPopupValue.textContent = VP.settings.speed + 'x';
+
+    const speedBtn = document.getElementById('speedBtn');
+    if (speedBtn) speedBtn.classList.toggle('active-speed', VP.settings.speed !== 1);
 
     document.querySelectorAll('#ratioControl button').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.ratio === VP.settings.ratio);
@@ -463,6 +467,9 @@
         const rawConfig = JSON.parse(e.target.result);
         if (!rawConfig || typeof rawConfig !== 'object') throw new Error('文件格式错误');
         if (!rawConfig.version) throw new Error('缺少版本号字段');
+        if (typeof rawConfig.version !== 'number') {
+          throw new Error('版本号字段格式错误（应为数字）');
+        }
         if (rawConfig.version > VP.CONFIG_VERSION) {
           throw new Error('配置来自更高版本（v' + rawConfig.version + '），请升级播放器');
         }
@@ -553,7 +560,6 @@
       VP.loadTags();
       VP.loadDirNames();
       VP.loadSubtitles();
-      VP.loadSubtitleStyle();
 
       const metaList = VP.loadPlaylistMeta();
       if (metaList.length === 0) { VP.renderPlaylist(); VP.renderTagBar(); return; }
@@ -671,13 +677,6 @@
 
     dom.resumeToast.classList.add('show');
 
-    const newContinue = dom.resumeContinueBtn.cloneNode(true);
-    const newRestart = dom.resumeRestartBtn.cloneNode(true);
-    dom.resumeContinueBtn.parentNode.replaceChild(newContinue, dom.resumeContinueBtn);
-    dom.resumeRestartBtn.parentNode.replaceChild(newRestart, dom.resumeRestartBtn);
-    dom.resumeContinueBtn = newContinue;
-    dom.resumeRestartBtn = newRestart;
-
     let dismissed = false;
     const hide = () => {
       if (dismissed) return;
@@ -685,7 +684,7 @@
       dom.resumeToast.classList.remove('show');
     };
 
-    newContinue.addEventListener('click', () => {
+    dom.resumeContinueBtn.onclick = () => {
       try {
         const target = Math.min(prog.time, dom.video.duration - 1);
         dom.video.currentTime = target;
@@ -693,9 +692,9 @@
           VP.formatTime(target) + ' / ' + VP.formatTime(dom.video.duration));
       } catch (e) {}
       hide();
-    });
+    };
 
-    newRestart.addEventListener('click', () => {
+    dom.resumeRestartBtn.onclick = () => {
       dom.video.currentTime = 0;
       if (VP.videoProgress[id]) {
         delete VP.videoProgress[id];
@@ -703,13 +702,10 @@
       }
       VP.showOSD(VP.ICONS.play, '从头开始播放');
       hide();
-    });
+    };
 
     if (dom.resumeCloseBtn) {
-      const newClose = dom.resumeCloseBtn.cloneNode(true);
-      dom.resumeCloseBtn.parentNode.replaceChild(newClose, dom.resumeCloseBtn);
-      dom.resumeCloseBtn = newClose;
-      newClose.addEventListener('click', hide);
+      dom.resumeCloseBtn.onclick = hide;
     }
 
     setTimeout(hide, 5000);
@@ -743,30 +739,36 @@
   if (dom.folderRefreshBtn) dom.folderRefreshBtn.addEventListener('click', VP.refreshFolder);
   if (dom.folderPathBackBtn) dom.folderPathBackBtn.addEventListener('click', VP.goBackFolder);
 
-  dom.settingsBtn.addEventListener('click', VP.openSettings);
-  dom.settingsClose.addEventListener('click', VP.closeSettings);
-  dom.settingsOverlay.addEventListener('click', VP.closeSettings);
+  if (dom.settingsBtn) dom.settingsBtn.addEventListener('click', VP.openSettings);
+  if (dom.settingsClose) dom.settingsClose.addEventListener('click', VP.closeSettings);
+  if (dom.settingsOverlay) dom.settingsOverlay.addEventListener('click', VP.closeSettings);
 
-  dom.playerArea.addEventListener('mousemove', () => VP.showControls());
-  dom.playerArea.addEventListener('mouseleave', () => {
-    if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
-    VP.controlsHideTimer = setTimeout(VP.hideControls, 800);
-  });
+  if (dom.playerArea) {
+    dom.playerArea.addEventListener('mousemove', () => VP.showControls());
+    dom.playerArea.addEventListener('mouseleave', () => {
+      if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
+      VP.controlsHideTimer = setTimeout(VP.hideControls, 800);
+    });
+    dom.playerArea.addEventListener('touchstart', () => VP.showControls(), { passive: true });
+  }
 
-  dom.videoControls.addEventListener('mouseenter', () => {
-    if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
-    dom.videoControls.classList.remove('hidden');
-  });
-  dom.videoControls.addEventListener('mouseleave', () => VP.resetControlsTimer());
+  if (dom.videoControls) {
+    dom.videoControls.addEventListener('mouseenter', () => {
+      if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
+      dom.videoControls.classList.remove('hidden');
+    });
+    dom.videoControls.addEventListener('mouseleave', () => VP.resetControlsTimer());
+  }
 
-  dom.togglePlaylistBtn.addEventListener('mouseenter', () => {
-    if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
-    dom.togglePlaylistBtn.classList.remove('hidden');
-    dom.videoControls.classList.remove('hidden');
-  });
-  dom.togglePlaylistBtn.addEventListener('mouseleave', () => VP.resetControlsTimer());
-
-  dom.playerArea.addEventListener('touchstart', () => VP.showControls(), { passive: true });
+  if (dom.togglePlaylistBtn) {
+    dom.togglePlaylistBtn.addEventListener('mouseenter', () => {
+      if (VP.controlsHideTimer) clearTimeout(VP.controlsHideTimer);
+      dom.togglePlaylistBtn.classList.remove('hidden');
+      dom.videoControls.classList.remove('hidden');
+    });
+    dom.togglePlaylistBtn.addEventListener('mouseleave', () => VP.resetControlsTimer());
+    dom.togglePlaylistBtn.addEventListener('click', VP.togglePlaylist);
+  }
 
   dom.video.addEventListener('play', () => {
     dom.centerPlayBtn.classList.remove('show');
@@ -779,35 +781,53 @@
 
   document.querySelectorAll('.settings-nav-item').forEach(tab => {
     tab.addEventListener('click', () => {
-      // 1. 切换左侧导航项状态
       document.querySelectorAll('.settings-nav-item').forEach(t => t.classList.remove('active'));
-      // 2. 切换右侧内容区
       document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
-      
+
       tab.classList.add('active');
       const tabId = tab.dataset.tab;
       const content = document.getElementById('tab-' + tabId);
       if (content) content.classList.add('active');
 
-      // 3. 更新右侧顶部大标题
       const titleEl = document.getElementById('settingsMainTitle');
       if (titleEl) {
         titleEl.textContent = tab.textContent.trim();
       }
 
-      // 4. 数据同步与刷新
       if (tabId === 'data') VP.updateStorageInfo();
       if (tabId === 'about') VP.updateAboutEnv();
       if (tabId === 'subtitle') VP.syncSubtitleStyleUI();
     });
   });
 
-  document.querySelectorAll('#speedControl button').forEach(btn => {
+  // ===== 浮层交互逻辑 (倍速、字幕) =====
+  function openSpeedPopup() { if (dom.speedPopup) dom.speedPopup.classList.add('show'); }
+  function closeSpeedPopup() { if (dom.speedPopup) dom.speedPopup.classList.remove('show'); }
+
+  if (dom.speedBtn) {
+    dom.speedBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (dom.speedPopup && dom.speedPopup.classList.contains('show')) {
+        closeSpeedPopup();
+      } else {
+        closeSubtitlePopup();
+        if (dom.danmakuPopup) dom.danmakuPopup.classList.remove('show');
+        openSpeedPopup();
+      }
+      VP.resetControlsTimer();
+    });
+  }
+  if (dom.speedPopup) dom.speedPopup.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => { closeSpeedPopup(); });
+
+  document.querySelectorAll('#speedControlPopup button').forEach(btn => {
     btn.addEventListener('click', () => {
       VP.settings.speed = parseFloat(btn.dataset.speed);
       dom.video.playbackRate = VP.settings.speed;
       VP.updateSettingsUI();
       VP.saveSettings();
+      VP.showOSD(VP.ICONS.info, `播放速度 ${VP.settings.speed}x`);
+      VP.resetControlsTimer();
     });
   });
 
@@ -850,13 +870,15 @@
     });
   }
 
-  dom.resetSettings.addEventListener('click', () => {
-    VP.settings = { speed: 1, ratio: 'contain', brightness: 100, contrast: 100, saturation: 100 };
-    VP.applySettings(); VP.updateSettingsUI(); VP.saveSettings();
-    VP.showOSD(VP.ICONS.check, '已恢复默认设置');
-  });
+  if (dom.resetSettings) {
+    dom.resetSettings.addEventListener('click', () => {
+      VP.settings = { speed: 1, ratio: 'contain', brightness: 100, contrast: 100, saturation: 100 };
+      VP.applySettings(); VP.updateSettingsUI(); VP.saveSettings();
+      VP.showOSD(VP.ICONS.check, '已恢复默认设置');
+    });
+  }
 
-  // ===== 字幕样式配置（#11） =====
+  // ===== 字幕样式配置 =====
   if (dom.subtitleFontSizeSlider) {
     dom.subtitleFontSizeSlider.addEventListener('input', (e) => {
       VP.subtitleStyle.fontSize = parseInt(e.target.value);
@@ -864,38 +886,6 @@
       VP.applySubtitleStyle();
       VP.updateSubtitlePreview();
       VP.saveSubtitleStyle();
-    });
-  }
-
-  if (dom.subtitleColorInput) {
-    dom.subtitleColorInput.addEventListener('input', (e) => {
-      VP.subtitleStyle.color = e.target.value;
-      if (dom.subtitleColorValue) dom.subtitleColorValue.textContent = e.target.value.toUpperCase();
-      if (dom.subtitleColorPresets) {
-        dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.color.toLowerCase() === e.target.value.toLowerCase());
-        });
-      }
-      VP.applySubtitleStyle();
-      VP.updateSubtitlePreview();
-      VP.saveSubtitleStyle();
-    });
-  }
-
-  if (dom.subtitleColorPresets) {
-    dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const color = btn.dataset.color;
-        VP.subtitleStyle.color = color;
-        if (dom.subtitleColorInput) dom.subtitleColorInput.value = color;
-        if (dom.subtitleColorValue) dom.subtitleColorValue.textContent = color.toUpperCase();
-        dom.subtitleColorPresets.querySelectorAll('.color-preset').forEach(b => {
-          b.classList.toggle('active', b.dataset.color.toLowerCase() === color.toLowerCase());
-        });
-        VP.applySubtitleStyle();
-        VP.updateSubtitlePreview();
-        VP.saveSubtitleStyle();
-      });
     });
   }
 
@@ -929,71 +919,68 @@
     });
   }
 
-  dom.resetShortcuts.addEventListener('click', VP.resetShortcutsToDefault);
+  if (dom.resetShortcuts) dom.resetShortcuts.addEventListener('click', VP.resetShortcutsToDefault);
 
-  dom.toggleBadges.addEventListener('click', () => {
-    VP.showKeyBadges = !VP.showKeyBadges;
-    dom.toggleBadges.classList.toggle('on', VP.showKeyBadges);
-    VP.saveBadgesSetting();
-    VP.updateKeyBadges();
-  });
+  if (dom.toggleBadges) {
+    dom.toggleBadges.addEventListener('click', () => {
+      VP.showKeyBadges = !VP.showKeyBadges;
+      dom.toggleBadges.classList.toggle('on', VP.showKeyBadges);
+      VP.saveBadgesSetting();
+      VP.updateKeyBadges();
+    });
+  }
 
-  dom.playlistSearchInput.addEventListener('input', (e) => {
-    VP.searchQuery = e.target.value.trim();
-    dom.playlistSearchClear.classList.toggle('show', VP.searchQuery.length > 0);
-    VP.renderPlaylist();
-    VP.updateFolderPathBar();
-  });
+  if (dom.playlistSearchInput) {
+    dom.playlistSearchInput.addEventListener('input', (e) => {
+      VP.searchQuery = e.target.value.trim();
+      if (dom.playlistSearchClear) dom.playlistSearchClear.classList.toggle('show', VP.searchQuery.length > 0);
+      VP.renderPlaylist();
+      VP.updateFolderPathBar();
+    });
+  }
 
-  dom.playlistSearchClear.addEventListener('click', () => {
-    dom.playlistSearchInput.value = '';
-    VP.searchQuery = '';
-    dom.playlistSearchClear.classList.remove('show');
-    VP.renderPlaylist();
-    VP.updateFolderPathBar();
-    dom.playlistSearchInput.focus();
-  });
+  if (dom.playlistSearchClear) {
+    dom.playlistSearchClear.addEventListener('click', () => {
+      dom.playlistSearchInput.value = '';
+      VP.searchQuery = '';
+      dom.playlistSearchClear.classList.remove('show');
+      VP.renderPlaylist();
+      VP.updateFolderPathBar();
+      dom.playlistSearchInput.focus();
+    });
+  }
 
-  dom.sortSelect.addEventListener('change', () => {
-    VP.sortMode = dom.sortSelect.value;
-    VP.saveSort();
-    VP.renderPlaylist();
-    if (VP.sortMode !== 'manual') {
-      VP.showOSD(VP.ICONS.info, '已排序（拖动排序已禁用）');
-    }
-  });
+  if (dom.sortSelect) {
+    dom.sortSelect.addEventListener('change', () => {
+      VP.sortMode = dom.sortSelect.value;
+      VP.saveSort();
+      VP.renderPlaylist();
+      if (VP.sortMode !== 'manual') {
+        VP.showOSD(VP.ICONS.info, '已排序（拖动排序已禁用）');
+      }
+    });
+  }
 
-  dom.sortDirBtn.addEventListener('click', () => {
-    VP.sortDir = VP.sortDir === 'asc' ? 'desc' : 'asc';
-    VP.updateSortDirIcon();
-    VP.saveSort();
-    if (VP.sortMode !== 'manual') VP.renderPlaylist();
-  });
+  if (dom.sortDirBtn) {
+    dom.sortDirBtn.addEventListener('click', () => {
+      VP.sortDir = VP.sortDir === 'asc' ? 'desc' : 'asc';
+      VP.updateSortDirIcon();
+      VP.saveSort();
+      if (VP.sortMode !== 'manual') VP.renderPlaylist();
+    });
+  }
 
-  dom.densityBtn.addEventListener('click', () => {
-    VP.isCompact = !VP.isCompact;
-    VP.applyDensity();
-    VP.saveDensity();
-    VP.showOSD(
-      VP.ICONS.density,
-      VP.isCompact ? '紧凑模式' : '宽松模式'
-    );
-  });
-
-  dom.subtitleBtn.addEventListener('click', () => {
-    if (!VP.hasVideo) {
-      VP.showOSD(VP.ICONS.info, '请先播放视频再加载字幕');
-      return;
-    }
-    dom.subtitleInput.click();
-  });
-
-  dom.subtitleInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      VP.loadSubtitle(e.target.files[0]);
-    }
-    dom.subtitleInput.value = '';
-  });
+  if (dom.densityBtn) {
+    dom.densityBtn.addEventListener('click', () => {
+      VP.isCompact = !VP.isCompact;
+      VP.applyDensity();
+      VP.saveDensity();
+      VP.showOSD(
+        VP.ICONS.density,
+        VP.isCompact ? '紧凑模式' : '宽松模式'
+      );
+    });
+  }
 
   function enterSelectionMode() {
     VP.selectionMode = true;
@@ -1014,144 +1001,139 @@
   VP.enterSelectionMode = enterSelectionMode;
   VP.exitSelectionMode = exitSelectionMode;
 
-  dom.selectModeBtn.addEventListener('click', () => {
-    if (VP.selectionMode) exitSelectionMode();
-    else enterSelectionMode();
-  });
+  if (dom.selectModeBtn) {
+    dom.selectModeBtn.addEventListener('click', () => {
+      if (VP.selectionMode) exitSelectionMode();
+      else enterSelectionMode();
+    });
+  }
 
-  dom.cancelSelectBtn.addEventListener('click', exitSelectionMode);
+  if (dom.cancelSelectBtn) dom.cancelSelectBtn.addEventListener('click', exitSelectionMode);
 
-  dom.selectAllCheckbox.addEventListener('change', () => {
-    if (dom.selectAllCheckbox.checked) {
-      VP.playlist.forEach(v => {
-        if (!VP.isDirNode(v) && VP.matchesFilters(v)) VP.selectedIds.add(v.id);
-      });
-    } else {
-      VP.selectedIds.clear();
-    }
-    VP.renderPlaylist();
-  });
+  if (dom.selectAllCheckbox) {
+    dom.selectAllCheckbox.addEventListener('change', () => {
+      if (dom.selectAllCheckbox.checked) {
+        VP.playlist.forEach(v => {
+          if (!VP.isDirNode(v) && VP.matchesFilters(v)) VP.selectedIds.add(v.id);
+        });
+      } else {
+        VP.selectedIds.clear();
+      }
+      VP.renderPlaylist();
+    });
+  }
 
   // ===== 批量删除 =====
-  dom.batchDeleteBtn.addEventListener('click', async () => {
-    const count = VP.selectedIds.size;
-    if (count === 0) {
-      VP.dlgAlert('请先选择要删除的视频', '提示');
-      return;
-    }
+  if (dom.batchDeleteBtn) {
+    dom.batchDeleteBtn.addEventListener('click', async () => {
+      const count = VP.selectedIds.size;
+      if (count === 0) {
+        VP.dlgAlert('请先选择要删除的视频', '提示');
+        return;
+      }
 
-    const refCount = VP.playlist.filter(v =>
-      VP.selectedIds.has(v.id) && VP.isFileRef(v)
-    ).length;
+      const refCount = VP.playlist.filter(v =>
+        VP.selectedIds.has(v.id) && VP.isFileRef(v)
+      ).length;
 
-    const showDeleteSource = VP.env.isTauri && refCount > 0;
+      const showDeleteSource = VP.env.isTauri && refCount > 0;
 
-    let confirmResult;
-    if (showDeleteSource) {
-      confirmResult = await VP.dlgConfirm(
-        `确定要删除选中的 ${count} 个视频吗？\n其中 ${refCount} 个是文件引用。`,
-        '批量删除',
-        {
-          danger: true,
-          okText: '删除',
-          checkbox: {
-            label: `同时删除 ${refCount} 个源文件（不可恢复）`,
-            defaultChecked: false,
-            danger: true
+      let confirmResult;
+      if (showDeleteSource) {
+        confirmResult = await VP.dlgConfirm(
+          `确定要删除选中的 ${count} 个视频吗？\n其中 ${refCount} 个是文件引用。`,
+          '批量删除',
+          {
+            danger: true,
+            okText: '删除',
+            checkbox: {
+              label: `同时删除 ${refCount} 个源文件（不可恢复）`,
+              defaultChecked: false,
+              danger: true
+            }
           }
-        }
-      );
-      if (!confirmResult || !confirmResult.ok) return;
-    } else {
-      const ok = await VP.dlgConfirm(`确定要删除选中的 ${count} 个视频吗？`, '批量删除', { danger: true, okText: '删除' });
-      if (!ok) return;
-      confirmResult = { ok: true, checked: false };
-    }
+        );
+        if (!confirmResult || !confirmResult.ok) return;
+      } else {
+        const ok = await VP.dlgConfirm(`确定要删除选中的 ${count} 个视频吗？`, '批量删除', { danger: true, okText: '删除' });
+        if (!ok) return;
+        confirmResult = { ok: true, checked: false };
+      }
 
-    const deleteSource = showDeleteSource && confirmResult.checked;
+      const deleteSource = showDeleteSource && confirmResult.checked;
 
-    VP.showToast(`正在删除 ${count} 个视频…`);
+      VP.showToast(`正在删除 ${count} 个视频…`);
 
-    const ids = Array.from(VP.selectedIds);
-    let deletedCurrent = false;
-    const sourceDeleteFailed = [];
+      const ids = Array.from(VP.selectedIds);
+      let deletedCurrent = false;
+      const sourceDeleteFailed = [];
 
-    for (const id of ids) {
-      const it = VP.playlist.find(v => v.id === id);
+      for (const id of ids) {
+        const it = VP.playlist.find(v => v.id === id);
 
-      if (deleteSource && it && VP.isFileRef(it)) {
-        try {
-          const fs = VP.env.tauriFs;
-          if (typeof fs.remove === 'function') {
-            await fs.remove(it.path);
-          } else {
+        if (deleteSource && it && VP.isFileRef(it) && !it.missing) {
+          try {
+            const fs = VP.env.tauriFs;
+            if (fs && typeof fs.remove === 'function') {
+              await fs.remove(it.path);
+            } else {
+              sourceDeleteFailed.push(it.name);
+            }
+          } catch (err) {
+            console.error('删除源文件失败:', err);
             sourceDeleteFailed.push(it.name);
           }
-        } catch (err) {
-          console.error('删除源文件失败:', err);
-          sourceDeleteFailed.push(it.name);
         }
+
+        if (VP.currentVideoId === id) deletedCurrent = true;
       }
 
-      if (it && !VP.isFileRef(it)) {
-        try { await VP.dbDelete(id); } catch (err) {}
+      await VP.purgeChildData(ids);
+
+      VP.playlist = VP.playlist.filter(v => !VP.selectedIds.has(v.id));
+
+      if (deletedCurrent) {
+        VP.destroyAssRenderer();
+        if (VP.currentObjectURL) {
+          URL.revokeObjectURL(VP.currentObjectURL);
+          VP.currentObjectURL = null;
+        }
+        dom.video.removeAttribute('src');
+        dom.video.load();
+        VP.hasVideo = false;
+        VP.currentVideoId = null;
+        VP.setControlsEnabled(false);
+        dom.placeholder.classList.remove('hidden');
+        dom.progressPlayed.style.width = '0%';
+        dom.progressThumb.style.left = '0%';
+        dom.currentTimeDisplay.textContent = '0:00';
+        dom.durationDisplay.textContent = '0:00';
+        VP.updatePlayPauseIcon();
+        VP.resetPreviewThumbnail();
       }
 
-      if (VP.videoProgress[id]) delete VP.videoProgress[id];
-      if (VP.watchedSet.has(id)) VP.watchedSet.delete(id);
-      if (VP.renameMap[id]) delete VP.renameMap[id];
-      if (VP.tagMap[id]) delete VP.tagMap[id];
-      if (VP.subtitleMap[id]) delete VP.subtitleMap[id];
-      if (VP.currentVideoId === id) deletedCurrent = true;
-    }
-    VP.saveVideoProgress();
-    VP.saveWatched();
-    VP.saveRenames();
-    VP.saveTags();
-    VP.saveSubtitles();
+      await VP.savePlaylistMeta();
+      exitSelectionMode();
+      VP.hideToast();
 
-    VP.playlist = VP.playlist.filter(v => !VP.selectedIds.has(v.id));
-
-    if (deletedCurrent) {
-      if (VP.currentObjectURL) {
-        URL.revokeObjectURL(VP.currentObjectURL);
-        VP.currentObjectURL = null;
+      if (deletedCurrent) {
+        const first = VP.playlist.find(v => !VP.isDirNode(v));
+        if (first) await VP.switchToVideo(first.id);
       }
-      dom.video.removeAttribute('src');
-      dom.video.load();
-      VP.hasVideo = false;
-      VP.currentVideoId = null;
-      VP.setControlsEnabled(false);
-      dom.placeholder.classList.remove('hidden');
-      dom.progressPlayed.style.width = '0%';
-      dom.progressThumb.style.left = '0%';
-      dom.currentTimeDisplay.textContent = '0:00';
-      dom.durationDisplay.textContent = '0:00';
-      VP.updatePlayPauseIcon();
-      VP.resetPreviewThumbnail();
-    }
+      VP.renderTagBar();
+      VP.updateStorageInfo();
+      VP.updateFolderPathBar();
 
-    await VP.savePlaylistMeta();
-    exitSelectionMode();
-    VP.hideToast();
-
-    if (deletedCurrent) {
-      const first = VP.playlist.find(v => !VP.isDirNode(v));
-      if (first) await VP.switchToVideo(first.id);
-    }
-    VP.renderTagBar();
-    VP.updateStorageInfo();
-    VP.updateFolderPathBar();
-
-    if (sourceDeleteFailed.length > 0) {
-      const preview = sourceDeleteFailed.slice(0, 5).join('\n');
-      const more = sourceDeleteFailed.length > 5 ? `\n…等 ${sourceDeleteFailed.length} 个` : '';
-      VP.dlgAlert(
-        `列表项已移除，但以下 ${sourceDeleteFailed.length} 个源文件删除失败\n（可能被占用或权限不足）：\n\n${preview}${more}`,
-        '部分源文件删除失败'
-      );
-    }
-  });
+      if (sourceDeleteFailed.length > 0) {
+        const preview = sourceDeleteFailed.slice(0, 5).join('\n');
+        const more = sourceDeleteFailed.length > 5 ? `\n…等 ${sourceDeleteFailed.length} 个` : '';
+        VP.dlgAlert(
+          `列表项已移除，但以下 ${sourceDeleteFailed.length} 个源文件删除失败\n（可能被占用或权限不足）：\n\n${preview}${more}`,
+          '部分源文件删除失败'
+        );
+      }
+    });
+  }
 
   document.addEventListener('click', (e) => {
     if (!dom.itemContextMenu.classList.contains('show')) return;
@@ -1162,68 +1144,26 @@
 
   document.addEventListener('scroll', () => VP.closeContextMenu(), true);
 
-  dom.menuOpenFolderBtn.addEventListener('click', () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    const item = VP.playlist.find(v => v.id === id);
-    if (item && VP.isDirNode(item)) {
-      VP.enterFolder(item.path);
-    }
-  });
+  if (dom.menuOpenFolderBtn) {
+    dom.menuOpenFolderBtn.addEventListener('click', () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      const item = VP.playlist.find(v => v.id === id);
+      if (item && VP.isDirNode(item)) {
+        VP.enterFolder(item.path);
+      }
+    });
+  }
 
-  dom.menuRenameDirBtn.addEventListener('click', async () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    const item = VP.playlist.find(v => v.id === id);
-    if (!item || !VP.isDirNode(item)) return;
+  if (dom.menuRenameDirBtn) {
+    dom.menuRenameDirBtn.addEventListener('click', async () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      const item = VP.playlist.find(v => v.id === id);
+      if (!item || !VP.isDirNode(item)) return;
 
-    const currentDirName = VP.getDirDisplayName(item.path, item.name);
-    const newName = await VP.dlgPrompt('输入新的目录名称：', currentDirName, '重命名目录');
-    if (newName === null) return;
-    const trimmed = newName.trim();
-    if (!trimmed) {
-      VP.dlgAlert('名称不能为空', '提示');
-      return;
-    }
-    if (trimmed === currentDirName) return;
-    VP.dirNames[item.path] = trimmed;
-    VP.saveDirNames();
-    VP.renderPlaylist();
-    VP.updateFolderPathBar();
-    VP.showOSD(VP.ICONS.check, '目录已重命名',
-      trimmed.length > 20 ? trimmed.slice(0, 20) + '…' : trimmed);
-  });
-
-  dom.menuPlayBtn.addEventListener('click', () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (id) VP.switchToVideo(id);
-  });
-
-  dom.menuInfoBtn.addEventListener('click', () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    VP.showVideoInfo(id);
-  });
-
-  dom.menuTagsBtn.addEventListener('click', () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    VP.showTagEditor(id);
-  });
-
-  dom.menuRenameBtn.addEventListener('click', async () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    const item = VP.playlist.find(v => v.id === id);
-    if (!item) return;
-
-    if (VP.isDirNode(item)) {
       const currentDirName = VP.getDirDisplayName(item.path, item.name);
       const newName = await VP.dlgPrompt('输入新的目录名称：', currentDirName, '重命名目录');
       if (newName === null) return;
@@ -1239,52 +1179,112 @@
       VP.updateFolderPathBar();
       VP.showOSD(VP.ICONS.check, '目录已重命名',
         trimmed.length > 20 ? trimmed.slice(0, 20) + '…' : trimmed);
-      return;
-    }
+    });
+  }
 
-    const current = VP.getDisplayName(item);
-    const newName = await VP.dlgPrompt('输入新的视频名称：', current, '重命名');
-    if (newName === null) return;
-    const trimmed = newName.trim();
-    if (!trimmed) {
-      VP.dlgAlert('名称不能为空', '提示');
-      return;
-    }
-    if (trimmed === current) return;
-    VP.renameMap[id] = trimmed;
-    VP.saveRenames();
-    VP.renderPlaylist();
-    VP.showOSD(VP.ICONS.check, '已重命名',
-      trimmed.length > 20 ? trimmed.slice(0, 20) + '…' : trimmed);
-  });
+  if (dom.menuPlayBtn) {
+    dom.menuPlayBtn.addEventListener('click', () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (id) VP.switchToVideo(id);
+    });
+  }
 
-  dom.menuDeleteBtn.addEventListener('click', () => {
-    const id = VP.menuTargetId;
-    VP.closeContextMenu();
-    if (!id) return;
-    VP.removeVideo(id);
-  });
+  if (dom.menuInfoBtn) {
+    dom.menuInfoBtn.addEventListener('click', () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      VP.showVideoInfo(id);
+    });
+  }
 
-  dom.importBtn.addEventListener('click', () => dom.fileInput.click());
-  dom.fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) VP.addVideos(e.target.files);
-    dom.fileInput.value = '';
-  });
+  if (dom.menuTagsBtn) {
+    dom.menuTagsBtn.addEventListener('click', () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      VP.showTagEditor(id);
+    });
+  }
 
-  dom.togglePlaylistBtn.addEventListener('click', VP.togglePlaylist);
+  if (dom.menuRenameBtn) {
+    dom.menuRenameBtn.addEventListener('click', async () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      const item = VP.playlist.find(v => v.id === id);
+      if (!item) return;
 
-  dom.centerPlayBtn.addEventListener('click', () => {
-    VP.togglePlayPause();
-    dom.centerPlayBtn.classList.remove('show');
-  });
+      if (VP.isDirNode(item)) {
+        const currentDirName = VP.getDirDisplayName(item.path, item.name);
+        const newName = await VP.dlgPrompt('输入新的目录名称：', currentDirName, '重命名目录');
+        if (newName === null) return;
+        const trimmed = newName.trim();
+        if (!trimmed) {
+          VP.dlgAlert('名称不能为空', '提示');
+          return;
+        }
+        if (trimmed === currentDirName) return;
+        VP.dirNames[item.path] = trimmed;
+        VP.saveDirNames();
+        VP.renderPlaylist();
+        VP.updateFolderPathBar();
+        VP.showOSD(VP.ICONS.check, '目录已重命名',
+          trimmed.length > 20 ? trimmed.slice(0, 20) + '…' : trimmed);
+        return;
+      }
 
-  function showVolumePopup() { dom.volumePopup.classList.add('show'); }
+      const current = VP.getDisplayName(item);
+      const newName = await VP.dlgPrompt('输入新的视频名称：', current, '重命名');
+      if (newName === null) return;
+      const trimmed = newName.trim();
+      if (!trimmed) {
+        VP.dlgAlert('名称不能为空', '提示');
+        return;
+      }
+      if (trimmed === current) return;
+      VP.renameMap[id] = trimmed;
+      VP.saveRenames();
+      VP.renderPlaylist();
+      VP.showOSD(VP.ICONS.check, '已重命名',
+        trimmed.length > 20 ? trimmed.slice(0, 20) + '…' : trimmed);
+    });
+  }
+
+  if (dom.menuDeleteBtn) {
+    dom.menuDeleteBtn.addEventListener('click', () => {
+      const id = VP.menuTargetId;
+      VP.closeContextMenu();
+      if (!id) return;
+      VP.removeVideo(id);
+    });
+  }
+
+  if (dom.importBtn) dom.importBtn.addEventListener('click', () => dom.fileInput.click());
+  if (dom.fileInput) {
+    dom.fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) VP.addVideos(e.target.files);
+      dom.fileInput.value = '';
+    });
+  }
+
+  if (dom.togglePlaylistBtn) dom.togglePlaylistBtn.addEventListener('click', VP.togglePlaylist);
+
+  if (dom.centerPlayBtn) {
+    dom.centerPlayBtn.addEventListener('click', () => {
+      VP.togglePlayPause();
+      dom.centerPlayBtn.classList.remove('show');
+    });
+  }
+
+  function showVolumePopup() { if (dom.volumePopup) dom.volumePopup.classList.add('show'); }
 
   function hideVolumePopup() {
     if (VP.volumeDragging) return;
-    if (dom.volumePopup.matches(':hover')) return;
-    if (dom.muteBtn.matches(':hover')) return;
-    dom.volumePopup.classList.remove('show');
+    if (dom.volumePopup && dom.volumePopup.matches(':hover')) return;
+    if (dom.muteBtn && dom.muteBtn.matches(':hover')) return;
+    if (dom.volumePopup) dom.volumePopup.classList.remove('show');
   }
 
   function setVolumeFromEvent(e) {
@@ -1304,11 +1304,25 @@
     VP.saveVolumeState();
   }
 
-  dom.volumeVerticalSlider.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    VP.volumeDragging = true;
-    setVolumeFromEvent(e);
-  });
+  if (dom.volumeVerticalSlider) {
+    dom.volumeVerticalSlider.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      VP.volumeDragging = true;
+      setVolumeFromEvent(e);
+    });
+
+    dom.volumeVerticalSlider.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      VP.volumeDragging = true;
+      setVolumeFromEvent(e);
+    }, { passive: false });
+
+    dom.volumeVerticalSlider.addEventListener('touchmove', (e) => {
+      if (!VP.volumeDragging) return;
+      e.preventDefault();
+      setVolumeFromEvent(e);
+    }, { passive: false });
+  }
 
   document.addEventListener('mousemove', (e) => {
     if (VP.volumeDragging) setVolumeFromEvent(e);
@@ -1321,18 +1335,6 @@
     }
   });
 
-  dom.volumeVerticalSlider.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    VP.volumeDragging = true;
-    setVolumeFromEvent(e);
-  }, { passive: false });
-
-  dom.volumeVerticalSlider.addEventListener('touchmove', (e) => {
-    if (!VP.volumeDragging) return;
-    e.preventDefault();
-    setVolumeFromEvent(e);
-  }, { passive: false });
-
   document.addEventListener('touchend', () => {
     if (VP.volumeDragging) {
       VP.volumeDragging = false;
@@ -1340,47 +1342,82 @@
     }
   });
 
-  dom.volumePopupWrap.addEventListener('mouseenter', showVolumePopup);
-  dom.volumePopupWrap.addEventListener('mouseleave', () => {
-    setTimeout(hideVolumePopup, 120);
-  });
+  if (dom.volumePopupWrap) {
+    dom.volumePopupWrap.addEventListener('mouseenter', showVolumePopup);
+    dom.volumePopupWrap.addEventListener('mouseleave', () => {
+      setTimeout(hideVolumePopup, 120);
+    });
+  }
 
-  dom.muteBtn.addEventListener('click', () => {
-    VP.toggleMute();
-    VP.resetControlsTimer();
-    showVolumePopup();
-    setTimeout(hideVolumePopup, 1500);
-  });
+  if (dom.muteBtn) {
+    dom.muteBtn.addEventListener('click', () => {
+      VP.toggleMute();
+      VP.resetControlsTimer();
+      showVolumePopup();
+      setTimeout(hideVolumePopup, 1500);
+    });
+  }
 
-  dom.progressWrap.addEventListener('mousemove', (e) => {
-    if (!VP.hasVideo || !dom.video.duration) return;
-    const rect = dom.progressTrack.getBoundingClientRect();
-    const percent = ((e.clientX - rect.left) / rect.width) * 100;
-    const clampedPercent = Math.max(0, Math.min(100, percent));
+  if (dom.progressWrap) {
+    dom.progressWrap.addEventListener('mousemove', (e) => {
+      if (!VP.hasVideo || !dom.video.duration) return;
+      const rect = dom.progressTrack.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      const clampedPercent = Math.max(0, Math.min(100, percent));
 
-    dom.progressHoverTime.style.left = clampedPercent + '%';
-    dom.progressHoverTime.textContent = VP.formatTime((clampedPercent / 100) * dom.video.duration);
-    dom.previewThumbnail.style.left = clampedPercent + '%';
+      dom.progressHoverTime.style.left = clampedPercent + '%';
+      dom.progressHoverTime.textContent = VP.formatTime((clampedPercent / 100) * dom.video.duration);
+      dom.previewThumbnail.style.left = clampedPercent + '%';
 
-    VP.requestPreviewAt(clampedPercent);
-  });
+      VP.requestPreviewAt(clampedPercent);
+    });
 
-  dom.progressWrap.addEventListener('mouseleave', () => {
-    dom.previewThumbnail.classList.remove('show');
-    if (VP.previewTimeout) {
-      clearTimeout(VP.previewTimeout);
-      VP.previewTimeout = null;
-    }
-    VP.lastPreviewTime = -1;
-  });
+    dom.progressWrap.addEventListener('mouseleave', () => {
+      dom.previewThumbnail.classList.remove('show');
+      if (VP.previewTimeout) {
+        clearTimeout(VP.previewTimeout);
+        VP.previewTimeout = null;
+      }
+      VP.lastPreviewTime = -1;
+    });
 
-  dom.progressWrap.addEventListener('mousedown', (e) => {
-    if (!VP.hasVideo) return;
-    VP.isDraggingProgress = true;
-    dom.previewThumbnail.classList.remove('show');
-    VP.seekFromEvent(e);
-    e.preventDefault();
-  });
+    dom.progressWrap.addEventListener('mousedown', (e) => {
+      if (!VP.hasVideo) return;
+      VP.isDraggingProgress = true;
+      dom.previewThumbnail.classList.remove('show');
+      VP.seekFromEvent(e);
+      e.preventDefault();
+    });
+
+    dom.progressWrap.addEventListener('touchstart', (e) => {
+      if (!VP.hasVideo) return;
+      VP.isDraggingProgress = true;
+      VP.seekFromEvent(e);
+    }, { passive: true });
+
+    dom.progressWrap.addEventListener('touchmove', (e) => {
+      if (!VP.isDraggingProgress) return;
+      VP.seekFromEvent(e);
+      e.preventDefault();
+    }, { passive: false });
+
+    dom.progressWrap.addEventListener('touchend', (e) => {
+      if (!VP.isDraggingProgress) return;
+      VP.isDraggingProgress = false;
+      const t = e.changedTouches[0];
+      if (t) {
+        const rect = dom.progressTrack.getBoundingClientRect();
+        let percent = ((t.clientX - rect.left) / rect.width) * 100;
+        percent = Math.max(0, Math.min(100, percent));
+        if (dom.video.duration) {
+          dom.video.currentTime = (percent / 100) * dom.video.duration;
+          VP.recordCurrentProgress();
+          VP.saveVideoProgress();
+        }
+      }
+      VP.resetControlsTimer();
+    });
+  }
 
   document.addEventListener('mousemove', (e) => {
     if (VP.isDraggingProgress) VP.seekFromEvent(e);
@@ -1399,96 +1436,71 @@
     }
   });
 
-  dom.progressWrap.addEventListener('touchstart', (e) => {
-    if (!VP.hasVideo) return;
-    VP.isDraggingProgress = true;
-    VP.seekFromEvent(e);
-  }, { passive: true });
-
-  dom.progressWrap.addEventListener('touchmove', (e) => {
-    if (!VP.isDraggingProgress) return;
-    VP.seekFromEvent(e);
-    e.preventDefault();
-  }, { passive: false });
-
-  dom.progressWrap.addEventListener('touchend', (e) => {
-    if (!VP.isDraggingProgress) return;
-    VP.isDraggingProgress = false;
-    const t = e.changedTouches[0];
-    if (t) {
-      const rect = dom.progressTrack.getBoundingClientRect();
-      let percent = ((t.clientX - rect.left) / rect.width) * 100;
-      percent = Math.max(0, Math.min(100, percent));
-      if (dom.video.duration) {
-        dom.video.currentTime = (percent / 100) * dom.video.duration;
-        VP.recordCurrentProgress();
-        VP.saveVideoProgress();
-      }
-    }
-    VP.resetControlsTimer();
-  });
-
-  dom.playPauseBtn.addEventListener('click', () => { VP.togglePlayPause(); VP.resetControlsTimer(); });
-  dom.lockBtn.addEventListener('click', () => { VP.toggleLock(); VP.resetControlsTimer(); });
-  dom.fullscreenBtn.addEventListener('click', () => { VP.toggleFullscreen(); VP.resetControlsTimer(); });
-  dom.prevBtn.addEventListener('click', () => { VP.playPrev(); VP.resetControlsTimer(); });
-  dom.nextBtn.addEventListener('click', () => { VP.playNext(); VP.resetControlsTimer(); });
+  if (dom.playPauseBtn) dom.playPauseBtn.addEventListener('click', () => { VP.togglePlayPause(); VP.resetControlsTimer(); });
+  if (dom.fullscreenBtn) dom.fullscreenBtn.addEventListener('click', () => { VP.toggleFullscreen(); VP.resetControlsTimer(); });
+  if (dom.prevBtn) dom.prevBtn.addEventListener('click', () => { VP.playPrev(); VP.resetControlsTimer(); });
+  if (dom.nextBtn) dom.nextBtn.addEventListener('click', () => { VP.playNext(); VP.resetControlsTimer(); });
 
   document.addEventListener('fullscreenchange', VP.updateFullscreenIcon);
 
   let dragCounter = 0;
-  dom.playerArea.addEventListener('dragenter', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    dragCounter++;
-    dom.dropOverlay.classList.add('active');
-  });
-  dom.playerArea.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
-  dom.playerArea.addEventListener('dragleave', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    dragCounter--;
-    if (dragCounter <= 0) { dragCounter = 0; dom.dropOverlay.classList.remove('active'); }
-  });
-  dom.playerArea.addEventListener('drop', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    dragCounter = 0;
-    dom.dropOverlay.classList.remove('active');
-    if (e.dataTransfer.files.length > 0) VP.addVideos(e.dataTransfer.files);
-  });
+  if (dom.playerArea) {
+    dom.playerArea.addEventListener('dragenter', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dragCounter++;
+      dom.dropOverlay.classList.add('active');
+    });
+    dom.playerArea.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+    dom.playerArea.addEventListener('dragleave', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) { dragCounter = 0; dom.dropOverlay.classList.remove('active'); }
+    });
+    dom.playerArea.addEventListener('drop', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dragCounter = 0;
+      dom.dropOverlay.classList.remove('active');
+      if (e.dataTransfer.files.length > 0) VP.addVideos(e.dataTransfer.files);
+    });
+  }
 
   let playlistDragCounter = 0;
-  dom.playlistPanel.addEventListener('dragenter', (e) => {
-    if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
-    e.preventDefault(); e.stopPropagation();
-    playlistDragCounter++;
-    dom.playlistDropOverlay.classList.add('active');
-    dom.playlistPanel.classList.add('drag-over');
-  });
-  dom.playlistPanel.addEventListener('dragover', (e) => {
-    if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
-    e.preventDefault(); e.stopPropagation();
-  });
-  dom.playlistPanel.addEventListener('dragleave', (e) => {
-    if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
-    e.preventDefault(); e.stopPropagation();
-    playlistDragCounter--;
-    if (playlistDragCounter <= 0) {
+  if (dom.playlistPanel) {
+    dom.playlistPanel.addEventListener('dragenter', (e) => {
+      if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
+      e.preventDefault(); e.stopPropagation();
+      playlistDragCounter++;
+      dom.playlistDropOverlay.classList.add('active');
+      dom.playlistPanel.classList.add('drag-over');
+    });
+    dom.playlistPanel.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
+      e.preventDefault(); e.stopPropagation();
+    });
+    dom.playlistPanel.addEventListener('dragleave', (e) => {
+      if (!e.dataTransfer.types || !Array.from(e.dataTransfer.types).includes('Files')) return;
+      e.preventDefault(); e.stopPropagation();
+      playlistDragCounter--;
+      if (playlistDragCounter <= 0) {
+        playlistDragCounter = 0;
+        dom.playlistDropOverlay.classList.remove('active');
+        dom.playlistPanel.classList.remove('drag-over');
+      }
+    });
+    dom.playlistPanel.addEventListener('drop', (e) => {
+      if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+      e.preventDefault(); e.stopPropagation();
       playlistDragCounter = 0;
       dom.playlistDropOverlay.classList.remove('active');
       dom.playlistPanel.classList.remove('drag-over');
-    }
-  });
-  dom.playlistPanel.addEventListener('drop', (e) => {
-    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
-    e.preventDefault(); e.stopPropagation();
-    playlistDragCounter = 0;
-    dom.playlistDropOverlay.classList.remove('active');
-    dom.playlistPanel.classList.remove('drag-over');
-    VP.addVideos(e.dataTransfer.files);
-  });
+      VP.addVideos(e.dataTransfer.files);
+    });
+  }
 
   ['dragenter', 'dragover', 'drop'].forEach(name => {
     document.body.addEventListener(name, (e) => {
-      if (dom.playerArea.contains(e.target) || dom.playlistPanel.contains(e.target)) return;
+      if (dom.playerArea && dom.playerArea.contains(e.target)) return;
+      if (dom.playlistPanel && dom.playlistPanel.contains(e.target)) return;
       e.preventDefault();
     });
   });
@@ -1565,6 +1577,33 @@
     clickTimer = setTimeout(() => { VP.togglePlayPause(); clickTimer = null; }, 200);
   });
 
+  // ===== 后台自动暂停 =====
+  let pausedByBackground = false;
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (VP.hasVideo && !dom.video.paused) {
+        pausedByBackground = true;
+        dom.video.pause();
+        VP.recordCurrentProgress();
+        VP.saveVideoProgress();
+      }
+    } else {
+      pausedByBackground = false;
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (document.hidden && VP.hasVideo && !dom.video.paused) {
+        pausedByBackground = true;
+        dom.video.pause();
+        VP.recordCurrentProgress();
+        VP.saveVideoProgress();
+      }
+    }, 200);
+  });
+
   window.addEventListener('beforeunload', () => {
     if (VP.currentVideoId && VP.hasVideo) {
       VP.recordCurrentProgress();
@@ -1573,12 +1612,14 @@
     VP.saveVolumeState();
   });
 
-  dom.exportConfigBtn.addEventListener('click', VP.exportConfig);
-  dom.importConfigBtn.addEventListener('click', () => dom.configInput.click());
-  dom.configInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) VP.importConfig(e.target.files[0]);
-    dom.configInput.value = '';
-  });
+  if (dom.exportConfigBtn) dom.exportConfigBtn.addEventListener('click', VP.exportConfig);
+  if (dom.importConfigBtn && dom.configInput) {
+    dom.importConfigBtn.addEventListener('click', () => dom.configInput.click());
+    dom.configInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) VP.importConfig(e.target.files[0]);
+      dom.configInput.value = '';
+    });
+  }
 
   // ===== 键盘快捷键 =====
   document.addEventListener('keydown', (e) => {
@@ -1681,7 +1722,208 @@
     }
   })();
 
-  // ===== 初始化 =====
+  // ===== 字幕与弹幕浮层交互 =====
+  function openSubtitlePopup() { if (dom.subtitlePopup) dom.subtitlePopup.classList.add('show'); }
+  function closeSubtitlePopup() { if (dom.subtitlePopup) dom.subtitlePopup.classList.remove('show'); }
+  
+  if (dom.subtitleBtn) {
+    dom.subtitleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!VP.hasVideo) {
+        VP.showOSD(VP.ICONS.info, '请先播放视频再操作字幕');
+        return;
+      }
+      if (dom.subtitlePopup.classList.contains('show')) {
+        closeSubtitlePopup();
+      } else {
+        closeSpeedPopup();
+        if (dom.danmakuPopup) dom.danmakuPopup.classList.remove('show');
+        openSubtitlePopup();
+      }
+      VP.resetControlsTimer();
+    });
+  }
+
+  if (dom.subtitlePopup) {
+    dom.subtitlePopup.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  document.addEventListener('click', () => { closeSubtitlePopup(); });
+
+  if (dom.loadSubBtn) {
+    dom.loadSubBtn.addEventListener('click', () => {
+      dom.subtitleInput.click();
+      closeSubtitlePopup();
+    });
+  }
+
+  VP.subtitleOffset = 0;
+  VP.updateSubtitleOffsetUI = function() {
+    if (!dom.subtitleOffsetValue) return;
+    const sec = VP.subtitleOffset / 1000;
+    dom.subtitleOffsetValue.textContent = (sec > 0 ? '+' : '') + sec.toFixed(1) + 's';
+  };
+
+  function changeSubtitleOffset(deltaMs) {
+    if (!VP.hasVideo) return;
+    VP.subtitleOffset += deltaMs;
+    VP.subtitleOffset = Math.max(-10000, Math.min(10000, VP.subtitleOffset));
+
+    VP.updateSubtitleOffsetUI();
+    if (VP.subtitleRenderMode !== 'effect') {
+      delete dom.subtitleOverlay.dataset.currentKey;
+      VP.updateSubtitle();
+    } else {
+      VP.showOSD(VP.ICONS.info, '特效模式下微调需等待字幕刷新');
+    }
+  }
+
+  if (dom.subOffsetMinus) dom.subOffsetMinus.addEventListener('click', () => changeSubtitleOffset(-100));
+  if (dom.subOffsetPlus) dom.subOffsetPlus.addEventListener('click', () => changeSubtitleOffset(100));
+
+  // ===== 字幕渲染模式逻辑 =====
+  VP.loadSubtitleRenderMode = function () {
+    try {
+      const raw = localStorage.getItem(VP.SUBTITLE_RENDER_MODE_KEY);
+      if (raw === 'effect' || raw === 'native' || raw === 'auto') {
+        VP.subtitleRenderMode = raw;
+      } else {
+        VP.subtitleRenderMode = 'auto';
+      }
+    } catch (e) {
+      VP.subtitleRenderMode = 'auto';
+    }
+    VP.syncSubtitleRenderModeUI();
+  };
+
+  VP.saveSubtitleRenderMode = function () {
+    try {
+      localStorage.setItem(VP.SUBTITLE_RENDER_MODE_KEY, VP.subtitleRenderMode);
+    } catch (e) {}
+  };
+
+  VP.syncSubtitleRenderModeUI = function () {
+    const ctrl = document.getElementById('subtitleRenderModeControl');
+    if (!ctrl) return;
+    ctrl.querySelectorAll('button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === VP.subtitleRenderMode);
+    });
+  };
+
+  const subtitleModeCtrl = document.getElementById('subtitleRenderModeControl');
+  if (subtitleModeCtrl) {
+    subtitleModeCtrl.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (VP.subtitleRenderMode === mode) return;
+        VP.subtitleRenderMode = mode;
+        VP.saveSubtitleRenderMode();
+        VP.syncSubtitleRenderModeUI();
+        VP.reapplyCurrentSubtitle();
+      });
+    });
+  }
+
+  // ===== 弹幕设置逻辑 =====
+  document.addEventListener('click', (e) => {
+    if (dom.danmakuPopup && dom.danmakuPopup.classList.contains('show')) {
+      if (!e.target.closest('#danmakuPopup') && !e.target.closest('#menuDanmakuBtn')) {
+        dom.danmakuPopup.classList.remove('show');
+      }
+    }
+  });
+
+  // 开关
+  if (dom.toggleDanmaku) {
+    dom.toggleDanmaku.addEventListener('click', () => {
+      VP.danmakuSettings.enabled = !VP.danmakuSettings.enabled;
+      VP.applyDanmakuSettings();
+    });
+  }
+
+  // 【核心】所有滑块，只要动了，就直接 hardUpdate
+  if (dom.danmakuFontSizeSlider) {
+    dom.danmakuFontSizeSlider.addEventListener('input', (e) => {
+      VP.danmakuSettings.fontSize = parseInt(e.target.value);
+      dom.danmakuFontSizeValue.textContent = VP.danmakuSettings.fontSize + 'px';
+      VP.hardUpdateDanmaku();
+    });
+  }
+
+  if (dom.danmakuOpacitySlider) {
+    dom.danmakuOpacitySlider.addEventListener('input', (e) => {
+      VP.danmakuSettings.opacity = parseInt(e.target.value) / 100;
+      dom.danmakuOpacityValue.textContent = e.target.value + '%';
+      VP.hardUpdateDanmaku();
+    });
+  }
+
+  if (dom.danmakuAreaSlider) {
+    dom.danmakuAreaSlider.addEventListener('input', (e) => {
+      VP.danmakuSettings.area = parseInt(e.target.value);
+      dom.danmakuAreaValue.textContent = e.target.value + '%';
+      VP.hardUpdateDanmaku();
+    });
+  }
+
+  if (dom.danmakuSpeedSlider) {
+    dom.danmakuSpeedSlider.addEventListener('input', (e) => {
+      VP.danmakuSettings.speed = parseInt(e.target.value);
+      dom.danmakuSpeedValue.textContent = VP.danmakuSettings.speed < 100 ? '慢' : (VP.danmakuSettings.speed > 200 ? '快' : '适中');
+      VP.hardUpdateDanmaku();
+    });
+  }
+
+  if (dom.loadDanmakuBtn) {
+    dom.loadDanmakuBtn.addEventListener('click', () => {
+      dom.danmakuInput.click();
+      if (dom.danmakuPopup) dom.danmakuPopup.classList.remove('show');
+    });
+  }
+
+  // 初始化
+  VP.updateSubtitleOffsetUI();
+  VP.loadSubtitleRenderMode();
+
+  // ===== 更多菜单交互 (新增) =====
+  const moreBtn = document.getElementById('moreBtn');
+  const morePopup = document.getElementById('morePopup');
+  
+  if (moreBtn && morePopup) {
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      morePopup.classList.toggle('show');
+      if (dom.volumePopup) dom.volumePopup.classList.remove('show');
+      if (dom.speedPopup) dom.speedPopup.classList.remove('show');
+      if (dom.subtitlePopup) dom.subtitlePopup.classList.remove('show');
+      if (dom.danmakuPopup) dom.danmakuPopup.classList.remove('show');
+    });
+
+    document.addEventListener('click', () => {
+      morePopup.classList.remove('show');
+    });
+    morePopup.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  const menuDanmakuBtn = document.getElementById('menuDanmakuBtn');
+  if (menuDanmakuBtn) {
+    menuDanmakuBtn.addEventListener('click', () => {
+      morePopup.classList.remove('show');
+      if (dom.danmakuPopup) {
+        dom.danmakuPopup.classList.add('show');
+      }
+    });
+  }
+
+  const menuLockBtn = document.getElementById('menuLockBtn');
+  if (menuLockBtn) {
+    menuLockBtn.addEventListener('click', () => {
+      morePopup.classList.remove('show');
+      VP.toggleLock();
+    });
+  }
+
+  // ===== 主初始化 =====
   VP.loadShortcuts();
   VP.renderShortcuts();
   VP.loadBadgesSetting();
@@ -1696,6 +1938,33 @@
   VP.loadSettings();
   VP.loadSubtitleStyle();
   VP.updateAboutEnv();
+
+  // 字幕相关初始化
+  VP.updateSubtitleOffsetUI();
+  VP.loadSubtitleRenderMode();
+
+  // 弹幕初始化
+  VP.loadDanmaku();
+  VP.loadDanmakuSettings();
+  VP.initDanmaku();
+
+  // 监听字幕文件选择器
+  if (dom.subtitleInput) {
+    dom.subtitleInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        VP.loadSubtitle(e.target.files[0]);
+      }
+      dom.subtitleInput.value = '';
+      closeSubtitlePopup();
+    });
+  }
+
+  if (dom.danmakuInput) {
+    dom.danmakuInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) VP.loadDanmakuFile(e.target.files[0]);
+      dom.danmakuInput.value = '';
+    });
+  }
 
   if (VP.env.isTauri) {
     if (dom.importBtn) dom.importBtn.style.display = 'none';
