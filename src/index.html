@@ -47,6 +47,9 @@
         <!-- 字幕显示层 -->
         <div id="subtitleOverlay" class="subtitle-overlay"></div>
 
+        <!-- 弹幕层 -->
+        <div id="danmakuOverlay" class="danmaku-overlay"></div>
+
         <button class="center-play" id="centerPlayBtn" aria-label="播放">
           <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
@@ -141,23 +144,57 @@
           </div>
 
           <div class="right-buttons">
-            <!-- 字幕按钮 -->
-            <button class="ctrl-btn" id="subtitleBtn" aria-label="加载外挂字幕" title="加载外挂字幕">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z"/></svg>
-            </button>
+            <!-- 1. 字幕（纯中文） -->
+            <div class="subtitle-popup-wrap" id="subtitlePopupWrap">
+              <div class="subtitle-popup" id="subtitlePopup">
+                <div class="sub-title" style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:8px;">渲染模式</div>
+                <div class="segment-control" id="subtitleRenderModeControl" style="margin-bottom:12px; width:100%;">
+                  <button data-mode="auto" class="active" style="flex:1; padding:4px 0; font-size:11px;">自动</button>
+                  <button data-mode="effect" style="flex:1; padding:4px 0; font-size:11px;">特效</button>
+                  <button data-mode="native" style="flex:1; padding:4px 0; font-size:11px;">基础</button>
+                </div>
 
-            <button class="ctrl-btn" id="lockBtn" aria-label="锁定控制栏" title="锁定控制栏" data-shortcut="lock">
-              <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-              <span class="key-badge" data-badge="lock"></span>
-            </button>
+                <div class="sub-title" style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:8px; display:flex; justify-content:space-between;">
+                  <span>时间轴微调</span>
+                  <span id="subtitleOffsetValue" style="color:#a8b8ff; font-weight:bold;">0.0s</span>
+                </div>
+                <div style="display:flex; gap:6px; margin-bottom:16px;">
+                  <button class="toolbar-btn" id="subOffsetMinus" style="flex:1; justify-content:center;">-0.1s</button>
+                  <button class="toolbar-btn" id="subOffsetPlus" style="flex:1; justify-content:center;">+0.1s</button>
+                </div>
 
-            <button class="ctrl-btn" id="settingsBtn" aria-label="设置" title="设置" data-shortcut="settings">
-              <svg viewBox="0 0 24 24">
-                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-              </svg>
-              <span class="key-badge" data-badge="settings"></span>
-            </button>
+                <button class="data-btn primary" id="loadSubBtn" style="padding:8px; font-size:12px; width:100%;">
+                  导入外部字幕
+                </button>
+              </div>
 
+              <button class="ctrl-btn text-btn" id="subtitleBtn" aria-label="字幕设置" title="字幕设置">
+                字幕
+              </button>
+            </div>
+
+            <!-- 2. 倍速（纯中文） -->
+            <div class="speed-popup-wrap" id="speedPopupWrap">
+              <div class="speed-popup" id="speedPopup">
+                <div class="sub-title" style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                  <span>播放速度</span>
+                  <span id="speedPopupValue" style="color:#a8b8ff; font-weight:bold;">1x</span>
+                </div>
+                <div class="segment-control" id="speedControlPopup" style="width:100%;">
+                  <button data-speed="0.5" style="flex:1; padding:5px 0; font-size:11px;">0.5x</button>
+                  <button data-speed="0.75" style="flex:1; padding:5px 0; font-size:11px;">0.75x</button>
+                  <button data-speed="1" class="active" style="flex:1; padding:5px 0; font-size:11px;">1x</button>
+                  <button data-speed="1.25" style="flex:1; padding:5px 0; font-size:11px;">1.25x</button>
+                  <button data-speed="1.5" style="flex:1; padding:5px 0; font-size:11px;">1.5x</button>
+                  <button data-speed="2" style="flex:1; padding:5px 0; font-size:11px;">2x</button>
+                </div>
+              </div>
+              <button class="ctrl-btn text-btn" id="speedBtn" aria-label="播放速度" title="播放速度">
+                <span id="speedBtnLabel">1.0x</span>
+              </button>
+            </div>
+
+            <!-- 3. 音量（保留图标） -->
             <div class="volume-popup-wrap" id="volumePopupWrap">
               <div class="volume-popup" id="volumePopup">
                 <div class="volume-percent" id="volumePercent">100%</div>
@@ -179,6 +216,32 @@
               </button>
             </div>
 
+            <!-- 4. 设置（保留图标） -->
+            <button class="ctrl-btn" id="settingsBtn" aria-label="设置" title="设置" data-shortcut="settings">
+              <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+              </svg>
+              <span class="key-badge" data-badge="settings"></span>
+            </button>
+
+            <!-- 5. 更多菜单（收纳弹幕和锁定） -->
+            <div class="more-popup-wrap" id="morePopupWrap">
+              <div class="more-popup" id="morePopup">
+                <button class="menu-item" id="menuDanmakuBtn">
+                  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                  <span>弹幕设置</span>
+                </button>
+                <button class="menu-item" id="menuLockBtn">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  <span>锁定控制栏</span>
+                </button>
+              </div>
+              <button class="ctrl-btn" id="moreBtn" aria-label="更多" title="更多">
+                <svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+              </button>
+            </div>
+
+            <!-- 6. 全屏（保留图标） -->
             <button class="ctrl-btn" id="fullscreenBtn" aria-label="全屏" disabled title="全屏" data-shortcut="fullscreen">
               <svg id="fullscreenIcon" viewBox="0 0 24 24">
                 <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -190,6 +253,38 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- ===== 弹幕设置浮层（被抽离成全局浮层了） ===== -->
+      <div class="danmaku-popup" id="danmakuPopup">
+        <div class="sub-title" style="font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>弹幕设置</span>
+          <button class="toggle-switch on" id="toggleDanmaku" aria-label="弹幕开关"></button>
+        </div>
+        
+        <div class="setting-row-label" style="margin-top: 12px; margin-bottom: 4px; font-size: 11px; color: rgba(255,255,255,0.5);">
+          <span>字号</span><span id="danmakuFontSizeValue">25px</span>
+        </div>
+        <input type="range" class="sub-slider" id="danmakuFontSizeSlider" min="12" max="48" value="25">
+
+        <div class="setting-row-label" style="margin-top: 8px; margin-bottom: 4px; font-size: 11px; color: rgba(255,255,255,0.5);">
+          <span>不透明度</span><span id="danmakuOpacityValue">90%</span>
+        </div>
+        <input type="range" class="sub-slider" id="danmakuOpacitySlider" min="10" max="100" value="90">
+
+        <div class="setting-row-label" style="margin-top: 8px; margin-bottom: 4px; font-size: 11px; color: rgba(255,255,255,0.5);">
+          <span>显示区域</span><span id="danmakuAreaValue">75%</span>
+        </div>
+        <input type="range" class="sub-slider" id="danmakuAreaSlider" min="25" max="100" value="75">
+
+        <div class="setting-row-label" style="margin-top: 8px; margin-bottom: 4px; font-size: 11px; color: rgba(255,255,255,0.5);">
+          <span>速度</span><span id="danmakuSpeedValue">适中</span>
+        </div>
+        <input type="range" class="sub-slider" id="danmakuSpeedSlider" min="50" max="300" value="144">
+
+        <button class="data-btn primary" id="loadDanmakuBtn" style="margin-top:16px; padding:8px; font-size:12px; width:100%;">
+          导入弹幕 (.xml/.json)
+        </button>
       </div>
 
       <!-- ===== 全新双栏设置面板 ===== -->
@@ -237,19 +332,6 @@
           <div class="settings-body">
             <!-- 1. 外观主题 -->
             <div class="settings-tab-content active" id="tab-playback">
-              <div class="setting-row">
-                <div class="setting-row-label">
-                  <span class="setting-title">播放速度</span>
-                </div>
-                <div class="segment-control" id="speedControl">
-                  <button data-speed="0.5">0.5x</button>
-                  <button data-speed="0.75">0.75x</button>
-                  <button data-speed="1" class="active">1x</button>
-                  <button data-speed="1.25">1.25x</button>
-                  <button data-speed="1.5">1.5x</button>
-                  <button data-speed="2">2x</button>
-                </div>
-              </div>
               <div class="setting-row">
                 <div class="setting-row-label">
                   <span class="setting-title">画面比例</span>
@@ -304,22 +386,6 @@
                 </div>
                 <div class="setting-slider">
                   <input type="range" id="subtitleFontSizeSlider" min="12" max="48" value="24" step="1">
-                </div>
-              </div>
-              <div class="setting-row">
-                <div class="setting-row-label">
-                  <span class="setting-title">字体颜色</span>
-                  <span class="value" id="subtitleColorValue">#FFFFFF</span>
-                </div>
-                <div class="setting-color-row">
-                  <input type="color" id="subtitleColorInput" value="#ffffff">
-                  <div class="setting-color-presets" id="subtitleColorPresets">
-                    <button class="color-preset" data-color="#ffffff" style="background:#ffffff"></button>
-                    <button class="color-preset" data-color="#ffe14d" style="background:#ffe14d"></button>
-                    <button class="color-preset" data-color="#7d8cff" style="background:#7d8cff"></button>
-                    <button class="color-preset" data-color="#ff9b9b" style="background:#ff9b9b"></button>
-                    <button class="color-preset" data-color="#a8ffb8" style="background:#a8ffb8"></button>
-                  </div>
                 </div>
               </div>
               <div class="setting-row">
@@ -660,12 +726,19 @@
   </div>
 
   <input type="file" id="fileInput" accept="video/*" multiple>
-  
+
   <!-- 字幕文件选择器 -->
-  <input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa" style="display:none;">
+  <input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa,.txt" style="display:none;">
+
+  <!-- 弹幕文件选择器（仅支持普通弹幕，强制拦截 ASS） -->
+  <input type="file" id="danmakuInput" accept=".xml,.json" style="display:none;">
 
   <script src="js/core.js"></script>
   <script src="js/env.js"></script>
+  <script src="js/ass.global.min.js"></script>
+  <script src="js/danmaku.min.js"></script>
+  <script src="js/subtitle.js"></script>
+  <script src="js/danmaku.js"></script>
   <script src="js/player.js"></script>
   <script src="js/playlist.js"></script>
   <script src="js/app.js"></script>
