@@ -37,6 +37,9 @@ window.VP = window.VP || {};
   VP.SUBTITLE_KEY = 'playerSubtitles';
   VP.SUBTITLE_STYLE_KEY = 'playerSubtitleStyle';
   VP.DIR_PREFIX = 'dir:';
+  VP.SUBTITLE_RENDER_MODE_KEY = 'playerSubtitleRenderMode';
+  VP.DANMAKU_KEY = 'playerDanmaku';
+  VP.DANMAKU_SETTINGS_KEY = 'playerDanmakuSettings'; // 新增弹幕设置存储
 
   // ===== 字幕默认样式 =====
   VP.DEFAULT_SUBTITLE_STYLE = {
@@ -46,6 +49,18 @@ window.VP = window.VP || {};
     outline: 2,
     position: 'bottom'
   };
+
+  // ===== 弹幕默认设置 =====
+  VP.danmakuSettings = {
+    enabled: true,
+    fontSize: 25,
+    opacity: 0.9,
+    area: 75,
+    speed: 144
+  };
+
+  // ===== 倍速档位 =====
+  VP.SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
   // ===== 默认快捷键 =====
   VP.DEFAULT_SHORTCUTS = {
@@ -138,6 +153,7 @@ window.VP = window.VP || {};
   VP.currentSubtitles = [];
   VP.subtitleMap = {};
   VP.subtitleLines = [];
+  VP.subtitleRenderMode = 'auto';
 
   // ===== DOM 引用 =====
   function $(id) { return document.getElementById(id); }
@@ -264,9 +280,6 @@ window.VP = window.VP || {};
     // 字幕设置 UI
     subtitleFontSizeSlider: $('subtitleFontSizeSlider'),
     subtitleFontSizeValue: $('subtitleFontSizeValue'),
-    subtitleColorInput: $('subtitleColorInput'),
-    subtitleColorValue: $('subtitleColorValue'),
-    subtitleColorPresets: $('subtitleColorPresets'),
     subtitleBgOpacitySlider: $('subtitleBgOpacitySlider'),
     subtitleBgOpacityValue: $('subtitleBgOpacityValue'),
     subtitleOutlineSlider: $('subtitleOutlineSlider'),
@@ -274,7 +287,38 @@ window.VP = window.VP || {};
     subtitlePositionControl: $('subtitlePositionControl'),
     subtitlePreviewBox: $('subtitlePreviewBox'),
     subtitlePreviewText: $('subtitlePreviewText'),
-    resetSubtitleSettings: $('resetSubtitleSettings')
+    resetSubtitleSettings: $('resetSubtitleSettings'),
+    videoWrapper: $('videoWrapper'),
+    // 字幕浮层
+    subtitlePopupWrap: $('subtitlePopupWrap'),
+    subtitlePopup: $('subtitlePopup'),
+    subtitleOffsetValue: $('subtitleOffsetValue'),
+    subOffsetMinus: $('subOffsetMinus'),
+    subOffsetPlus: $('subOffsetPlus'),
+    loadSubBtn: $('loadSubBtn'),
+    // 倍速浮层
+    speedPopupWrap: $('speedPopupWrap'),
+    speedPopup: $('speedPopup'),
+    speedBtn: $('speedBtn'),
+    speedBtnLabel: $('speedBtnLabel'),
+    speedControlPopup: $('speedControlPopup'),
+    speedPopupValue: $('speedPopupValue'),
+    // 弹幕浮层
+    danmakuOverlay: $('danmakuOverlay'),
+    danmakuBtn: $('danmakuBtn'),
+    danmakuInput: $('danmakuInput'),
+    danmakuPopupWrap: $('danmakuPopupWrap'),
+    danmakuPopup: $('danmakuPopup'),
+    toggleDanmaku: $('toggleDanmaku'),
+    danmakuFontSizeSlider: $('danmakuFontSizeSlider'),
+    danmakuFontSizeValue: $('danmakuFontSizeValue'),
+    danmakuOpacitySlider: $('danmakuOpacitySlider'),
+    danmakuOpacityValue: $('danmakuOpacityValue'),
+    danmakuAreaSlider: $('danmakuAreaSlider'),
+    danmakuAreaValue: $('danmakuAreaValue'),
+    danmakuSpeedSlider: $('danmakuSpeedSlider'),
+    danmakuSpeedValue: $('danmakuSpeedValue'),
+    loadDanmakuBtn: $('loadDanmakuBtn'),
   };
 
   // ===== 工具函数 =====
