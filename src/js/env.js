@@ -44,7 +44,7 @@
 
   // ===== 路径工具 =====
   VP.isFileRef = function (item) {
-    return !!(item && item.id && item.id.startsWith(VP.FILE_REF_PREFIX));
+    return !!(item && item.id && typeof item.id === 'string' && item.id.startsWith(VP.FILE_REF_PREFIX));
   };
 
   VP.joinPath = function (dir, name) {
@@ -69,10 +69,15 @@
         console.warn('convertFileSrc 失败，回退到 file://', e);
       }
     }
+    // 回退：手动拼接 file:// URL
+    // 【修复】原实现判断 i===1，但 split('/') 后首段（index 0）才是盘符，
+    //         原逻辑永远不成立，导致 "C:" 被 encodeURIComponent 成 "C%3A"，
+    //         产生非法 URL "file://C%3A/..."。此处改为 i===0。
     let normalized = fullPath.replace(/\\/g, '/');
     if (!normalized.startsWith('/')) normalized = '/' + normalized;
     const encoded = normalized.split('/').map((seg, i) => {
-      if (i === 1 && /^[A-Za-z]:$/.test(seg)) return seg;
+      // 首段若是 Windows 盘符（如 "C:"），保留冒号不编码
+      if (i === 0 && /^[A-Za-z]:$/.test(seg)) return seg;
       return encodeURIComponent(seg);
     }).join('/');
     return 'file://' + encoded;
