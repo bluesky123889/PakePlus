@@ -113,8 +113,11 @@
   // ===== 标签 / 搜索过滤 =====
   VP.getAllTags = function () {
     const tagSet = new Set();
-    Object.values(VP.tagMap).forEach(tags => {
-      tags.forEach(t => tagSet.add(t));
+    // 【修复】只统计仍在播放列表中的视频的标签，避免残留 0 计数标签
+    const aliveIds = new Set(VP.playlist.filter(v => !VP.isDirNode(v)).map(v => v.id));
+    Object.keys(VP.tagMap).forEach(id => {
+      if (!aliveIds.has(id)) return;
+      (VP.tagMap[id] || []).forEach(t => tagSet.add(t));
     });
     return Array.from(tagSet).sort();
   };
@@ -373,15 +376,11 @@
     });
 
     // === 再渲染视频 ===
+    // 【修复】统一走 getViewItems，避免与 core.js 逻辑分叉
+    const viewVideos = view.videos;
+    const viewIdSet = new Set(viewVideos.map(v => v.id));
     const sortedAll = VP.getSortedPlaylist();
-    let sortedVideos;
-    if (VP.searchQuery) {
-      sortedVideos = sortedAll.filter(v => !VP.isDirNode(v));
-    } else if (VP.currentPath === null) {
-      sortedVideos = sortedAll.filter(v => !VP.isDirNode(v) && !v.path);
-    } else {
-      sortedVideos = sortedAll.filter(v => !VP.isDirNode(v) && VP.dirname(v.path) === VP.currentPath);
-    }
+    const sortedVideos = sortedAll.filter(v => viewIdSet.has(v.id));
 
     let visibleCount = 0;
 
@@ -888,7 +887,7 @@
     });
   };
 
-  // ===== 清理子项辅助（#3 新增） =====
+  // ===== 清理子项辅助 =====
   VP.purgeChildData = async function (ids) {
     let dbCount = 0;
     for (const id of ids) {
@@ -941,12 +940,9 @@
       }
 
       const idsToRemove = new Set(toRemove.map(v => v.id));
-
-      // 【#3 修复】清理所有子项的进度/已看/重命名/标签/字幕/DB 记录
       const childIds = Array.from(idsToRemove);
       await VP.purgeChildData(childIds);
 
-      // 如果当前播放的视频在删除范围内，重置播放器
       const removingCurrent = VP.currentVideoId && idsToRemove.has(VP.currentVideoId);
 
       VP.playlist = VP.playlist.filter(v => !idsToRemove.has(v.id));
@@ -1189,7 +1185,7 @@
     await VP.scanFolder(dir, true);
   };
 
-  // ===== 自动匹配字幕（#14 新增） =====
+  // ===== 自动匹配字幕 =====
   const SUBTITLE_EXT_RE = /\.(srt|vtt|ass|ssa)$/i;
   const VIDEO_EXT_RE = /\.(mp4|webm|mov|mkv|avi|flv|wmv|m4v|ogv)$/i;
 
@@ -1310,13 +1306,14 @@
 
     const videoEntries = [];
     const dirSet = new Set();
-    const subtitleEntries = []; // 【#14】收集字幕文件
+    const subtitleEntries = []; // 收集字幕文件
+    const failedDirs = [];      // 【修复】记录无法读取的目录（原缺失，导致 ReferenceError）
 
     async function walk(dir, depth) {
       if (depth > MAX_DEPTH) return;
       if (videoEntries.length >= MAX_FILES) return;
 
-     let entries;
+      let entries;
       try {
         entries = await VP.env.tauriFs.readDir(dir);
       } catch (err) {
@@ -1375,7 +1372,7 @@
       }));
     }
 
-    // 【#14】匹配字幕
+    // 匹配字幕
     let subtitleMatchResult = { matched: 0, skipped: 0 };
     if (subtitleEntries.length > 0) {
       VP.showToast(`正在匹配字幕…`);
@@ -1434,7 +1431,7 @@
     VP.updateFolderPathBar();
     VP.hideToast();
 
-        const truncated = videoEntries.length >= MAX_FILES;
+    const truncated = videoEntries.length >= MAX_FILES;
     if (addedVideos === 0 && addedDirs === 0 && subtitleMatchResult.matched === 0) {
       VP.showOSD(VP.ICONS.info, '文件夹内容已在列表中');
     } else {
