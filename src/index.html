@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>全屏视频播放器 - v1.6.2</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth.css">
+  
+  <script>
+    if (localStorage.getItem('video_current_user')) {
+      document.write('<style id="no-flash-style">#authLayer { display: none !important; } .player-container { opacity: 1 !important; }</style>');
+    }
+  </script>
+</head>
+<body>
+
+  <div id="authLayer" class="auth-layer">
+    <div class="auth-left">
+      <div class="auth-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#grad1)" />
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#6c5ce7;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1 class="brand-title" data-i18n="appName">全屏视频播放器</h1>
+      </div>
+      <p class="brand-slogan" data-i18n="appDesc">纯粹、极简、无广告的沉浸式影音体验</p>
+    </div>
+    <div class="auth-right">
+      <div class="auth-box">
+        <h2 class="auth-title" id="authTitle" data-i18n="login">登录</h2>
+        <div class="auth-form-group">
+          <label data-i18n="username">用户名</label>
+          <div class="auth-input-wrap">
+            <input type="text" id="loginUser" data-i18n-placeholder="username" placeholder="请输入用户名" class="auth-input" autocomplete="off">
+          </div>
+        </div>
+        <div class="auth-form-group">
+          <label data-i18n="password">密码</label>
+          <div class="auth-input-wrap">
+            <input type="password" id="loginPass" data-i18n-placeholder="password" placeholder="请输入密码" class="auth-input">
+          </div>
+        </div>
+        <div class="auth-form-group" id="securityCodeGroup" style="display: none;">
+          <label data-i18n="securityCodeLabel">安全校验码 (6位数字，用于找回密码)</label>
+          <div class="auth-input-wrap">
+            <input type="text" id="securityCode" data-i18n-placeholder="securityCodePlaceholder" placeholder="请设置6位数字" class="auth-input" maxlength="6" autocomplete="off">
+          </div>
+        </div>
+        <div class="auth-options">
+          <label class="auth-checkbox">
+            <input type="checkbox" id="rememberPass"> <span data-i18n="rememberMe">记住密码</span>
+          </label>
+          <a href="#" class="auth-forgot" data-i18n="forgotPassword">忘记密码?</a>
+        </div>
+        <button id="authSubmitBtn" class="auth-btn" data-i18n="login">登录</button>
+        <div class="auth-switch">
+          <span id="authSwitchText" data-i18n="noAccount">没有账号？</span>
+          <span id="authSwitchLink" class="auth-link" data-i18n="clickRegister">点此注册</span>
+        </div>
+        <div id="authError" class="auth-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-dialog-backdrop hidden" id="forgotDialog">
+    <div class="auth-dialog">
+      <div class="auth-dialog-icon" style="background: rgba(108, 92, 231, 0.1);">
+        <svg viewBox="0 0 24 24" style="fill: #a99bf0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <h3 data-i18n="resetPasswordTitle">找回密码</h3>
+      <p style="margin-bottom: 16px;" data-i18n="resetPasswordDesc">请输入您的用户名和注册时设置的6位安全校验码来重置密码。</p>
+      <div style="text-align: left; margin-bottom: 16px;">
+        <input type="text" id="resetUser" class="auth-input" placeholder="用户名" style="margin-bottom: 10px;" data-i18n-placeholder="username">
+        <input type="text" id="resetCode" class="auth-input" placeholder="6位安全校验码" maxlength="6" style="margin-bottom: 10px;" data-i18n-placeholder="newSecurityCode">
+        <input type="password" id="resetNewPass" class="auth-input" placeholder="输入新密码" data-i18n-placeholder="newPassword">
+      </div>
+      <div class="auth-error" id="resetError" style="margin-top: -10px; margin-bottom: 16px;"></div>
+      <div class="auth-dialog-actions">
+        <button class="auth-dialog-btn cancel" id="resetCancelBtn" data-i18n="cancel">取消</button>
+        <button class="auth-dialog-btn danger" id="resetConfirmBtn" style="background: #6c5ce7; box-shadow: 0 4px 15px rgba(108,92,231,0.3);" data-i18n="resetBtn">重置密码</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-dialog-backdrop hidden" id="changeCodeDialog">
+    <div class="auth-dialog">
+      <div class="auth-dialog-icon" style="background: rgba(108, 92, 231, 0.1);">
+        <svg viewBox="0 0 24 24" style="fill: #a99bf0;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+      </div>
+      <h3 data-i18n="changeCodeTitle">重置安全认证码</h3>
+      <p style="margin-bottom: 16px;" data-i18n="changeCodeDesc">请输入您的新 6 位数字安全码。修改后，之前的安全码将失效。</p>
+      <div style="text-align: left; margin-bottom: 16px;">
+        <input type="text" id="newSecurityCode" class="auth-input" placeholder="输入新的6位数字" maxlength="6" autocomplete="off" data-i18n-placeholder="newCodePlaceholder">
+      </div>
+      <div class="auth-error" id="changeCodeError" style="margin-top: -10px; margin-bottom: 16px;"></div>
+      <div class="auth-dialog-actions">
+        <button class="auth-dialog-btn cancel" id="changeCodeCancelBtn" data-i18n="cancel">取消</button>
+        <button class="auth-dialog-btn primary" id="changeCodeConfirmBtn" style="background: #6c5ce7; box-shadow: 0 4px 15px rgba(108,92,231,0.3);" data-i18n="confirmModify">确认修改</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="player-container" id="playerContainer">
+    <div class="main-area ui-visible" id="mainArea">
+      <video id="video" preload="metadata" playsinline class="fit-contain">
+        您的浏览器不支持 HTML5 视频。
+      </video>
+
+      <div id="ass-container"></div>
+      <div class="subtitle-overlay top" id="subtitleTop"></div>
+      <div class="subtitle-overlay bottom" id="subtitleBottom"></div>
+
+      <div class="speed-indicator" id="speedIndicator">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="speedText">2.0x</span> <span data-i18n="speedTip">播放速度</span>
+      </div>
+
+      <div class="volume-toast" id="volumeToast">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        <span id="volumeToastText">100%</span>
+      </div>
+
+      <div class="seek-osd" id="seekOsd">
+        <span class="seek-osd-dir" id="seekOsdDir">快进</span>
+        <span class="seek-osd-text" id="seekOsdText">0:00 / 0:00</span>
+      </div>
+
+      <div class="resume-tip" id="resumeTip">
+        <span class="resume-tip-text"><span data-i18n="resumedAt">已为您续播至</span> <b id="resumeTipText">0:00</b></span>
+        <button class="resume-tip-btn" id="resumeRestartBtn" data-i18n="playFromStart">从头播放</button>
+        <button class="resume-tip-close" id="resumeCloseBtn" aria-label="关闭">×</button>
+      </div>
+
+      <div class="top-bar">
+        <div class="top-title" id="topTitle" data-i18n="noVideoPlay">暂无播放视频</div>
+        <div class="top-time" id="topTime">--</div>
+        <div class="top-actions">
+          <button class="more-btn" id="moreBtn" aria-label="更多" data-i18n-title="more">
+            <svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-backdrop" id="modalBackdrop"></div>
+      
+      <div class="info-modal" id="infoModal">
+        <h3 data-i18n="videoDetails">视频详情</h3>
+        <button class="modal-close-btn" id="closeInfoBtn" aria-label="关闭">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+        <div class="info-list">
+          <div class="info-row"><span data-i18n="fileName">文件名</span><span id="infoName">-</span></div>
+          <div class="info-row"><span data-i18n="fileSize">文件大小</span><span id="infoSize">-</span></div>
+          <div class="info-row"><span data-i18n="duration">时长</span><span id="infoDuration">-</span></div>
+          <div class="info-row"><span data-i18n="resolution">分辨率</span><span id="infoResolution">-</span></div>
+          <div class="info-row"><span data-i18n="format">格式</span><span id="infoFormat">-</span></div>
+        </div>
+      </div>
+
+      <div class="confirm-modal" id="confirmModal">
+        <h3 id="confirmTitle" data-i18n="confirmTitle">提示</h3>
+        <p id="confirmText" data-i18n="confirmDelete">确定要删除吗？</p>
+        <div class="confirm-checkbox-group" id="deleteSourceGroup" style="display: none;">
+          <input type="checkbox" id="deleteSourceCheck">
+          <span data-i18n="deleteSource">同时删除本地源文件 (不可恢复)</span>
+        </div>
+        <div class="confirm-actions">
+          <button class="confirm-btn cancel" id="confirmCancelBtn" data-i18n="cancel">取消</button>
+          <button class="confirm-btn danger" id="confirmOkBtn" data-i18n="confirm">确定</button>
+        </div>
+      </div>
+
+      <div class="input-modal" id="inputModal">
+        <h3 id="inputModalTitle" data-i18n="renameTitle">重命名</h3>
+        <input type="text" class="input-modal-field" id="inputModalField" spellcheck="false">
+        <div class="input-modal-hint" id="inputModalHint" data-i18n="renameHint">需保留扩展名</div>
+        <div class="confirm-actions">
+          <button class="confirm-btn cancel" id="inputCancelBtn" data-i18n="cancel">取消</button>
+          <button class="confirm-btn primary" id="inputOkBtn" data-i18n="confirm">确定</button>
+        </div>
+      </div>
+
+      <!-- 新增：手动匹配弹窗 -->
+      <div class="input-modal" id="matchModal" style="width: 420px;">
+        <h3 data-i18n="manualMatchTitle">手动匹配旧配置</h3>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 8px;" data-i18n="manualMatchHint">请从下方列表中选择你要继承的旧视频名字，或输入关键字进行搜索：</p>
+        <div id="matchOldList" style="max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 6px; padding: 8px; font-size: 12px; color: #ccc; margin-bottom: 12px;"></div>
+        <input type="text" class="input-modal-field" id="matchInputField" spellcheck="false" placeholder="输入关键字..." data-i18n-placeholder="manualMatchPlaceholder">
+        <div class="confirm-actions">
+          <button class="confirm-btn cancel" id="matchCancelBtn" data-i18n="cancel">取消</button>
+          <button class="confirm-btn primary" id="matchOkBtn" data-i18n="confirm">确定</button>
+        </div>
+      </div>
+
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-icon">
+          <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        </div>
+        <h2 data-i18n="importVideoTitle">导入视频开始播放</h2>
+        <p data-i18n="importVideoDesc">支持选择文件夹或单独选择视频文件。</p>
+        <button class="import-btn" id="importBtn">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/><path d="M12 17l-3-3h2V9h2v5h2z"/></svg>
+          <span data-i18n="selectFolderBtn">选择视频文件夹</span>
+        </button>
+      </div>
+
+      <div class="video-loading" id="videoLoading">
+        <div class="video-loading-spinner"></div>
+        <div class="video-loading-text" data-i18n="videoLoading">加载中...</div>
+      </div>
+
+      <div class="controls-wrapper disabled" id="controlsWrapper">
+        <div class="progress-area">
+          <div class="progress-bar-container" id="progressBarContainer">
+            <div class="buffered" id="bufferedBar"></div>
+            <div class="progress" id="progressBar"></div>
+            <div class="preview-tooltip" id="previewTooltip">
+              <canvas id="previewCanvas" width="160" height="90"></canvas>
+              <span class="preview-time" id="previewTime">0:00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons-area">
+          <div class="buttons-left">
+            <button class="control-btn" id="prevBtn" aria-label="上一集" disabled data-i18n-title="prevEp">
+              <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="control-btn" id="playPauseBtn" aria-label="播放/暂停" disabled data-i18n-title="playPause">
+              <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <svg id="pauseIcon" style="display: none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="control-btn" id="nextBtn" aria-label="下一集" disabled data-i18n-title="nextEp">
+              <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6v12z"/></svg>
+            </button>
+            <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+          </div>
+
+          <div class="buttons-right">
+            <div class="popover-wrapper">
+              <button class="control-btn text-btn" id="episodeBtn" disabled data-i18n="episode">选集</button>
+              <div class="popover episode-popover" id="episodePopover">
+                <div class="episode-list" id="episodeList"></div>
+              </div>
+            </div>
+            <div class="popover-wrapper">
+              <button class="control-btn text-btn" id="speedBtn" disabled data-i18n="speed">倍速</button>
+              <div class="popover speed-popover" id="speedPopover"></div>
+            </div>
+
+            <div class="popover-wrapper">
+              <button class="control-btn text-btn" id="subtitleBtn" aria-label="字幕" disabled data-i18n="subtitle">字幕</button>
+              <div class="popover subtitle-popover" id="subtitlePopover">
+                <div class="subtitle-slider-track" id="subSliderTrack">
+                  <div class="subtitle-page">
+                    <div class="subtitle-group">
+                      <div class="subtitle-title" data-i18n="subtitle">字幕</div>
+                      <div class="subtitle-item active" id="settingSubtitle">
+                        <span data-i18n="showSubtitle">显示字幕</span>
+                        <div class="toggle-switch"></div>
+                      </div>
+                      <div class="subtitle-current" id="subtitleCurrent" data-i18n="subtitleCurrent">当前视频无字幕</div>
+                    </div>
+                    
+                    <div class="subtitle-group">
+                      <div class="subtitle-item" id="settingEffectSubtitle">
+                        <span data-i18n="effectMode">特效模式</span>
+                        <div class="toggle-switch"></div>
+                      </div>
+                    </div>
+
+                    <div class="subtitle-group">
+                      <div class="subtitle-action" id="importSubtitleBtn">
+                        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                        <span data-i18n="importSubtitle">导入字幕</span>
+                      </div>
+                      <div class="subtitle-action danger disabled" id="removeSubtitleBtn">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <span data-i18n="removeSubtitle">移除字幕</span>
+                      </div>
+                    </div>
+                    <div class="subtitle-group">
+                      <div class="more-settings-btn" id="showAdvancedBtn">
+                        <span data-i18n="moreSettings">更多设置</span>
+                        <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="subtitle-page">
+                    <div class="back-settings-btn" id="backToBasicBtn">
+                      <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+                      <span data-i18n="back">返回</span>
+                    </div>
+                    <div class="subtitle-group" style="padding-top: 8px; padding-bottom: 8px;">
+                      <div class="sub-slider-group">
+                        <div class="sub-slider-label"><span data-i18n="fontSize">字号</span><span class="sub-val" id="subFontSizeVal">22px</span></div>
+                        <input type="range" class="sub-slider" id="subFontSizeSlider" min="12" max="48" step="1" value="22">
+                      </div>
+                      <div class="sub-slider-group">
+                        <div class="sub-slider-label"><span data-i18n="verticalPos">垂直位置 (对话)</span><span class="sub-val" id="subBottomOffsetVal">80px</span></div>
+                        <input type="range" class="sub-slider" id="subBottomOffsetSlider" min="10" max="250" step="1" value="80">
+                      </div>
+                      <div class="sub-slider-group">
+                        <div class="sub-slider-label"><span data-i18n="lyricTop">歌词顶部位置</span><span class="sub-val" id="subTopOffsetVal">3%</span></div>
+                        <input type="range" class="sub-slider" id="subTopOffsetSlider" min="0" max="50" step="1" value="3">
+                      </div>
+                      <div class="sub-slider-group">
+                        <div class="sub-slider-label"><span data-i18n="outlineWidth">描边宽度</span><span class="sub-val" id="subOutlineVal">1px</span></div>
+                        <input type="range" class="sub-slider" id="subOutlineSlider" min="0" max="4" step="0.5" value="1">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="popover-wrapper">
+              <button class="control-btn" id="muteBtn" aria-label="音量" disabled data-i18n-title="volume">
+                <svg id="volumeUpIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <svg id="volumeMuteIcon" style="display: none;" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+              </button>
+              <div class="popover volume-popover" id="volumePopover">
+                <input type="range" class="volume-slider-vertical" id="volumeSlider" min="0" max="1" step="0.01" value="1" disabled>
+                <span class="volume-percent" id="volumePercent">100%</span>
+              </div>
+            </div>
+            <div class="popover-wrapper">
+              <button class="control-btn" id="settingsBtn" aria-label="设置" disabled>
+                <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+              </button>
+              <div class="popover settings-popover" id="settingsPopover">
+                <div class="settings-group">
+                  <div class="settings-title" data-i18n="playback">播放</div>
+                  <div class="settings-item" id="settingLoop">
+                    <span class="settings-item-label" data-i18n="singleLoop">单集循环</span>
+                    <div class="toggle-switch"></div>
+                  </div>
+                  <div class="settings-item active" id="settingAutoNext">
+                    <span class="settings-item-label" data-i18n="autoNext">自动连播</span>
+                    <div class="toggle-switch"></div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-title" data-i18n="aspectRatio">画面比例</div>
+                  <div class="fit-options">
+                    <div class="fit-option active" data-fit="contain" data-i18n="fitContain">自适应</div>
+                    <div class="fit-option" data-fit="cover" data-i18n="fitCover">裁剪铺满</div>
+                    <div class="fit-option" data-fit="fill" data-i18n="fitFill">拉伸铺满</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="control-btn" id="pipBtn" aria-label="画中画" style="display: none;" disabled data-i18n-title="pip">
+              <svg viewBox="0 0 24 24"><path d="M19 7h-8v6h8V7zm2-4H3v18h18V3zm-2 16H5V5h14v14z"/></svg>
+            </button>
+            <button class="control-btn" id="fullscreenBtn" aria-label="全屏" disabled data-i18n-title="fullScreen">
+              <svg id="fullscreenEnterIcon" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              <svg id="fullscreenExitIcon" style="display: none;" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="toast" id="toast"></div>
+
+      <button class="screen-lock-btn left" id="screenLockBtn" title="锁定屏幕">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+        </svg>
+      </button>
+
+      <button class="screen-lock-btn right" id="screenUnlockBtn" title="解锁屏幕" style="display: none;">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </button>
+
+      <div class="skip-intro-btn" id="skipIntroBtn">
+        <span class="skip-hint-text" id="skipHintText" data-i18n="skipStartHint">是否跳过开头</span>
+        <div class="skip-btn" id="skipActionBtn" data-i18n="skipBtn">跳过</div>
+      </div>
+
+      <div class="side-drawer-backdrop" id="drawerBackdrop"></div>
+      <aside class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+          <h3 data-i18n="settings">设置</h3>
+          <button class="drawer-close" id="drawerCloseBtn" aria-label="关闭">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-page active" id="drawerPage1">
+            <div class="drawer-menu-item" data-target="drawerPage2">
+              <span data-i18n="pictureAdjust">画面调节</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPage3">
+              <span data-i18n="history">历史播放</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPage4">
+              <span data-i18n="skipSettings">跳过设置</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPage5">
+              <span data-i18n="shortcuts">快捷键</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPageLanguage">
+              <span data-i18n="language">语言</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPageProfile">
+              <span data-i18n="myProfile">我的</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPageUpdate">
+              <span data-i18n="versionUpdate">版本更新</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPageAbout">
+              <span data-i18n="about">关于</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPage2">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="pictureAdjust">画面调节</span>
+            </div>
+            <div class="drawer-page-content">
+              <div class="drawer-slider-row">
+                <label data-i18n="brightness">亮度</label>
+                <input type="range" class="drawer-slider" id="adjBrightness" min="50" max="150" step="1" value="100">
+                <span class="drawer-slider-val" id="adjBrightnessVal">100%</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="contrast">对比度</label>
+                <input type="range" class="drawer-slider" id="adjContrast" min="50" max="150" step="1" value="100">
+                <span class="drawer-slider-val" id="adjContrastVal">100%</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="saturation">饱和度</label>
+                <input type="range" class="drawer-slider" id="adjSaturate" min="0" max="200" step="1" value="100">
+                <span class="drawer-slider-val" id="adjSaturateVal">100%</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="hue">色相</label>
+                <input type="range" class="drawer-slider" id="adjHue" min="-180" max="180" step="1" value="0">
+                <span class="drawer-slider-val" id="adjHueVal">0°</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="blur">模糊</label>
+                <input type="range" class="drawer-slider" id="adjBlur" min="0" max="10" step="0.5" value="0">
+                <span class="drawer-slider-val" id="adjBlurVal">0px</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="scale">缩放</label>
+                <input type="range" class="drawer-slider" id="adjScale" min="100" max="200" step="1" value="100">
+                <span class="drawer-slider-val" id="adjScaleVal">100%</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="glassBlur">毛玻璃模糊</label>
+                <input type="range" class="drawer-slider" id="adjGlassBlur" min="0" max="40" step="1" value="24">
+                <span class="drawer-slider-val" id="adjGlassBlurVal">24px</span>
+              </div>
+              <div class="drawer-slider-row">
+                <label data-i18n="glassDarkness">毛玻璃暗度</label>
+                <input type="range" class="drawer-slider" id="adjGlassAlpha" min="0" max="100" step="1" value="55">
+                <span class="drawer-slider-val" id="adjGlassAlphaVal">55%</span>
+              </div>
+              <button class="drawer-reset-btn" id="adjResetBtn" data-i18n="resetDefault">恢复默认</button>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPage3">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="history">历史播放</span>
+            </div>
+            <div class="drawer-page-content">
+              <div class="history-list" id="historyList" style="max-height: none;">
+                <div class="history-empty" data-i18n="noHistory">暂无播放历史</div>
+              </div>
+              <button class="drawer-reset-btn danger" id="clearHistoryBtn" data-i18n="clearHistory">清空历史</button>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPage4">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="skipSettings">跳过设置</span>
+            </div>
+            <div class="drawer-page-content">
+              
+              <div class="current-video-hint empty" id="skipCurrentVideoHint">
+                <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-2z"/></svg>
+                <span id="skipCurrentVideoName" data-i18n="noVideoPlay">暂无播放视频</span>
+              </div>
+
+              <div class="drawer-switch-row">
+                <span data-i18n="enableIntroSkip">启用片头跳过</span>
+                <div class="toggle-switch" id="skipIntroToggle"></div>
+              </div>
+              <div class="skip-time-row">
+                <label data-i18n="introTime">片头时间</label>
+                <div class="skip-input-group">
+                  <input type="text" class="skip-time-input" id="skipIntroStartVal" value="0:00" data-i18n-placeholder="skipStart" placeholder="开始">
+                  <div class="skip-arrow-group">
+                    <button class="skip-arrow-btn up" onclick="adjustTime('skipIntroStartVal', 1)">▲</button>
+                    <button class="skip-arrow-btn down" onclick="adjustTime('skipIntroStartVal', -1)">▼</button>
+                  </div>
+                  <button class="skip-get-btn" id="skipIntroStartGet" data-i18n-title="skipGetTime" title="获取当前时间">✎</button>
+                </div>
+                <span class="skip-sep" data-i18n="skipTo">至</span>
+                <div class="skip-input-group">
+                  <input type="text" class="skip-time-input" id="skipIntroEndVal" value="1:30" data-i18n-placeholder="skipEnd" placeholder="结束">
+                  <div class="skip-arrow-group">
+                    <button class="skip-arrow-btn up" onclick="adjustTime('skipIntroEndVal', 1)">▲</button>
+                    <button class="skip-arrow-btn down" onclick="adjustTime('skipIntroEndVal', -1)">▼</button>
+                  </div>
+                  <button class="skip-get-btn" id="skipIntroEndGet" data-i18n-title="skipGetTime" title="获取当前时间">✎</button>
+                </div>
+              </div>
+
+              <div class="drawer-divider"></div>
+
+              <div class="drawer-switch-row">
+                <span data-i18n="enableOutroSkip">启用片尾跳过</span>
+                <div class="toggle-switch" id="skipOutroToggle"></div>
+              </div>
+              <div class="skip-time-row">
+                <label data-i18n="outroTime">片尾时间</label>
+                <div class="skip-input-group">
+                  <input type="text" class="skip-time-input" id="skipOutroStartVal" value="22:00" data-i18n-placeholder="skipStart" placeholder="开始">
+                  <div class="skip-arrow-group">
+                    <button class="skip-arrow-btn up" onclick="adjustTime('skipOutroStartVal', 1)">▲</button>
+                    <button class="skip-arrow-btn down" onclick="adjustTime('skipOutroStartVal', -1)">▼</button>
+                  </div>
+                  <button class="skip-get-btn" id="skipOutroStartGet" data-i18n-title="skipGetTime" title="获取当前时间">✎</button>
+                </div>
+                <span class="skip-sep" data-i18n="skipTo">至</span>
+                <div class="skip-input-group">
+                  <input type="text" class="skip-time-input" id="skipOutroEndVal" value="23:40" data-i18n-placeholder="skipEnd" placeholder="结束">
+                  <div class="skip-arrow-group">
+                    <button class="skip-arrow-btn up" onclick="adjustTime('skipOutroEndVal', 1)">▲</button>
+                    <button class="skip-arrow-btn down" onclick="adjustTime('skipOutroEndVal', -1)">▼</button>
+                  </div>
+                  <button class="skip-get-btn" id="skipOutroEndGet" data-i18n-title="skipGetTime" title="获取当前时间">✎</button>
+                </div>
+              </div>
+
+              <div class="drawer-divider"></div>
+
+              <div class="drawer-switch-row" style="margin-top: 10px;">
+                <span data-i18n="enableSkipBtn">启用"跳过"按钮</span>
+                <div class="toggle-switch active" id="skipButtonToggle"></div>
+              </div>
+              
+              <div class="drawer-switch-row" style="margin-top: 10px;">
+                <span data-i18n="enableAutoSkip">启用自动跳过 (不弹按钮)</span>
+                <div class="toggle-switch" id="skipAutoToggle"></div>
+              </div>
+
+              <div class="drawer-divider"></div>
+              
+              <button class="drawer-reset-btn" id="manualMatchBtn" style="background: rgba(108, 92, 231, 0.2); color: #fff; margin-top: 16px;" data-i18n="manualMatchBtn">
+                找不到之前的配置？点击手动匹配
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPage5">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="shortcuts">快捷键设置</span>
+            </div>
+            <div class="drawer-page-content">
+              <div class="shortcut-list" id="shortcutList"></div>
+              <button class="drawer-reset-btn danger" id="resetShortcutBtn" style="margin-top: 16px;" data-i18n="resetShortcut">恢复默认快捷键</button>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPageLanguage">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="language">语言</span>
+            </div>
+            <div class="drawer-page-content">
+              <div class="drawer-switch-row" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <span data-i18n="interfaceLang">界面语言</span>
+              </div>
+              
+              <div class="lang-option" data-lang="zh">
+                <span>简体中文</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+              
+              <div class="lang-option" data-lang="zh-TW">
+                <span>繁體中文</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+              
+              <div class="lang-option" data-lang="en">
+                <span>English</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+              
+              <div class="lang-option" data-lang="ja">
+                <span>日本語</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+              
+              <div class="lang-option" data-lang="ko">
+                <span>한국어</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+
+              <div class="lang-option" data-lang="es">
+                <span>Español</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+
+              <div class="lang-option" data-lang="ru">
+                <span>Русский</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+
+              <div class="lang-option" data-lang="pt">
+                <span>Português</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+
+              <div class="lang-option" data-lang="fr">
+                <span>Français</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+
+              <div class="lang-option" data-lang="de">
+                <span>Deutsch</span>
+                <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPageProfile">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="myProfile">我的</span>
+            </div>
+            <div class="drawer-page-content">
+              <div class="profile-card">
+                <!-- 自定义头像部分 -->
+                <div class="profile-avatar" id="profileAvatar" data-i18n-title="clickToChangeAvatar" title="点击更换头像" style="cursor: pointer; overflow: hidden; position: relative;">
+                  <svg id="defaultAvatarSvg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                  <img id="customAvatarImg" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <div class="profile-info">
+                  <!-- 自定义昵称部分 -->
+                  <div class="profile-name" id="profileUsername" data-i18n-title="renameTitle">加载中...</div>
+                  <input type="text" id="profileNameInput" class="profile-name-input" style="display: none;" maxlength="12" />
+                  <div class="profile-desc" data-i18n="localGeek">本地极客用户</div>
+                </div>
+              </div>
+              <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+              
+              <div class="profile-stats">
+                <div class="stat-item">
+                  <div class="stat-value" id="statVideoCount">0</div>
+                  <div class="stat-label" data-i18n="statVideos">本地视频</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="statHistoryCount">0</div>
+                  <div class="stat-label" data-i18n="statHistory">播放记录</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="statDuration">0h</div>
+                  <div class="stat-label" data-i18n="statDuration">累计时长</div>
+                </div>
+              </div>
+
+              <div class="profile-section">
+                <div class="profile-section-title" data-i18n="secSettings">安全设置</div>
+                <div class="profile-menu-item" id="changeSecurityCodeBtn">
+                  <span data-i18n="resetSecCode">重置安全认证码</span>
+                  <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+                </div>
+              </div>
+
+              <div class="profile-section">
+                <div class="profile-section-title" data-i18n="dataConfig">数据与配置</div>
+                <div class="profile-menu-item" id="exportConfigBtn">
+                  <span data-i18n="exportConfig">导出配置 (含列表/进度/设置)</span>
+                  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                </div>
+                <div class="profile-menu-item" id="importConfigBtn">
+                  <span data-i18n="importConfig">导入配置 (跨设备恢复)</span>
+                  <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                </div>
+                <input type="file" id="configFileInput" accept=".json" style="display: none;">
+                <div style="font-size: 11px; color: #888; padding: 8px 4px; line-height: 1.5;" data-i18n="importConfigHint">
+                  * 导入配置后，若视频显示离线，请点击列表下方的“导入文件夹”，系统会自动根据文件名与大小重新连接所有进度与跳过配置。
+                </div>
+              </div>
+
+              <div class="profile-section">
+                <div class="profile-section-title" style="color: #ff6b6b;" data-i18n="dangerZone">危险操作</div>
+                <button class="drawer-reset-btn danger" id="clearCurrentDataBtn" style="margin-top: 8px;" data-i18n="clearData">
+                  清空当前账号的所有数据 (列表与记录)
+                </button>
+                <div style="height: 10px;"></div>
+                <button class="drawer-reset-btn danger" id="logoutBtn" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #ccc;" data-i18n="logout">
+                  退出登录
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPageUpdate">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="versionTitle">版本更新</span>
+            </div>
+            <div class="drawer-page-content">
+              
+              <div class="update-log">
+                <!-- v1.6.2 新增 -->
+                <div class="update-item active">
+                  <div class="update-ver">v1.6.2 <span class="update-tag" data-i18n="v162Tag">个性化定制与配置跨设备同步</span> <span class="update-badge" data-i18n="versionCurrent">当前版本</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v162D1">个人主页自定义...</li>
+                    <li data-i18n="v162D2">全量配置导出/导入...</li>
+                    <li data-i18n="v162D3">智能配置重连（防丢失）...</li>
+                    <li data-i18n="v162D4">底层交互优化...</li>
+                  </ul>
+                </div>
+                
+                <div class="update-item">
+                  <div class="update-ver">v1.6.1 <span class="update-tag" data-i18n="v161Tag">跳过重构与国际化增强</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v161D1">智能跳过进阶...</li>
+                    <li data-i18n="v161D2">边看边标记...</li>
+                    <li data-i18n="v161D3">跳过面板强化...</li>
+                    <li data-i18n="v161D4">全量国际化补全...</li>
+                    <li data-i18n="v161D5">UI 细节与交互优化...</li>
+                  </ul>
+                </div>
+                
+                <div class="update-item">
+                  <div class="update-ver">v1.6.0 <span class="update-tag" data-i18n="v16Tag">账号系统与全局国际化</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v16D1">多用户系统...</li>
+                    <li data-i18n="v16D2">安全机制...</li>
+                    <li data-i18n="v16D3">全局国际化...</li>
+                    <li data-i18n="v16D4">个人控制台...</li>
+                    <li data-i18n="v16D5">状态无缝恢复...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.5.0 <span class="update-tag" data-i18n="v15Tag">完整态与快捷键增强</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v15D1">快捷操作扩展...</li>
+                    <li data-i18n="v15D2">快进 OSD 提示...</li>
+                    <li data-i18n="v15D3">一键从头播放...</li>
+                    <li data-i18n="v15D4">状态持久化...</li>
+                    <li data-i18n="v15D5">交互细节统一...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.4.0 <span class="update-tag" data-i18n="v14Tag">体验打磨与交互修复</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v14D1">模态框升级...</li>
+                    <li data-i18n="v14D2">提示系统统一...</li>
+                    <li data-i18n="v14D3">智能防误触...</li>
+                    <li data-i18n="v14D4">底层优化...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.3.0 <span class="update-tag" data-i18n="v13Tag">视觉进化与精细化管理</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v13D1">UI 重构...</li>
+                    <li data-i18n="v13D2">缩略图预览...</li>
+                    <li data-i18n="v13D3">批量管理...</li>
+                    <li data-i18n="v13D4">安全锁定...</li>
+                    <li data-i18n="v13D5">字体调节...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.2.0 <span class="update-tag" data-i18n="v12Tag">高度定制与进阶设置</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v12D1">快捷键系统...</li>
+                    <li data-i18n="v12D2">画面滤镜...</li>
+                    <li data-i18n="v12D3">历史记录...</li>
+                    <li data-i18n="v12D4">自定义跳过...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.1.0 <span class="update-tag" data-i18n="v11Tag">双语字幕与轻量化</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v11D1">字幕引擎...</li>
+                    <li data-i18n="v11D2">拖拽导入...</li>
+                    <li data-i18n="v11D3">列表优化...</li>
+                  </ul>
+                </div>
+                <div class="update-item">
+                  <div class="update-ver">v1.0.0 <span class="update-tag" data-i18n="v10Tag">基础诞生</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v10D1">核心播放...</li>
+                    <li data-i18n="v10D2">基础列表...</li>
+                    <li data-i18n="v10D3">UI 框架...</li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="drawer-page" id="drawerPageAbout">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="aboutTitle">关于</span>
+            </div>
+            <div class="drawer-page-content" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
+              
+              <div style="text-align: center; margin-bottom: 24px; padding-top: 10px;">
+                <h2 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 6px;" data-i18n="appName">全屏视频播放器</h2>
+                <div style="color: #6c5ce7; font-size: 12px; background: rgba(108, 92, 231, 0.15); display: inline-block; padding: 2px 10px; border-radius: 20px;" data-i18n="appVersion">Version 1.6.2</div>
+              </div>
+              
+              <div style="text-align: center; color: #aaa; font-size: 13px; line-height: 1.6; margin-bottom: 24px;" data-i18n="appDesc">
+                一款纯粹、轻量、无广告的本地视频播放器。<br>深度定制的沉浸式 UI，原生支持双语字幕与高级排版。
+              </div>
+              
+              <div style="background: rgba(0, 0, 0, 0.2); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                  <span style="color: #666; flex-shrink: 0; margin-right: 16px;" data-i18n="techStack">技术栈</span>
+                  <span style="color: #ccc; text-align: right;" data-i18n="techStackValue">Vanilla JS / Tauri / ASS 渲染引擎</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                  <span style="color: #666; flex-shrink: 0; margin-right: 16px;" data-i18n="thanks">致谢</span>
+                  <span style="color: #ccc; text-align: right;" data-i18n="thanksValue">感谢开源社区提供的 ASS 解析库</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                  <span style="color: #666; flex-shrink: 0; margin-right: 16px;" data-i18n="author">作者</span>
+                  <span style="color: #ccc; text-align: right;" data-i18n="authorValue">Bluesky</span>
+                </div>
+              </div>
+              
+              <div style="text-align: center; color: #555; font-size: 11px; margin-top: auto; padding-top: 20px;" data-i18n="copyright">
+                © 2026 All Rights Reserved.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+    </div>
+
+    <button class="toggle-playlist-tab is-collapsed" id="togglePlaylistTab" aria-label="切换列表">
+      <svg id="toggleIcon" viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+    </button>
+
+    <aside class="playlist-panel collapsed" id="playlistPanel">
+      <div class="playlist-header">
+        <h3><span data-i18n="playlist">播放列表</span> <span class="count" id="playlistCount">0</span></h3>
+        <button class="manage-btn" id="manageBtn">管理</button>
+      </div>
+      
+      <div class="folder-selector-wrapper" id="folderSelectorWrapper" style="display: none;">
+        <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+        <select id="folderSelect"></select>
+      </div>
+
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="searchInput" data-i18n-placeholder="searchVideo" placeholder="搜索视频...">
+        </div>
+      </div>
+      <div class="playlist-body" id="playlistBody">
+        <div class="playlist-empty" id="playlistEmpty">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+          <span><span data-i18n="noVideo">暂无视频</span><br><span data-i18n="importVideoHint">点击下方按钮导入</span></span>
+        </div>
+      </div>
+      <div class="playlist-footer" id="playlistFooter">
+        <button class="add-btn" id="addFolderBtn">
+          <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          <span data-i18n="importFolder">导入文件夹</span>
+        </button>
+        <button class="add-btn" id="addVideoBtn">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span data-i18n="addVideo">添加视频</span>
+        </button>
+        <div class="batch-action-bar">
+          <label class="select-all-btn">
+            <input type="checkbox" id="selectAllCheck"> <span data-i18n="selectAll">全选</span>
+          </label>
+          <button class="batch-delete-btn" id="batchDeleteBtn">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            <span data-i18n="deleteSelected">删除选中</span> (<span id="selectedCount">0</span>)
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <input type="file" class="file-input" id="fileInput" accept="video/mp4,video/webm,video/ogg,video/*" multiple>
+    <input type="file" class="file-input" id="subtitleInput" accept=".ass,.ssa,.srt,.txt">
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="ass.global.min.js"></script>
+  <script src="subtitle.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
