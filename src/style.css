@@ -1459,6 +1459,28 @@ video.fit-fill {
     box-shadow: 0 0 8px rgba(108, 92, 231, 0.6);
 }
 
+/* 👇 新增：进度条的小圆点 👇 */
+.progress-bar-container .progress::after {
+    content: '';
+    position: absolute;
+    right: -6px; /* 让圆点居中于进度条末端 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+    opacity: 0; /* 默认隐藏 */
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+/* 鼠标悬浮在进度条或者拖拽时，显示小圆点 */
+.progress-bar-container:hover .progress::after,
+.progress-bar-container.dragging .progress::after {
+    opacity: 1;
+}
+
 .preview-tooltip {
     position: absolute;
     bottom: 24px;
@@ -3044,4 +3066,290 @@ body.show-kbd .kbd-hint {
     color: #ddd;
     letter-spacing: 1px;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* 在 style.css 里加上/修改 */
+#ass-fallback-screen-layer .subtitle-line {
+    font-weight: 700 !important;
+    
+    /* 借用底部的描边阴影变量，如果没有就用兜底黑边 */
+    text-shadow: var(
+        --sub-outline-shadow, 
+        0 0 2px #000, 
+        1px 1px 2px #000, 
+        -1px -1px 2px #000
+    ) !important;
+}
+
+/* ================= 弹幕按钮激活状态 ================= */
+#danmakuBtn.active {
+    color: #a99bf0;
+    background: rgba(108, 92, 231, 0.2);
+}
+
+/* ================= 弹幕设置面板专属布局 ================= */
+#danmakuPopover {
+    width: 240px !important;
+    padding: 12px 0 !important;
+    overflow: hidden !important;
+}
+
+#danmakuPopover .subtitle-page {
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+#danmakuPopover .subtitle-group {
+    padding: 0 !important;
+    border-bottom: none !important;
+}
+
+/* 顶部标题 */
+#danmakuPopover .subtitle-title {
+    padding: 4px 16px 8px !important;
+}
+
+/* 显示弹幕 & 导入弹幕 那一行 */
+#danmakuPopover .subtitle-item,
+#danmakuPopover .subtitle-action {
+    padding: 10px 16px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* 开关按钮别被挤压 */
+#danmakuPopover .toggle-switch {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+/* 滑块区域 */
+#danmakuPopover .sub-slider-group {
+    padding: 8px 16px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* 关键：强制修正滑块的宽度，防止撑破父容器 */
+#danmakuPopover .sub-slider {
+    width: calc(100% - 2px) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+}
+
+/* 给导入弹幕加个上边框 */
+#danmakuPopover #importDanmakuBtn {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: none !important;
+    margin-top: 4px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+/* ================= 系统检测 ================= */
+.sys-refresh-btn {
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.sys-refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.sys-refresh-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.sys-loading {
+    text-align: center;
+    padding: 40px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.sys-check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 图标和文字的间距 */
+    padding: 8px 4px;
+    font-size: 13px;
+    color: #ccc;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.sys-check-row:last-child {
+    border-bottom: none;
+}
+
+.sys-check-icon {
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.sys-check-name {
+    color: #aaa;
+    /* 关键：不要让它撑满整个剩余空间，给它一个固定最小宽度即可 */
+    min-width: 70px; 
+    flex-shrink: 0;
+}
+
+.sys-check-value {
+    color: #eee;
+    font-variant-numeric: tabular-nums;
+    text-align: right; /* 👈 改回右对齐 */
+    margin-left: auto; /* 👈 关键：把元素推到最右侧 */
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12.5px;
+}
+
+.sys-i18n-list {
+    margin: 4px 0 8px 26px;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+}
+
+.sys-i18n-list li {
+    padding: 2px 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    word-break: break-all;
+}
+
+.sys-collapse {
+    margin-top: 16px;
+}
+
+.sys-collapse-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #aaa;
+    cursor: pointer;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: 0.15s;
+}
+
+.sys-collapse-header:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.sys-collapse-header svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    transition: transform 0.2s;
+}
+
+.sys-collapse.open .sys-collapse-header svg {
+    transform: rotate(90deg);
+}
+
+.sys-collapse-body {
+    display: none;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+    word-break: break-all;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.sys-collapse.open .sys-collapse-body {
+    display: block;
+}
+
+.sys-collapse-body strong {
+    color: #aaa;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.sys-error-item {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.sys-error-item:last-child {
+    border-bottom: none;
+}
+
+.sys-error-time {
+    color: #666;
+    font-size: 11px;
+    font-family: monospace;
+    flex-shrink: 0;
+}
+
+.sys-error-msg {
+    color: #ff6b6b;
+    flex: 1;
+    word-break: break-all;
+}
+
+/* ================= 系统检测：刷新按钮转圈动画 ================= */
+@keyframes rotate-refresh {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.sys-refresh-btn.spinning svg {
+    animation: rotate-refresh 0.8s linear infinite;
+}
+
+.sys-refresh-btn.spinning {
+    opacity: 0.7;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ================= 系统检测：诊断信息文字提亮 ================= */
+#sysDetailContent strong {
+    color: #eee !important;      /* 提亮文字颜色 */
+    font-size: 13px;             /* 稍微加大一点字号 */
+    display: inline-block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+/* 顺便优化一下 User Agent 这种长文本的阅读体验 */
+#sysDetailContent span[style*="word-break: break-all"] {
+    color: #a99bf0 !important;   /* 用主题紫色让 UA 代码稍微显眼一点 */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 8px;
+    border-radius: 6px;
+    display: block;
+    margin-top: 4px;
+    line-height: 1.5;
 }
