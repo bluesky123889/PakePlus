@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>全屏视频播放器 - v1.6.2</title>
+  <title>全屏视频播放器 - v1.7.5</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="auth.css">
-  
+
   <script>
     if (localStorage.getItem('video_current_user')) {
       document.write('<style id="no-flash-style">#authLayer { display: none !important; } .player-container { opacity: 1 !important; }</style>');
@@ -148,7 +148,7 @@
       </div>
 
       <div class="modal-backdrop" id="modalBackdrop"></div>
-      
+
       <div class="info-modal" id="infoModal">
         <h3 data-i18n="videoDetails">视频详情</h3>
         <button class="modal-close-btn" id="closeInfoBtn" aria-label="关闭">
@@ -186,7 +186,6 @@
         </div>
       </div>
 
-      <!-- 新增：手动匹配弹窗 -->
       <div class="input-modal" id="matchModal" style="width: 420px;">
         <h3 data-i18n="manualMatchTitle">手动匹配旧配置</h3>
         <p style="font-size: 13px; color: #aaa; margin-bottom: 8px;" data-i18n="manualMatchHint">请从下方列表中选择你要继承的旧视频名字，或输入关键字进行搜索：</p>
@@ -267,7 +266,7 @@
                       </div>
                       <div class="subtitle-current" id="subtitleCurrent" data-i18n="subtitleCurrent">当前视频无字幕</div>
                     </div>
-                    
+
                     <div class="subtitle-group">
                       <div class="subtitle-item" id="settingEffectSubtitle">
                         <span data-i18n="effectMode">特效模式</span>
@@ -322,6 +321,38 @@
             </div>
 
             <div class="popover-wrapper">
+              <button class="control-btn text-btn" id="danmakuBtn" disabled data-i18n="danmaku">弹幕</button>
+              <div class="popover subtitle-popover" id="danmakuPopover" style="width: 220px;">
+                <div class="subtitle-page">
+                  <div class="subtitle-group">
+                    <div class="subtitle-title" data-i18n="danmaku">弹幕</div>
+                    <div class="subtitle-item active" id="settingDanmaku">
+                      <span data-i18n="showDanmaku">显示弹幕</span>
+                      <div class="toggle-switch"></div>
+                    </div>
+                  </div>
+
+                  <div class="subtitle-group">
+                    <div class="sub-slider-group">
+                      <div class="sub-slider-label">
+                        <span data-i18n="danmakuOpacity">不透明度</span>
+                        <span class="sub-val" id="danmakuOpacityVal">100%</span>
+                      </div>
+                      <input type="range" class="sub-slider" id="danmakuOpacitySlider" min="0" max="100" step="10" value="100">
+                    </div>
+                  </div>
+
+                  <div class="subtitle-group">
+                    <div class="subtitle-action" id="importDanmakuBtn" style="border-bottom: none;">
+                      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                      <span data-i18n="importDanmaku">导入弹幕 (XML/ASS)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="popover-wrapper">
               <button class="control-btn" id="muteBtn" aria-label="音量" disabled data-i18n-title="volume">
                 <svg id="volumeUpIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                 <svg id="volumeMuteIcon" style="display: none;" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
@@ -367,7 +398,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="toast" id="toast"></div>
 
       <button class="screen-lock-btn left" id="screenLockBtn" title="锁定屏幕">
@@ -426,6 +457,10 @@
             </div>
             <div class="drawer-menu-item" data-target="drawerPageUpdate">
               <span data-i18n="versionUpdate">版本更新</span>
+              <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
+            </div>
+            <div class="drawer-menu-item" data-target="drawerPageSystemCheck">
+              <span data-i18n="systemCheck">系统检测</span>
               <svg viewBox="0 0 24 24"><path d="M9.01 6L8 7.01 12.99 12 8 16.99 9.01 18l5.99-6z"/></svg>
             </div>
             <div class="drawer-menu-item" data-target="drawerPageAbout">
@@ -509,7 +544,7 @@
               <span class="drawer-page-title" data-i18n="skipSettings">跳过设置</span>
             </div>
             <div class="drawer-page-content">
-              
+
               <div class="current-video-hint empty" id="skipCurrentVideoHint">
                 <svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-2z"/></svg>
                 <span id="skipCurrentVideoName" data-i18n="noVideoPlay">暂无播放视频</span>
@@ -573,14 +608,14 @@
                 <span data-i18n="enableSkipBtn">启用"跳过"按钮</span>
                 <div class="toggle-switch active" id="skipButtonToggle"></div>
               </div>
-              
+
               <div class="drawer-switch-row" style="margin-top: 10px;">
                 <span data-i18n="enableAutoSkip">启用自动跳过 (不弹按钮)</span>
                 <div class="toggle-switch" id="skipAutoToggle"></div>
               </div>
 
               <div class="drawer-divider"></div>
-              
+
               <button class="drawer-reset-btn" id="manualMatchBtn" style="background: rgba(108, 92, 231, 0.2); color: #fff; margin-top: 16px;" data-i18n="manualMatchBtn">
                 找不到之前的配置？点击手动匹配
               </button>
@@ -611,27 +646,27 @@
               <div class="drawer-switch-row" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                 <span data-i18n="interfaceLang">界面语言</span>
               </div>
-              
+
               <div class="lang-option" data-lang="zh">
                 <span>简体中文</span>
                 <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </div>
-              
+
               <div class="lang-option" data-lang="zh-TW">
                 <span>繁體中文</span>
                 <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </div>
-              
+
               <div class="lang-option" data-lang="en">
                 <span>English</span>
                 <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </div>
-              
+
               <div class="lang-option" data-lang="ja">
                 <span>日本語</span>
                 <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </div>
-              
+
               <div class="lang-option" data-lang="ko">
                 <span>한국어</span>
                 <svg viewBox="0 0 24 24" class="lang-check"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
@@ -673,20 +708,18 @@
             </div>
             <div class="drawer-page-content">
               <div class="profile-card">
-                <!-- 自定义头像部分 -->
                 <div class="profile-avatar" id="profileAvatar" data-i18n-title="clickToChangeAvatar" title="点击更换头像" style="cursor: pointer; overflow: hidden; position: relative;">
                   <svg id="defaultAvatarSvg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                   <img id="customAvatarImg" style="display: none; width: 100%; height: 100%; object-fit: cover;" />
                 </div>
                 <div class="profile-info">
-                  <!-- 自定义昵称部分 -->
                   <div class="profile-name" id="profileUsername" data-i18n-title="renameTitle">加载中...</div>
                   <input type="text" id="profileNameInput" class="profile-name-input" style="display: none;" maxlength="12" />
                   <div class="profile-desc" data-i18n="localGeek">本地极客用户</div>
                 </div>
               </div>
               <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
-              
+
               <div class="profile-stats">
                 <div class="stat-item">
                   <div class="stat-value" id="statVideoCount">0</div>
@@ -722,7 +755,7 @@
                 </div>
                 <input type="file" id="configFileInput" accept=".json" style="display: none;">
                 <div style="font-size: 11px; color: #888; padding: 8px 4px; line-height: 1.5;" data-i18n="importConfigHint">
-                  * 导入配置后，若视频显示离线，请点击列表下方的“导入文件夹”，系统会自动根据文件名与大小重新连接所有进度与跳过配置。
+                  * 导入配置后，若视频显示离线，请点击列表下方的"导入文件夹"，系统会自动根据文件名与大小重新连接所有进度与跳过配置。
                 </div>
               </div>
 
@@ -748,11 +781,76 @@
               <span class="drawer-page-title" data-i18n="versionTitle">版本更新</span>
             </div>
             <div class="drawer-page-content">
-              
+
               <div class="update-log">
-                <!-- v1.6.2 新增 -->
                 <div class="update-item active">
-                  <div class="update-ver">v1.6.2 <span class="update-tag" data-i18n="v162Tag">个性化定制与配置跨设备同步</span> <span class="update-badge" data-i18n="versionCurrent">当前版本</span></div>
+                  <div class="update-ver">v1.7.5 <span class="update-tag" data-i18n="v175Tag">体验打磨与底层优化</span> <span class="update-badge" data-i18n="versionCurrent">当前版本</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v175D1">系统检测增强...</li>
+                    <li data-i18n="v175D2">UI 细节修复...</li>
+                    <li data-i18n="v175D3">交互反馈优化...</li>
+                    <li data-i18n="v175D4">播放列表增量保存...</li>
+                    <li data-i18n="v175D5">性能与内存优化...</li>
+                    <li data-i18n="v175D6">i18n 完善与修复...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.7.4 <span class="update-tag" data-i18n="v174Tag">系统检测与诊断工具</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v174D1">系统检测页面...</li>
+                    <li data-i18n="v174D2">一键复制报告...</li>
+                    <li data-i18n="v174D3">诊断信息折叠区...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.7.3 <span class="update-tag" data-i18n="v173Tag">性能优化与资源释放</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v173D1">弹幕渲染暂停...</li>
+                    <li data-i18n="v173D2">播放列表增量保存...</li>
+                    <li data-i18n="v173D3">弹幕分片解析...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.7.2 <span class="update-tag" data-i18n="v172Tag">交互打磨与细节优化</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v172D1">快捷键冲突检测...</li>
+                    <li data-i18n="v172D2">播放列表局部刷新...</li>
+                    <li data-i18n="v172D3">字幕二分查找...</li>
+                    <li data-i18n="v172D4">提示系统统一...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.7.1 <span class="update-tag" data-i18n="v171Tag">稳定性与安全性修复</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v171D1">密码加盐哈希...</li>
+                    <li data-i18n="v171D2">配置导入白名单...</li>
+                    <li data-i18n="v171D3">播放列表防抖保存...</li>
+                    <li data-i18n="v171D4">元数据串行探测...</li>
+                    <li data-i18n="v171D5">历史记录按需刷新...</li>
+                    <li data-i18n="v171D6">弹幕暗色增强...</li>
+                    <li data-i18n="v171D7">交互与资源优化...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.7.0 <span class="update-tag" data-i18n="v17Tag">弹幕系统与播放稳定性里程碑</span></div>
+                  <ul class="update-desc">
+                    <li data-i18n="v17D1">全新弹幕系统...</li>
+                    <li data-i18n="v17D2">XML 弹幕智能转换...</li>
+                    <li data-i18n="v17D3">弹幕轨道与布局自适应...</li>
+                    <li data-i18n="v17D4">弹幕偏好独立记忆...</li>
+                    <li data-i18n="v17D5">弹幕加载时序重构...</li>
+                    <li data-i18n="v17D6">跳过配置匹配修复...</li>
+                    <li data-i18n="v17D7">其它体验优化...</li>
+                  </ul>
+                </div>
+
+                <div class="update-item">
+                  <div class="update-ver">v1.6.2 <span class="update-tag" data-i18n="v162Tag">个性化定制与配置跨设备同步</span></div>
                   <ul class="update-desc">
                     <li data-i18n="v162D1">个人主页自定义...</li>
                     <li data-i18n="v162D2">全量配置导出/导入...</li>
@@ -760,7 +858,7 @@
                     <li data-i18n="v162D4">底层交互优化...</li>
                   </ul>
                 </div>
-                
+
                 <div class="update-item">
                   <div class="update-ver">v1.6.1 <span class="update-tag" data-i18n="v161Tag">跳过重构与国际化增强</span></div>
                   <ul class="update-desc">
@@ -771,7 +869,7 @@
                     <li data-i18n="v161D5">UI 细节与交互优化...</li>
                   </ul>
                 </div>
-                
+
                 <div class="update-item">
                   <div class="update-ver">v1.6.0 <span class="update-tag" data-i18n="v16Tag">账号系统与全局国际化</span></div>
                   <ul class="update-desc">
@@ -841,6 +939,36 @@
             </div>
           </div>
 
+          <!-- 系统检测：一级菜单页 -->
+          <div class="drawer-page" id="drawerPageSystemCheck">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" data-i18n="systemCheck">系统检测</span>
+              <button class="sys-refresh-btn" id="sysRefreshBtn" data-i18n-title="sysRefresh" title="刷新">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              </button>
+            </div>
+            <div class="drawer-page-content" id="sysMenuContent">
+              <!-- 菜单项由 JS 动态生成 -->
+              <div class="sys-loading" data-i18n="loading">加载中...</div>
+            </div>
+          </div>
+
+          <!-- 系统检测：二级详情页 -->
+          <div class="drawer-page" id="drawerPageSystemDetail">
+            <div class="drawer-page-header">
+              <button class="drawer-back-btn" id="sysDetailBackBtn">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg> <span data-i18n="back">返回</span>
+              </button>
+              <span class="drawer-page-title" id="sysDetailTitle">详情</span>
+            </div>
+            <div class="drawer-page-content" id="sysDetailContent">
+              <!-- 详细数据由 JS 动态注入 -->
+            </div>
+          </div>
+
           <div class="drawer-page" id="drawerPageAbout">
             <div class="drawer-page-header">
               <button class="drawer-back-btn">
@@ -849,16 +977,16 @@
               <span class="drawer-page-title" data-i18n="aboutTitle">关于</span>
             </div>
             <div class="drawer-page-content" style="display: flex; flex-direction: column; height: calc(100% - 60px);">
-              
+
               <div style="text-align: center; margin-bottom: 24px; padding-top: 10px;">
                 <h2 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 6px;" data-i18n="appName">全屏视频播放器</h2>
-                <div style="color: #6c5ce7; font-size: 12px; background: rgba(108, 92, 231, 0.15); display: inline-block; padding: 2px 10px; border-radius: 20px;" data-i18n="appVersion">Version 1.6.2</div>
+                <div style="color: #6c5ce7; font-size: 12px; background: rgba(108, 92, 231, 0.15); display: inline-block; padding: 2px 10px; border-radius: 20px;" data-i18n="appVersion">Version 1.7.5</div>
               </div>
-              
+
               <div style="text-align: center; color: #aaa; font-size: 13px; line-height: 1.6; margin-bottom: 24px;" data-i18n="appDesc">
                 一款纯粹、轻量、无广告的本地视频播放器。<br>深度定制的沉浸式 UI，原生支持双语字幕与高级排版。
               </div>
-              
+
               <div style="background: rgba(0, 0, 0, 0.2); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; font-size: 12px;">
                   <span style="color: #666; flex-shrink: 0; margin-right: 16px;" data-i18n="techStack">技术栈</span>
@@ -873,7 +1001,7 @@
                   <span style="color: #ccc; text-align: right;" data-i18n="authorValue">Bluesky</span>
                 </div>
               </div>
-              
+
               <div style="text-align: center; color: #555; font-size: 11px; margin-top: auto; padding-top: 20px;" data-i18n="copyright">
                 © 2026 All Rights Reserved.
               </div>
@@ -893,7 +1021,7 @@
         <h3><span data-i18n="playlist">播放列表</span> <span class="count" id="playlistCount">0</span></h3>
         <button class="manage-btn" id="manageBtn">管理</button>
       </div>
-      
+
       <div class="folder-selector-wrapper" id="folderSelectorWrapper" style="display: none;">
         <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
         <select id="folderSelect"></select>
@@ -934,12 +1062,15 @@
 
     <input type="file" class="file-input" id="fileInput" accept="video/mp4,video/webm,video/ogg,video/*" multiple>
     <input type="file" class="file-input" id="subtitleInput" accept=".ass,.ssa,.srt,.txt">
+    <input type="file" class="file-input" id="danmakuInput" accept=".ass,.ssa,.txt,.xml">
   </div>
 
-  <script src="auth.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="ass.global.min.js"></script>
-  <script src="subtitle.js"></script>
-  <script src="app.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="Language/i18n.js"></script>
+  <script src="js/ass.global.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/subtitle.js"></script>
+  <script src="js/danmaku.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
