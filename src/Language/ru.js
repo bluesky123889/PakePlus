@@ -268,6 +268,8 @@ window.LangPack['ru'] = {
   showDanmaku: "Показать данмаку",
   danmakuOpacity: "Непрозрачность",
   importDanmaku: "Импорт данмаку (XML/ASS)",
+  importDanmakuSuccess: "Данмаку успешно загружена!",
+  importDanmakuFail: "Ошибка формата данмаку",
 
   versionTitle: "Обновление версии",
   versionCurrent: "Текущая версия",
@@ -372,7 +374,7 @@ window.LangPack['ru'] = {
 
   aboutTitle: "О программе",
   appName: "Полноэкранный видеоплеер",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "Чистый, лёгкий видеоплеер без рекламы для локальных видео.<br>Глубоко кастомизированный иммерсивный UI, нативная поддержка двуязычных субтитров и продвинутой вёрстки.",
   techStack: "Технологический стек",
   techStackValue: "Vanilla JS / Tauri / Движок рендеринга ASS",
