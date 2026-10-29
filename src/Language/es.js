@@ -268,6 +268,8 @@ window.LangPack['es'] = {
   showDanmaku: "Mostrar danmaku",
   danmakuOpacity: "Opacidad",
   importDanmaku: "Importar danmaku (XML/ASS)",
+  importDanmakuSuccess: "¡Danmaku cargado con éxito!",
+  importDanmakuFail: "Error de formato de Danmaku",
 
   versionTitle: "Actualización de versión",
   versionCurrent: "Versión actual",
@@ -372,7 +374,7 @@ window.LangPack['es'] = {
 
   aboutTitle: "Acerca de",
   appName: "Reproductor de vídeo a pantalla completa",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "Un reproductor de vídeo local puro, ligero y sin anuncios.<br>UI inmersiva profundamente personalizada, soporte nativo de subtítulos bilingües y diseño avanzado.",
   techStack: "Stack tecnológico",
   techStackValue: "Vanilla JS / Tauri / Motor de renderizado ASS",
