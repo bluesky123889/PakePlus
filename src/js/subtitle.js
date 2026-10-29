@@ -4,8 +4,6 @@ window.Subtitle = (function () {
   let subtitleCues = [];
   let currentAssText = '';
   let subtitleEnabled = true;
-  let currentCueKey = '';
-  let subtitleVisible = false;
   let effectMode = false;
   let assRenderer = null;
 
@@ -438,7 +436,6 @@ window.Subtitle = (function () {
     if (!subtitleEnabled || subtitleCues.length === 0) {
       subtitleTop.classList.remove('visible'); subtitleTop.innerHTML = '';
       subtitleBottom.classList.remove('visible'); subtitleBottom.innerHTML = '';
-      subtitleVisible = false; currentCueKey = '';
       clearScreenTexts();
       return;
     }
@@ -447,28 +444,22 @@ window.Subtitle = (function () {
     const activeCaps = findActiveCaps(timeMs);
 
     if (activeCaps.length === 0) {
-      if (subtitleVisible) {
-        subtitleTop.classList.remove('visible'); subtitleTop.innerHTML = '';
-        subtitleBottom.classList.remove('visible'); subtitleBottom.innerHTML = '';
-        subtitleVisible = false;
-      }
+      subtitleTop.classList.remove('visible'); subtitleTop.innerHTML = '';
+      subtitleBottom.classList.remove('visible'); subtitleBottom.innerHTML = '';
       clearScreenTexts();
       return;
     }
 
     const groups = { lyric_jp: [], lyric_zh: [], dialogue: [], screenTexts: [] };
     for (const cap of activeCaps) {
-
       if (cap.isScreenText && cap.pos) {
         groups.screenTexts.push(cap);
         continue;
       }
-
       if (cap.isScreenText) {
         groups.screenTexts.push(cap);
         continue;
       }
-
       if (cap.isTopText) {
         cap.pos = { x: video.videoWidth / 2 || 960, y: (video.videoHeight || 1080) * 0.03 };
         cap.align = 8;
@@ -500,53 +491,69 @@ window.Subtitle = (function () {
 
     renderScreenTexts(groups.screenTexts);
 
-    const currentKey = activeCaps.map(c => c.start + (c.text || '').substring(0, 5)).join('|');
-    if (currentKey === currentCueKey && subtitleVisible && groups.screenTexts.length === 0) return;
-    currentCueKey = currentKey;
-
-    subtitleTop.innerHTML = '';
+    // ================= 顶部日文渲染 =================
     if (groups.lyric_jp.length > 0) {
-      const uniqueLyrics = [...new Set(groups.lyric_jp.map(c => c.text.trim()))];
-      uniqueLyrics.forEach(text => {
-        const el = document.createElement('div');
-        el.className = 'subtitle-line';
-        el.textContent = text;
-        subtitleTop.appendChild(el);
+      const jpTexts = groups.lyric_jp.map(c => c.text.trim());
+      
+      // 按时间正序追加：新出现的句子会被追加到 DOM 末尾，在 column 布局下自然排在最下方
+      jpTexts.forEach(text => {
+        let existingEl = Array.from(subtitleTop.children).find(el => el.textContent === text);
+        if (!existingEl) {
+          const el = document.createElement('div');
+          el.className = 'subtitle-line';
+          el.textContent = text;
+          subtitleTop.appendChild(el);
+        }
       });
+
+      // 清理过期的日文
+      Array.from(subtitleTop.children).forEach(el => {
+        if (!jpTexts.includes(el.textContent)) {
+          el.remove();
+        }
+      });
+
       subtitleTop.classList.add('visible');
     } else {
+      subtitleTop.innerHTML = '';
       subtitleTop.classList.remove('visible');
     }
 
-    subtitleBottom.innerHTML = '';
+
+    // ================= 底部中文渲染 =================
     const zhLines = [], jpLines = [];
 
     groups.lyric_zh.forEach(c => zhLines.push(c.text.trim()));
     groups.dialogue.filter(d => d.type === 'zh').forEach(d => zhLines.push(d.text.trim()));
     groups.dialogue.filter(d => d.type === 'jp').forEach(d => jpLines.push(d.text.trim()));
 
-    [...new Set(jpLines)].forEach(text => {
-      const el = document.createElement('div');
-      el.className = 'subtitle-line jp-line';
-      el.textContent = text;
-      subtitleBottom.appendChild(el);
-    });
+    if (zhLines.length > 0 || jpLines.length > 0) {
+      const allBottomTexts = [...jpLines, ...zhLines];
+      
+      allBottomTexts.forEach(text => {
+        let existingEl = Array.from(subtitleBottom.children).find(el => el.textContent === text);
+        if (!existingEl) {
+          const el = document.createElement('div');
+          el.className = `subtitle-line ${jpLines.includes(text) ? 'jp-line' : 'zh-line'}`;
+          el.textContent = text;
+          subtitleBottom.appendChild(el);
+        }
+      });
 
-    [...new Set(zhLines)].forEach(text => {
-      const el = document.createElement('div');
-      el.className = 'subtitle-line zh-line';
-      el.textContent = text;
-      subtitleBottom.appendChild(el);
-    });
+      Array.from(subtitleBottom.children).forEach(el => {
+        if (!allBottomTexts.includes(el.textContent)) {
+          el.remove();
+        }
+      });
 
-    if (subtitleBottom.children.length > 0) subtitleBottom.classList.add('visible');
-    else subtitleBottom.classList.remove('visible');
-
-    subtitleVisible = true;
+      subtitleBottom.classList.add('visible');
+    } else {
+      subtitleBottom.innerHTML = '';
+      subtitleBottom.classList.remove('visible');
+    }
   }
 
   return {
-    // 🔧 v1.7.4: 供系统检测调用
     isLoaded() {
       return subtitleCues.length > 0;
     },
@@ -612,8 +619,6 @@ window.Subtitle = (function () {
         item.subtitle = null;
       }
 
-      currentCueKey = '';
-      subtitleVisible = false;
       effectMode = false;
 
       if (assRenderer) {
