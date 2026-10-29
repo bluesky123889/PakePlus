@@ -3362,10 +3362,14 @@
     loadSkipConfigForCurrentVideo();
     updateSkipButton();
 
-    if (playlistBody?.querySelectorAll('.playlist-item').length === playlist.length) {
-      updateActivePlaylistItem();
-    } else {
-      renderPlaylist(searchInput?.value || '');
+        // 🟢 修复：强制更新主列表的高亮状态
+    updateActivePlaylistItem();
+    
+    // 🟢 修复：同步更新“选集”弹窗内部的高亮状态
+    if (episodeList) {
+      episodeList.querySelectorAll('.episode-item').forEach(el => {
+        el.classList.toggle('active', el.textContent.includes(item.name));
+      });
     }
 
     setTimeout(() => {
