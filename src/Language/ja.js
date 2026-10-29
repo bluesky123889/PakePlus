@@ -268,6 +268,8 @@ window.LangPack['ja'] = {
   showDanmaku: "弾幕を表示",
   danmakuOpacity: "不透明度",
   importDanmaku: "弾幕をインポート (XML/ASS)",
+  importDanmakuSuccess: "弾幕の読み込みに成功しました！",
+  importDanmakuFail: "弾幕のフォーマットエラー",
 
   versionTitle: "バージョン更新",
   versionCurrent: "現在のバージョン",
@@ -372,7 +374,7 @@ window.LangPack['ja'] = {
 
   aboutTitle: "について",
   appName: "全画面動画プレイヤー",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "シンプルで軽量、広告なしのローカル動画プレイヤー。<br>徹底的にカスタマイズされた没入型 UI、二言語字幕と高度なレイアウトをネイティブサポート。",
   techStack: "技術スタック",
   techStackValue: "Vanilla JS / Tauri / ASS レンダリングエンジン",
