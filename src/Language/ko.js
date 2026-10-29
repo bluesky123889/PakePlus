@@ -268,6 +268,8 @@ window.LangPack['ko'] = {
   showDanmaku: "탄막 표시",
   danmakuOpacity: "불투명도",
   importDanmaku: "탄막 가져오기 (XML/ASS)",
+  importDanmakuSuccess: "탄막 로드 성공!",
+  importDanmakuFail: "탄막 형식 오류",
 
   versionTitle: "버전 업데이트",
   versionCurrent: "현재 버전",
@@ -372,7 +374,7 @@ window.LangPack['ko'] = {
 
   aboutTitle: "정보",
   appName: "전체 화면 동영상 플레이어",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "순수하고 가볍고 광고 없는 로컬 동영상 플레이어.<br>깊이 커스터마이징된 몰입형 UI, 이중 언어 자막과 고급 레이아웃 기본 지원.",
   techStack: "기술 스택",
   techStackValue: "Vanilla JS / Tauri / ASS 렌더링 엔진",
