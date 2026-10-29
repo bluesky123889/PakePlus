@@ -268,6 +268,8 @@ window.LangPack['fr'] = {
   showDanmaku: "Afficher les danmaku",
   danmakuOpacity: "Opacité",
   importDanmaku: "Importer des danmaku (XML/ASS)",
+  importDanmakuSuccess: "Danmaku chargé avec succès !",
+  importDanmakuFail: "Erreur de format Danmaku",
 
   versionTitle: "Mise à jour de version",
   versionCurrent: "Version actuelle",
@@ -372,7 +374,7 @@ window.LangPack['fr'] = {
 
   aboutTitle: "À propos",
   appName: "Lecteur vidéo plein écran",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "Un lecteur vidéo local pur, léger et sans publicité.<br>Interface immersive profondément personnalisée, prise en charge native des sous-titres bilingues et de la mise en page avancée.",
   techStack: "Stack technique",
   techStackValue: "Vanilla JS / Tauri / Moteur de rendu ASS",
