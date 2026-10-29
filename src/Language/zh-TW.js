@@ -268,6 +268,8 @@ window.LangPack['zh-TW'] = {
   showDanmaku: "顯示彈幕",
   danmakuOpacity: "不透明度",
   importDanmaku: "匯入彈幕 (XML/ASS)",
+  importDanmakuSuccess: "彈幕載入成功！",
+  importDanmakuFail: "彈幕格式錯誤",
 
   versionTitle: "版本更新",
   versionCurrent: "目前版本",
@@ -372,7 +374,7 @@ window.LangPack['zh-TW'] = {
 
   aboutTitle: "關於",
   appName: "全螢幕影片播放器",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "一款純粹、輕量、無廣告的本機影片播放器。<br>深度客製的沉浸式 UI，原生支援雙語字幕與進階排版。",
   techStack: "技術棧",
   techStackValue: "Vanilla JS / Tauri / ASS 渲染引擎",
