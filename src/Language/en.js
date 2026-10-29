@@ -268,6 +268,8 @@ window.LangPack['en'] = {
   showDanmaku: "Show Danmaku",
   danmakuOpacity: "Opacity",
   importDanmaku: "Import Danmaku (XML/ASS)",
+  importDanmakuSuccess: "Danmaku loaded successfully!",
+  importDanmakuFail: "Danmaku format error",
 
   versionTitle: "Version Update",
   versionCurrent: "Current Version",
@@ -372,7 +374,7 @@ window.LangPack['en'] = {
 
   aboutTitle: "About",
   appName: "Fullscreen Video Player",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "A pure, lightweight, ad-free local video player.<br>Deeply customized immersive UI, natively supports bilingual subtitles and advanced layout.",
   techStack: "Tech Stack",
   techStackValue: "Vanilla JS / Tauri / ASS Rendering Engine",
