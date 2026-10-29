@@ -268,6 +268,8 @@ window.LangPack['pt'] = {
   showDanmaku: "Mostrar danmaku",
   danmakuOpacity: "Opacidade",
   importDanmaku: "Importar danmaku (XML/ASS)",
+  importDanmakuSuccess: "Danmaku carregado com sucesso!",
+  importDanmakuFail: "Erro de formato do Danmaku",
 
   versionTitle: "Atualização de versão",
   versionCurrent: "Versão atual",
@@ -372,7 +374,7 @@ window.LangPack['pt'] = {
 
   aboutTitle: "Sobre",
   appName: "Player de vídeo em tela cheia",
-  appVersion: "Version 1.7.5",
+  appVersion: "Version 1.7.5-LTS1.0.0",
   appDesc: "Um player de vídeo local puro, leve e sem anúncios.<br>UI imersiva profundamente personalizada, suporte nativo a legendas bilíngues e layout avançado.",
   techStack: "Stack tecnológico",
   techStackValue: "Vanilla JS / Tauri / Motor de renderização ASS",
