@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MelodyBox · 全屏双栏音乐播放器</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <video id="bgVideo" autoplay loop muted playsinline style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;"></video>
+  <video id="bgVideoNew" autoplay loop muted playsinline style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;"></video>
+
+  <div class="player">
+    <div class="bg-glow" id="bgGlow"></div>
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <div class="left-control">
+      <div class="top-bar">
+         <div class="logo gradient-logo">
+          <i class="fas fa-music"></i>
+          <span>MelodyBox</span>
+        </div>
+        <button class="icon-btn" id="settingsBtn" aria-label="设置">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="info">
+        <div class="song-title" id="songTitle">暂无歌曲</div>
+        <div class="artist" id="artistName">请导入音乐</div>
+        <div class="song-meta" id="songMeta"></div>
+      </div>
+
+      <div class="cover-wrapper">
+        <div class="cover">
+          <img id="coverImage"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%231f1b2e'/%3E%3Ccircle cx='200' cy='200' r='120' fill='%233d2e5c'/%3E%3Ccircle cx='200' cy='200' r='80' fill='%235b3f8c'/%3E%3Ccircle cx='200' cy='200' r='40' fill='%238b5cf6'/%3E%3Ctext x='200' y='215' font-family='Arial' font-size='24' fill='white' text-anchor='middle'%3E♪%3C/text%3E%3C/svg%3E"
+            alt="专辑封面">
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="time-display">
+          <span id="currentTime">0:00</span>
+          <span id="totalTime">0:00</span>
+        </div>
+        <div class="progress-bar-container" id="progressBar">
+          <div class="progress-filled" id="progressFilled"></div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="play-group">
+          <button class="ctrl-btn" id="prevBtn" aria-label="上一首">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z" />
+            </svg>
+          </button>
+          <button class="ctrl-btn play-btn" id="playBtn" aria-label="播放/暂停">
+            <svg id="playIcon" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7L8 5z" />
+            </svg>
+          </button>
+          <button class="ctrl-btn" id="nextBtn" aria-label="下一首">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 6h2v12h-2V6zm-2.5 6L5 6v12l8.5-6z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="tool-group">
+          <div class="volume-wrap">
+            <div class="volume-popup" id="volumePopup">
+              <div class="volume-value-bubble" id="volumeValueBubble">100%</div>
+              <input type="range" class="volume-slider-vertical" id="volumeSlider" min="0" max="1" step="0.01" value="1" aria-label="音量">
+            </div>
+            <button class="ctrl-btn volume-btn" id="muteBtn" aria-label="静音">
+              <svg id="volumeIcon" viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor" />
+                <path id="volumeWave" d="M16 9c1.5 1.5 1.5 4.5 0 6M19 7c2.5 2.5 2.5 7.5 0 10" stroke="currentColor"
+                  stroke-width="2" fill="none" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+          <button class="ctrl-btn loop-btn" id="loopBtn" aria-label="循环模式">
+            <svg viewBox="0 0 24 24">
+              <path d="M17 2l4 4-4 4" />
+              <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+              <path d="M7 22l-4-4 4-4" />
+              <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+            </svg>
+          </button>
+          <button class="ctrl-btn list-btn" id="listBtn" aria-label="播放列表">
+            <svg viewBox="0 0 24 24">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-lyrics">
+      <div class="lyrics-header">
+        歌词 <span class="lyrics-tag" id="lyricsTag">双语</span>
+      </div>
+      <div class="lyrics-sub" id="lyricsSub">支持内嵌歌词与 LRC 格式</div>
+      <div class="lyrics-content" id="lyricsContainer"></div>
+      
+      <canvas id="spectrumCanvas" class="spectrum-canvas" width="800" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="playlist-screen" id="playlistScreen">
+    <div class="pl-top-wrapper">
+      <div class="pl-header">
+        <button class="pl-back-btn" id="plCloseBtn" aria-label="返回">
+          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2;">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div class="pl-title">播放列表</div>
+        <button class="pl-sort-btn" id="plSortBtn"></button>
+      </div>
+
+      <div class="pl-search-box">
+        <svg viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="plSearchInput" placeholder="搜索歌曲 / 歌手 / 专辑（支持拼音、首字母）..." autocomplete="off">
+        
+        <button id="plLocateBtn" title="定位当前播放" style="right: 2.8rem;">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+            <line x1="12" y1="2" x2="12" y2="7"></line>
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <line x1="2" y1="12" x2="7" y2="12"></line>
+            <line x1="17" y1="12" x2="22" y2="12"></line>
+          </svg>
+        </button>
+
+        <button id="plSearchClear" style="display:none;">
+          <svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="pl-now-playing" id="plNowPlaying">
+        <div class="np-name" id="npName">当前播放</div>
+        <div class="np-label">正在播放</div>
+      </div>
+    </div>
+
+    <div class="pl-list-container">
+      <div class="pl-list-scroller" id="plListScroller">
+        <div class="pl-list-phantom" id="plListPhantom"></div>
+        <div class="pl-list-wrapper" id="plList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-modal" id="editModal">
+    <div class="edit-content">
+      <div class="edit-title">编辑歌曲信息</div>
+      <div class="edit-body">
+        <div class="edit-left">
+          <div class="edit-cover-preview" id="editCoverPreview">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+          </div>
+          <button class="btn-outline" id="editUploadCoverBtn" style="width: 120px; padding: 0.5rem 0; font-size: 0.8rem;">更换封面</button>
+          <input type="file" id="editCoverInput" accept="image/*" hidden>
+        </div>
+        <div class="edit-right">
+          <div class="edit-field">
+            <label>歌曲名</label>
+            <input type="text" class="edit-input" id="editTitleInput" placeholder="输入歌曲名">
+          </div>
+          <div class="edit-field">
+            <label>歌手</label>
+            <input type="text" class="edit-input" id="editArtistInput" placeholder="输入歌手名">
+          </div>
+          <div class="edit-field">
+            <label>专辑</label>
+            <input type="text" class="edit-input" id="editAlbumInput" placeholder="输入专辑名">
+          </div>
+        </div>
+      </div>
+      <div class="edit-actions">
+        <button class="btn-outline" id="editCancelBtn">取消</button>
+        <button class="btn-primary" id="editSaveBtn">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      
+      <div class="settings-header">
+        <div class="settings-title gradient-text">设置</div>
+        <button class="modal-close-btn" id="closeModalBtn" aria-label="关闭">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="settings-main-body">
+        <div class="settings-nav">
+          <div class="nav-item active" data-target="tab-bg">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            背景
+          </div>
+          <div class="nav-item" data-target="tab-music">
+            <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+            音乐
+          </div>
+          <div class="nav-item" data-target="tab-lyrics">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"></path></svg>
+            歌词
+          </div>
+          <div class="nav-item" data-target="tab-play">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            播放
+          </div>
+          <div class="nav-item" data-target="tab-shortcuts">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"></path></svg>
+            快捷键
+          </div>
+          <div class="nav-item" data-target="tab-data">
+            <svg viewBox="0 0 24 24"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path><line x1="15" y1="3" x2="21" y2="3"></line><line x1="18" y1="3" x2="18" y2="9"></line><path d="M8 12h8"></path><path d="M8 16h5"></path></svg>
+            数据
+          </div>
+          
+          <!-- 新增：统计菜单 -->
+          <div class="nav-item" data-target="tab-stats">
+            <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"></path></svg>
+            统计
+          </div>
+
+          <div class="nav-item" data-target="tab-about">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            关于
+          </div>
+        </div>
+
+        <div class="settings-body">
+          <div class="tab-pane active" id="tab-bg">
+            <div class="setting-list">
+              <div class="setting-item">
+                <div class="setting-label"><span class="s-title">背景来源</span></div>
+                <div class="setting-control">
+                  <div class="bg-source-group">
+                    <button class="bg-source-btn active" data-bg-source="color">纯色</button>
+                    <button class="bg-source-btn" data-bg-source="image">图片</button>
+                    <button class="bg-source-btn" data-bg-source="video">视频</button>
+                  </div>
+                  <input type="file" id="bgImageInput" accept="image/*" hidden>
+                </div>
+              </div>
+
+              <div class="setting-item" id="bgColorRow">
+                <div class="setting-label"><span class="s-title">背景颜色</span></div>
+                <div class="setting-control">
+                  <div class="bg-color-wrap">
+                    <span id="bgColorVal">#1f1b2e</span>
+                    <input type="color" id="bgColorInput" value="#1f1b2e">
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item" id="bgImagePreviewRow" style="display: none;">
+                <div class="setting-label">
+                  <span class="s-title">背景图片预览</span>
+                  <span class="s-desc">当前使用的背景图片</span>
+                </div>
+                <div class="setting-control">
+                  <div class="bg-image-card">
+                    <div class="bg-image-preview" id="bgImagePreview"></div>
+                    <div class="bg-image-actions">
+                      <button class="btn-outline btn-sm" id="changeBgImageBtn">更换图片</button>
+                      <button class="btn-outline btn-sm" id="importBgImageBtn">导入图片</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item" id="bgVideoRow" style="display: none;">
+                <div class="setting-label">
+                  <span class="s-title">背景视频预览</span>
+                  <span class="s-desc">当前使用的动态背景</span>
+                </div>
+                <div class="setting-control">
+                  <div class="bg-image-card">
+                    <div class="bg-image-preview" id="bgVideoPreview" style="position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                      <video id="bgVideoThumb" style="display: none; width: 100%; height: 100%; object-fit: cover;" muted playsinline preload="metadata"></video>
+                      <svg id="bgVideoPlaceholderIcon" viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: rgba(255,255,255,0.15); position: absolute;">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                      </svg>
+                      <span id="bgVideoPath" style="position: absolute; bottom: 4px; left: 0; right: 0; font-size: 0.65rem; color: rgba(255,255,255,0.8); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; z-index: 1;">点击选择</span>
+                    </div>
+                    <div class="bg-image-actions">
+                      <button class="btn-outline btn-sm" id="changeVideoBtn" style="display: none;">更换视频</button>
+                      <button class="btn-outline btn-sm" id="pickVideoBtn">选择视频</button>
+                      <button class="btn-outline btn-sm" id="scanVideoFolderBtn" style="display: none;">扫描文件夹</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-label"><span class="s-title">模糊强度</span></div>
+                <div class="setting-control slider-wrap">
+                  <input type="range" id="glowBlur" min="0" max="30" step="1" value="0">
+                  <span class="s-value" id="glowBlurVal">0px</span>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-label"><span class="s-title">遮罩透明度</span></div>
+                <div class="setting-control slider-wrap">
+                  <input type="range" id="overlayOpacity" min="0" max="100" step="1" value="40">
+                  <span class="s-value" id="overlayOpacityVal">40%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-music">
+            <div style="margin-bottom: 1.25rem; padding: 1.5rem; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 16px;">
+              <h4 style="color: #38bdf8; margin-bottom: 0.4rem; font-size: 1.05rem;">📁 引用本地音乐文件夹</h4>
+              <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.9rem;">直接读取硬盘上的音乐，不占用额外空间，适合音乐库较大的场景。</p>
+              <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn-primary" id="pickFolderBtn" style="background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.3);">选择文件夹</button>
+                <span id="currentFolderPath" style="font-size: 0.85rem; color: rgba(255,255,255,0.6); word-break: break-all; background: rgba(0,0,0,0.2); padding: 0.4rem 0.8rem; border-radius: 6px; display: none; flex: 1; min-width: 200px;">尚未选择文件夹</span>
+                <span id="pickFolderHint" style="font-size: 0.8rem; color: #38bdf8;"></span>
+              </div>
+            </div>
+
+            <div class="music-import-zone" id="importZone">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <p>点击选择音频文件，或直接拖拽文件到这里</p>
+              <span>支持 MP3 / WAV / OGG / FLAC / M4A 等格式，可多选</span>
+              <input type="file" id="fileInput" accept="audio/*" multiple hidden>
+            </div>
+            
+            <div class="import-progress" id="importProgress">
+              <div class="label">
+                <span id="importLabel">正在导入...</span>
+                <span id="importPercent">0%</span>
+              </div>
+              <div class="bar"><div id="importBar"></div></div>
+            </div>
+
+            <div class="setting-list" style="margin-top: 1.5rem;">
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">本地音乐概览</span>
+                  <span class="s-desc" id="storageSize">占用 0 MB</span>
+                </div>
+                <div class="setting-control">
+                  <span class="s-value" id="storageCount" style="margin-right: 1rem;">0 首</span>
+                  <button class="btn-danger" id="clearAllBtn" disabled>清空全部</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-lyrics">
+            <div class="setting-list">
+              <div class="setting-item">
+                <div class="setting-label"><span class="s-title">字号缩放</span></div>
+                <div class="setting-control slider-wrap">
+                  <input type="range" id="lyricScale" min="0.8" max="1.5" step="0.05" value="1">
+                  <span class="s-value" id="lyricScaleVal">100%</span>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-label"><span class="s-title">行距调节</span></div>
+                <div class="setting-control slider-wrap">
+                  <input type="range" id="lyricSpacing" min="0.5" max="4" step="0.1" value="1.6">
+                  <span class="s-value" id="lyricSpacingVal">1.6rem</span>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">时间偏移校正</span>
+                  <span class="s-desc">当前歌曲独立生效</span>
+                </div>
+                <div class="setting-control">
+                  <div class="offset-controls">
+                    <button class="btn-outline offset-btn" id="lyricOffsetMinus" title="提前 0.1 秒">-</button>
+                    <span id="lyricOffsetVal" style="min-width: 40px; text-align: center; font-weight: 700; color: #a78bfa; font-variant-numeric: tabular-nums;">0.0s</span>
+                    <button class="btn-outline offset-btn" id="lyricOffsetPlus" title="延后 0.1 秒">+</button>
+                    <button class="btn-outline" id="lyricOffsetReset" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; margin-left: 0.5rem;">归零</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">双语显示</span>
+                  <span class="s-desc">关闭后只显示原文或翻译</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="showBilingual" checked>
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">音乐频谱跳动</span>
+                  <span class="s-desc">在歌词底部显示动态频谱（需点击播放后生效）</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="showSpectrum" checked>
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-play">
+            <div class="setting-list">
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">记住播放进度</span>
+                  <span class="s-desc">关闭后重新打开从 0:00 开始</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="rememberProgress">
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">启动时恢复上次歌曲</span>
+                  <span class="s-desc">打开后刷新自动加载</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="restoreLastTrack">
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">启动时自动播放</span>
+                  <span class="s-desc">打开后刷新将直接开始播放</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="autoPlayOnStart">
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 1.5rem;">
+              <button class="btn-outline" id="resetPlaySettingsBtn">恢复默认行为设置</button>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-shortcuts">
+            <div class="setting-list" style="margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">在按钮上显示快捷键</span>
+                  <span class="s-desc">在播放按钮的右上角显示对应按键</span>
+                </div>
+                <div class="setting-control">
+                  <label class="switch">
+                    <input type="checkbox" id="showUiShortcuts" checked>
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-list" id="shortcutList"></div>
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+              <button class="btn-outline" id="resetShortcutsBtn">恢复默认快捷键</button>
+            </div>
+            <div class="shortcut-mobile-hint" style="display:none; margin-top:1rem; font-size:0.8rem; color: rgba(255,255,255,0.4);">
+              提示：快捷键功能主要在桌面端可用。
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-data">
+            <div class="data-dashboard">
+              <div class="dashboard-item">
+                <div class="dashboard-label">已导入歌曲</div>
+                <div class="dashboard-value" id="dashCount">0 首</div>
+              </div>
+              <div class="dashboard-item">
+                <div class="dashboard-label">占用空间</div>
+                <div class="dashboard-value" id="dashSize">0 MB</div>
+              </div>
+            </div>
+            
+            <div class="data-card">
+              <div class="data-card-header">
+                <h4>轻量备份 (JSON)</h4>
+                <p>仅包含歌曲列表、歌词、时间轴与设置。不包含音频文件。</p>
+              </div>
+              <div class="data-card-actions">
+                <button class="btn-primary" id="exportDataBtn">导出 JSON</button>
+                <button class="btn-outline" id="importDataBtn">导入 JSON</button>
+                <input type="file" id="dataFileInput" accept=".json" hidden>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <div class="data-card-header">
+                <h4>完整备份 (ZIP + 音频)</h4>
+                <p>包含所有音频、封面、歌词及设置。用于跨设备无缝迁移。</p>
+              </div>
+              <div class="data-card-actions">
+                <button class="btn-primary" id="exportZipBtn" style="background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.25);">打包并下载 ZIP</button>
+                <button class="btn-outline" id="importZipBtn">从 ZIP 恢复</button>
+                <input type="file" id="zipFileInput" accept=".zip" hidden>
+              </div>
+              
+              <div class="data-progress-wrap" id="dataProgressWrap">
+                <div class="data-progress-label" id="dataProgressLabel">处理中...</div>
+                <div class="data-progress-bar"><div class="data-progress-fill" id="dataProgressFill"></div></div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 2rem; text-align: right;">
+               <button class="btn-danger" id="clearAllBtnData">清空所有本地数据</button>
+            </div>
+          </div>
+
+          <!-- 新增：统计面板 -->
+          <div class="tab-pane" id="tab-stats">
+            <div class="stats-tabs">
+              <button class="stats-tab active" data-period="day">今日</button>
+              <button class="stats-tab" data-period="week">本周</button>
+              <button class="stats-tab" data-period="month">本月</button>
+            </div>
+
+            <div class="stats-card">
+              <div class="stats-header">
+                <span class="stats-title" id="statsTitle">今日听歌</span>
+                <span class="stats-date" id="statsDate">2023-10-27</span>
+              </div>
+              
+              <div class="stats-grid">
+                <div class="stats-item">
+                  <div class="stats-label">听歌时长</div>
+                  <div class="stats-value" id="statsTime">0 分钟</div>
+                </div>
+                <div class="stats-item">
+                  <div class="stats-label">听歌次数</div>
+                  <div class="stats-value" id="statsCount">0 次</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-tip">
+              💡 小提示：单曲播放达到一半以上，才算一次有效听歌。
+            </div>
+          </div>
+
+          <div class="tab-pane" id="tab-about">
+            <div class="about-content">
+              <div class="about-logo gradient-logo">
+                <i class="fas fa-music"></i>
+                <span>MelodyBox</span>
+              </div>
+              <div class="about-version">v1.17.0</div>
+              <div class="about-desc">
+                一个轻量、现代、支持 ID3 标签解析与内嵌歌词（含 LRC 时间轴）识别的网页音乐播放器。<br>
+                支持直接引用本地文件夹，不占空间。<br>
+                Built with ❤️ by DeepSeek.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="restoreReportModal" style="z-index: 400;">
+    <div class="modal-content" style="width: 90%; max-width: 500px; height: auto; max-height: 80vh; flex-direction: column;">
+      <div style="padding: 2rem 2rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div class="pane-title" style="margin-bottom: 0.5rem;">数据恢复报告</div>
+        <div style="display: flex; gap: 1.5rem; font-size: 0.95rem;">
+          <span style="color: #10b981; font-weight: 600;">✅ 成功恢复：<span id="reportSuccessCount">0</span> 首</span>
+          <span style="color: #ef4444; font-weight: 600;">❌ 失败：<span id="reportFailCount">0</span> 首</span>
+        </div>
+      </div>
+      
+      <div style="padding: 1.5rem 2rem; overflow-y: auto; flex: 1;">
+        <h5 style="color: rgba(255,255,255,0.7); margin-bottom: 1rem; font-size: 0.9rem;">失败详情：</h5>
+        <ul id="reportFailList" style="list-style: none; padding: 0; margin: 0; color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.8;"></ul>
+        <div id="reportEmptyMsg" style="display:none; text-align:center; color: rgba(255,255,255,0.4); padding: 2rem 0;">
+          全部恢复成功，没有失败数据！
+        </div>
+      </div>
+      
+      <div style="padding: 1rem 2rem 2rem; text-align: right;">
+        <button class="btn-primary" id="closeReportBtn">我知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="image-preview-modal" id="bgImageModal">
+    <div class="image-preview-content">
+      <div class="gallery-header">
+        <h3>切换背景图片</h3>
+        <button class="image-preview-close" id="closeBgImageModalBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="gallery-grid" id="bgGalleryGrid"></div>
+      
+      <div class="gallery-footer">
+        <button class="btn-outline btn-sm" id="uploadFromGalleryBtn" style="width: auto; padding: 0.5rem 1.5rem;">上传新图片</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="image-preview-modal" id="bgVideoModal">
+    <div class="image-preview-content">
+      <div class="gallery-header">
+        <h3>切换背景视频</h3>
+        <button class="image-preview-close" id="closeBgVideoModalBtn">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="gallery-grid" id="bgVideoGalleryGrid"></div>
+      
+      <div class="gallery-footer" style="display: flex; justify-content: center; gap: 1rem;">
+        <button class="btn-outline btn-sm" id="uploadFromVideoGalleryBtn" style="width: auto; padding: 0.5rem 1.5rem;">导入单个视频</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-hint">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+      <p>松开鼠标导入音乐</p>
+      <span>支持一次拖入多个文件</span>
+    </div>
+  </div>
+
+  <div class="confirm-modal" id="confirmModal">
+    <div class="confirm-content">
+      <div class="confirm-header">
+        <div class="confirm-icon" id="confirmIcon">
+          <svg viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <div class="confirm-title" id="confirmTitle">提示</div>
+      </div>
+      <div class="confirm-message" id="confirmMessage">确定要执行此操作吗？</div>
+      <div class="confirm-actions">
+        <button class="btn-outline" id="confirmCancelBtn">取消</button>
+        <button class="btn-primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <input type="file" id="lrcFileInput" accept=".lrc" hidden>
+  <audio id="audio" preload="metadata"></audio>
+
+  <script src="jsmediatags.min.js"></script>
+  <script src="jszip.min.js"></script>
+  <script src="pinyin-pro.min.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/krc-player.js"></script>
+  <script src="js/lyric-player.js"></script>
+  <script src="js/playlist-virtual.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
