@@ -611,24 +611,25 @@
         }
         pickFolderHint.textContent = `扫描到 ${collected.length} 首，正在解析标签入库...`;
         let added = 0;
+        
         for (const file of collected) {
           try {
             const trackId = 'folder-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
             const parsed = MB.parseArtistTitleFromName(file.name);
+            
             let title = parsed.title || MB.titleFromFileName(file.name);
             let artist = parsed.artist || '未知艺术家';
             let album = null, year = null, genre = null, track = null;
             let cover = MB.DEFAULT_COVER;
             let lyrics = '';
             let duration = 0;
-            let source = 'folder';
+            const source = 'folder';
 
             try {
-              const uint8Array = await window.__TAURI__.fs.readFile(file.path);
-              const blob = new Blob([uint8Array], { type: 'audio/mpeg' });
+              const buffer = await window.__TAURI__.fs.readFile(file.path); 
+              const blob = new Blob([buffer], { type: 'audio/mpeg' });
               duration = await MB.readDuration(blob);
-              const buffer = await blob.arrayBuffer();
-              const virtualFile = new File([buffer], file.name, { type: 'audio/mpeg' });
+              const virtualFile = new File([blob], file.name, { type: 'audio/mpeg' });
               const tags = await MB.parseTags(virtualFile);
               if (tags) {
                 title = tags.title || title;
@@ -640,10 +641,8 @@
                 lyrics = tags.lyrics || '';
                 cover = tags.cover || MB.DEFAULT_COVER;
               }
-              await MB.idbPut(MB.STORE_AUDIO, { id: trackId, blob: blob });
-              source = 'local';
             } catch (readErr) {
-              console.warn('读取文件流失败，降级为路径引用:', readErr);
+              console.warn('读取临时元数据失败，仅使用路径:', readErr);
             }
 
             const titlePinyin = MB.buildPinyinIndex(title);
@@ -665,11 +664,7 @@
               size: file.size || 0,
               mimeType: 'audio/mpeg',
               lyrics: lyrics,
-              pinyin: {
-                title: titlePinyin,
-                artist: artistPinyin,
-                album: albumPinyin
-              },
+              pinyin: { title: titlePinyin, artist: artistPinyin, album: albumPinyin },
               createdAt: Date.now(),
               lastPlayedAt: null,
               playCount: 0
@@ -1344,7 +1339,23 @@
     MB.loadBgSettings(); MB.loadBgGallery();
     MB.player.syncBgUI(); MB.player.applyBgSettings();
     MB.loadPlaySettings(); syncPlaySettingsUI();
-    MB.loadLyricSettings(); MB.loadLyricOffsets(); MB.player.applyLyricSettings();
+    MB.loadLyricSettings(); 
+    
+    const isTauri = !!window.__TAURI__;
+    const showSpectrumInput = document.getElementById('showSpectrum');
+    if (isTauri && showSpectrumInput) {
+      showSpectrumInput.checked = false;
+      showSpectrumInput.disabled = true;
+      MB.lyricSettings.showSpectrum = false;
+      
+      const descEl = showSpectrumInput.closest('.setting-item')?.querySelector('.s-desc');
+      if (descEl) {
+        descEl.textContent = '桌面端使用本地引用模式时，受安全策略限制，自动禁用频谱。';
+        descEl.style.color = '#f87171';
+      }
+    }
+
+    MB.loadLyricOffsets(); MB.player.applyLyricSettings();
     MB.loadShortcuts(); renderShortcutList(); syncShortcutBadges();
 
     const audio = MB.player.getAudio();
