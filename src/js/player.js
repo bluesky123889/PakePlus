@@ -100,7 +100,6 @@
 
   let bgRaf = null;
 
-  // 统计相关变量
   let statsTimer = null;
   let currentListenSeconds = 0;
   let hasCounted = false;
@@ -121,15 +120,9 @@
     volumeSlider.value = displayVal;
     updateRangeFill(volumeSlider);
 
-    if (volumeValueBubble) {
-      volumeValueBubble.textContent = Math.round(displayVal * 100) + '%';
-    }
-    if (volumeWrap) {
-      volumeWrap.classList.toggle('muted', muted);
-    }
-    if (volumeWave) {
-      volumeWave.style.opacity = muted ? '0.2' : '1';
-    }
+    if (volumeValueBubble) volumeValueBubble.textContent = Math.round(displayVal * 100) + '%';
+    if (volumeWrap) volumeWrap.classList.toggle('muted', muted);
+    if (volumeWave) volumeWave.style.opacity = muted ? '0.2' : '1';
     muteBtn.setAttribute('aria-label', muted ? '取消静音' : '静音');
   }
 
@@ -358,6 +351,7 @@
       const el = document.createElement('div');
       el.className = 'lyric-line' + (item.words ? ' krc-mode' : '');
       el.dataset.index = idx;
+      if (item.isMeta) el.dataset.isMeta = "true";
 
       const mainEl = document.createElement('div');
       mainEl.className = 'lyric-main';
@@ -599,7 +593,9 @@
           let safePath = song.filePath.replace(/\\/g, '/');
           audio.src = window.__TAURI__.core.convertFileSrc(safePath);
         } else {
-          audio.src = `asset://localhost/${encodeURIComponent(song.filePath)}`;
+          console.error("当前环境不支持 convertFileSrc");
+          MB.showToast('当前环境不支持本地引用，请检查打包配置', true);
+          return;
         }
       } else {
         const rec = await MB.idbGet(MB.STORE_AUDIO, song.id);
@@ -852,6 +848,7 @@
     updatePlayIcon();
     fadeVolume(targetVolume, 300);
     const song = MB.playlist[MB.currentIndex];
+    
     if (song && MB.lastCountedId !== song.id) {
       MB.lastCountedId = song.id;
       bumpPlayCount(song.id).then(() => {
@@ -859,11 +856,22 @@
       });
     }
     if (!lyricLoopId) lyricLoopId = requestAnimationFrame(tickLyrics);
-    initAudioContext();
-    if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-    if (MB.lyricSettings.showSpectrum && spectrumCanvas.classList.contains('show')) {
-      if (!spectrumRAF) renderSpectrum();
+
+    const isTauri = !!window.__TAURI__;
+    const forceDisableSpectrum = isTauri && song && song.source === 'folder';
+
+    if (!forceDisableSpectrum) {
+      initAudioContext();
+      if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+      if (MB.lyricSettings.showSpectrum && spectrumCanvas.classList.contains('show')) {
+        if (!spectrumRAF) renderSpectrum();
+      }
+    } else {
+      if (spectrumCanvas) {
+        spectrumCtx.clearRect(0, 0, spectrumCanvas.clientWidth, spectrumCanvas.clientHeight);
+      }
     }
+    
     startStatsTimer();
   });
 
@@ -1348,6 +1356,13 @@
   });
 
   showSpectrum.addEventListener('change', () => {
+    const isTauri = !!window.__TAURI__;
+    if (isTauri && !showSpectrum.checked) {
+      showSpectrum.checked = false;
+      MB.showToast('桌面端受安全策略限制，暂不支持频谱', true);
+      return;
+    }
+
     MB.lyricSettings.showSpectrum = showSpectrum.checked;
     MB.saveLyricSettings();
     if (showSpectrum.checked) {
