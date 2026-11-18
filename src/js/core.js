@@ -112,7 +112,8 @@
     restoreLastTrack: true,
     autoPlayOnStart: false,
     defaultSortOrder: 'asc',
-    showUiShortcuts: true
+    showUiShortcuts: true,
+    notifyOnSong: false
   };
 
   function loadPlaySettings() {
