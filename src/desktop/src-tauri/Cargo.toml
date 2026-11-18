@@ -1,0 +1,23 @@
+[package]
+name = "melodybox"
+version = "1.17.0"
+description = "MelodyBox desktop shell (Tauri 2 + Windows SMTC)"
+edition = "2021"
+rust-version = "1.90"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-media = "0.1.2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+# 体积优先：单文件 exe，约 3-5 MB
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+panic = "abort"
