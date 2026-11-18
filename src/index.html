@@ -479,6 +479,20 @@
                   </label>
                 </div>
               </div>
+
+              <div class="setting-item">
+                <div class="setting-label">
+                  <span class="s-title">切歌时系统通知</span>
+                  <span class="s-desc">仅在窗口不在前台时提醒，避免打扰</span>
+                </div>
+                <div class="setting-control">
+                  <button class="btn-outline" id="notifyTestBtn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">测试通知</button>
+                  <label class="switch">
+                    <input type="checkbox" id="notifyOnSong">
+                    <span class="slider-toggle"></span>
+                  </label>
+                </div>
+              </div>
             </div>
             <div style="margin-top: 1.5rem;">
               <button class="btn-outline" id="resetPlaySettingsBtn">恢复默认行为设置</button>
@@ -707,5 +721,8 @@
   <script src="js/playlist-virtual.js"></script>
   <script src="js/player.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/media-session.js"></script>
+  <script src="js/notify.js"></script>
+  <script src="js/native-media.js"></script>
 </body>
 </html>
