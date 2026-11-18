@@ -116,6 +116,8 @@
   const restoreLastTrack = document.getElementById('restoreLastTrack');
   const autoPlayOnStart = document.getElementById('autoPlayOnStart');
   const resetPlaySettingsBtn = document.getElementById('resetPlaySettingsBtn');
+  const notifyOnSong = document.getElementById('notifyOnSong');
+  const notifyTestBtn = document.getElementById('notifyTestBtn');
 
   const shortcutList = document.getElementById('shortcutList');
   const resetShortcutsBtn = document.getElementById('resetShortcutsBtn');
@@ -762,6 +764,7 @@
     rememberProgress.checked = !!MB.playSettings.rememberProgress;
     restoreLastTrack.checked = !!MB.playSettings.restoreLastTrack;
     autoPlayOnStart.checked = !!MB.playSettings.autoPlayOnStart;
+    if (notifyOnSong) notifyOnSong.checked = !!MB.playSettings.notifyOnSong;
   }
 
   rememberProgress.addEventListener('change', () => {
@@ -783,10 +786,25 @@
     MB.showToast(MB.playSettings.autoPlayOnStart ? '启动时将自动播放' : '启动时保持暂停');
   });
 
+  if (notifyOnSong) {
+    notifyOnSong.addEventListener('change', () => {
+      MB.playSettings.notifyOnSong = notifyOnSong.checked;
+      MB.savePlaySettings();
+      MB.showToast(MB.playSettings.notifyOnSong ? '后台切歌时将发送系统通知' : '已关闭系统通知');
+    });
+  }
+
+  if (notifyTestBtn) {
+    notifyTestBtn.addEventListener('click', () => {
+      if (window.MBNotify && window.MBNotify.test) window.MBNotify.test();
+    });
+  }
+
   resetPlaySettingsBtn.addEventListener('click', () => {
     MB.playSettings.rememberProgress = true;
     MB.playSettings.restoreLastTrack = true;
     MB.playSettings.autoPlayOnStart = false;
+    MB.playSettings.notifyOnSong = false;
     MB.savePlaySettings();
     syncPlaySettingsUI();
     MB.showToast('已恢复默认行为设置');
