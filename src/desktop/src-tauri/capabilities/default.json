@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "MelodyBox 桌面端：核心 API + 对话框 + 文件系统 + 系统媒体控制",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-title",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-read-dir",
+    "fs:allow-read-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**" }]
+    },
+    "media:default"
+  ]
+}
